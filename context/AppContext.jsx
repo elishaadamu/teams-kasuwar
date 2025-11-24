@@ -30,17 +30,6 @@ export const AppContextProvider = (props) => {
 
   const [wishlistItems, setWishlistItems] = useState([]);
 
-  const fetchProductData = async () => {
-    try {
-      const response = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.PRODUCT.GET_PRODUCT)
-      );
-      setProducts(response.data || []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-
   const fetchUserData = async () => {
     try {
       const encryptedUser = localStorage.getItem("user");
@@ -154,10 +143,6 @@ export const AppContextProvider = (props) => {
   };
 
   useEffect(() => {
-    fetchProductData();
-  }, []);
-
-  useEffect(() => {
     fetchUserData();
   }, []);
 
@@ -254,7 +239,6 @@ export const AppContextProvider = (props) => {
     userData,
     fetchUserData,
     products,
-    fetchProductData,
     cartItems,
     setCartItems,
     addToCart,

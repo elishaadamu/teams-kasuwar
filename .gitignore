@@ -15,7 +15,7 @@
 
 # next.js
 /.next/
-/out/   <-- This is the folder for static exports
+/out/  
 
 # production
 /build
