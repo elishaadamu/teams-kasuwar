@@ -685,8 +685,8 @@ const ManageAgentsPage = () => {
                           <span
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border bg-blue-100 text-blue-800 border-blue-200`}
                           >
-                            {agent.type.charAt(0).toUpperCase() +
-                              agent.type.slice(1)}
+                            {agent.type?.charAt(0).toUpperCase() +
+                              agent.type?.slice(1) || "N/A"}
                           </span>
                         </td>
                         <td className="px-6 py-4">
