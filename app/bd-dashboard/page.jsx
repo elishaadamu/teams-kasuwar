@@ -294,7 +294,7 @@ const DashboardHome = () => {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <Link
-                href="/bd-dashboard/agents"
+                href="/bd-dashboard/manage-agents"
                 className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center justify-center text-center"
               >
                 <FaUsers className="w-6 h-6 text-blue-600 mb-2" />
