@@ -673,22 +673,22 @@ const DashboardHome = () => {
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                w.status === "completed"
+                                w.status === "approved"
                                   ? "bg-green-100 text-green-800"
-                                  : w.status === "approved"
+                                  : w.status === "pending"
                                   ? "bg-blue-100 text-blue-800"
-                                  : w.status === "failed"
+                                  : w.status === "rejected"
                                   ? "bg-red-100 text-red-800"
                                   : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
                               <span
                                 className={`w-2 h-2 mr-1.5 rounded-full ${
-                                  w.status === "completed"
+                                  w.status === "approved"
                                     ? "bg-green-500"
-                                    : w.status === "approved"
+                                    : w.status === "pending"
                                     ? "bg-blue-500"
-                                    : w.status === "failed"
+                                    : w.status === "rejected"
                                     ? "bg-red-500"
                                     : "bg-yellow-500"
                                 }`}
