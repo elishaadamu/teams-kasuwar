@@ -7,6 +7,9 @@ import {
   FaEye,
   FaSearch,
   FaFilter,
+  FaEllipsisV,
+  FaBan,
+  FaUserCheck,
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,7 +33,9 @@ const ManageBDsPage = () => {
 
   const [formData, setFormData] = useState({
     firstName: "",
+    middleName: "",
     lastName: "",
+    skills: [],
     email: "",
     phoneNumber: "",
     gender: "",
@@ -45,11 +50,61 @@ const ManageBDsPage = () => {
     accountNumber: "",
   });
   const [passportPhotoBase64, setPassportPhotoBase64] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentBdId, setCurrentBdId] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const [currentSkill, setCurrentSkill] = useState("");
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Logic modified to simply close on any click outside the specific open dropdown mechanism
+      // or we can rely on scroll/resize to close it to avoid drifting.
+      // For simplicity, close on any click if it's not the button or menu
+      if (activeDropdown && !event.target.closest(".actions-dropdown-btn") && !event.target.closest(".actions-dropdown-menu")) {
+        setActiveDropdown(null);
+      }
+    };
+    // Close on scroll to avoid detached floating elements
+    const handleScroll = () => setActiveDropdown(null);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true); // true for capture to catch table scrolls
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [activeDropdown]);
+
+  const toggleDropdown = (e, id) => {
+    e.stopPropagation();
+    if (activeDropdown === id) {
+      setActiveDropdown(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dropdownHeight = 100; // Approximate height, or calculate dynamically if needed
+      const spaceBelow = window.innerHeight - rect.bottom;
+      
+      let top = rect.bottom + 5;
+      if (spaceBelow < dropdownHeight) {
+          top = rect.top - dropdownHeight - 5; // Flip up if no space below
+      }
+
+      setDropdownPos({
+        top: top,
+        left: rect.left - 150, // Shift left to align (w-48 is ~192px), adjusting for button center
+      });
+      setActiveDropdown(id);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
       firstName: "",
+      middleName: "",
       lastName: "",
+      skills: [],
       email: "",
       phoneNumber: "",
       gender: "",
@@ -128,6 +183,31 @@ const ManageBDsPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEditClick = (bd) => {
+    setFormData({
+      firstName: bd.firstName || "",
+      middleName: bd.middleName || "",
+      lastName: bd.lastName || "",
+      skills: Array.isArray(bd.skills) ? bd.skills : (bd.skills ? [bd.skills] : []),
+      email: bd.email || "",
+      phoneNumber: bd.phone || "",
+      gender: bd.gender || "",
+      maritalStatus: bd.maritalStatus || "",
+      dateOfBirth: bd.dateOfBirth ? new Date(bd.dateOfBirth).toISOString().split('T')[0] : "",
+      address: bd.address || "",
+      state: bd.state || "",
+      localGovt: bd.localGovt || bd.lga || "",
+      nin: bd.nin || "",
+      bankName: bd.bankName || "",
+      accountName: bd.accountName || "",
+      accountNumber: bd.accountNumber || "",
+    });
+    setPassportPhotoBase64(bd.passportPhoto || "");
+    setCurrentBdId(bd._id);
+    setIsEditing(true);
+    setShowAddModal(true);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -145,46 +225,90 @@ const ManageBDsPage = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleAddSkill = () => {
+    if (currentSkill.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, currentSkill.trim()]
+      }));
+      setCurrentSkill("");
+    }
+  };
+
+  const handleRemoveSkill = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const handleSkillKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSkill();
+    }
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!passportPhotoBase64) {
+    if (!passportPhotoBase64 && !isEditing) {
       toast.error("Please upload a passport photograph.");
       return;
     }
 
     setLoading(true);
 
-    const payload = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      gender: formData.gender,
-      maritalStatus: formData.maritalStatus,
-      dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
-      address: formData.address,
-      state: formData.state,
-      localGovt: formData.localGovt,
-      nin: formData.nin,
-      validId: formData.nin,
-      bankName: formData.bankName,
-      accountName: formData.accountName,
-      accountNumber: formData.accountNumber,
-      passportPhoto: passportPhotoBase64,
-      phone: formData.phoneNumber,
-      email: formData.email,
-      type: "bd",
-      role: "bdm",
-      managerId: userData._id,
-    };
-
     try {
-      await axios.post(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE), payload);
-      toast.success("Business Developer added successfully!");
+      if (isEditing) {
+        const updatePayload = {
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          skills: formData.skills,
+          gender: formData.gender,
+          maritalStatus: formData.maritalStatus,
+          dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
+          address: formData.address,
+          state: formData.state,
+          localGovt: formData.localGovt,
+          passportPhoto: passportPhotoBase64,
+          bdId: currentBdId,
+        };
+        await axios.put(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.UPDATE_BD +  userData._id), updatePayload); 
+        toast.success("Business Developer updated successfully!");
+      } else {
+        const createPayload = {
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          skills: formData.skills,
+          gender: formData.gender,
+          maritalStatus: formData.maritalStatus,
+          dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
+          address: formData.address,
+          state: formData.state,
+          localGovt: formData.localGovt,
+          nin: formData.nin,
+          validId: formData.nin,
+          bankName: formData.bankName,
+          accountName: formData.accountName,
+          accountNumber: formData.accountNumber,
+          passportPhoto: passportPhotoBase64,
+          phone: formData.phoneNumber,
+          email: formData.email,
+          type: "bd",
+          role: "bdm",
+          managerId: userData._id,
+        };
+        await axios.post(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE), createPayload);
+        toast.success("Business Developer added successfully!");
+      }
       closeModal();
       fetchBDs();
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to add Business Developer."
-      );
+      console.error(error);
+      const msg = error.response?.data?.message || (isEditing ? "Failed to update Business Developer." : "Failed to add Business Developer.");
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -238,12 +362,16 @@ const ManageBDsPage = () => {
 
   const openAddModal = () => {
     resetForm();
+    setIsEditing(false);
+    setCurrentBdId(null);
     setShowAddModal(true);
   };
 
   const closeModal = () => {
     setShowAddModal(false);
     resetForm();
+    setIsEditing(false);
+    setCurrentBdId(null);
   };
 
   const getStatusBadge = (bd) => {
@@ -368,7 +496,7 @@ const ManageBDsPage = () => {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Add New Business Developer
+                    {isEditing ? "Edit Business Developer" : "Add New Business Developer"}
                   </h2>
                   <p className="text-gray-600 mt-1">
                     Fill in the details to add a new team member
@@ -393,6 +521,13 @@ const ManageBDsPage = () => {
                     required
                   />
                   <InputField
+                    label="Middle Name"
+                    name="middleName"
+                    placeholder="Enter middle name"
+                    value={formData.middleName}
+                    onChange={handleInputChange}
+                  />
+                  <InputField
                     label="Last Name"
                     name="lastName"
                     placeholder="Enter last name"
@@ -400,24 +535,28 @@ const ManageBDsPage = () => {
                     onChange={handleInputChange}
                     required
                   />
-                  <InputField
-                    label="Email Address"
-                    name="email"
-                    type="email"
-                    placeholder="e.g. bd@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <InputField
-                    label="Phone Number"
-                    name="phoneNumber"
-                    type="tel"
-                    placeholder="e.g. 08012345678"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  {!isEditing && (
+                    <>
+                      <InputField
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        placeholder="e.g. bd@example.com"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      <InputField
+                        label="Phone Number"
+                        name="phoneNumber"
+                        type="tel"
+                        placeholder="e.g. 08012345678"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </>
+                  )}
                   <SelectField
                     label="Gender"
                     name="gender"
@@ -452,13 +591,66 @@ const ManageBDsPage = () => {
                     required
                   />
                   <InputField
-                    label="NIN"
-                    name="nin"
-                    placeholder="Enter National Identification Number"
-                    value={formData.nin}
+                    label="Date of Birth"
+                    name="dateOfBirth"
+                    type="date"
+                    placeholder="Select date of birth"
+                    value={formData.dateOfBirth}
                     onChange={handleInputChange}
                     required
                   />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Skills
+                    </label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={currentSkill}
+                        onChange={(e) => setCurrentSkill(e.target.value)}
+                        onKeyDown={handleSkillKeyDown}
+                        placeholder="Add a skill"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddSkill}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.skills.map((skill, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-100"
+                        >
+                          <span className="text-sm font-medium">{skill}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSkill(index)}
+                            className="text-blue-400 hover:text-blue-600 focus:outline-none"
+                          >
+                            <FaTimes className="text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                      {formData.skills.length === 0 && (
+                        <p className="text-sm text-gray-400 italic">No skills added yet</p>
+                      )}
+                    </div>
+                  </div>
+                  {!isEditing && (
+                    <InputField
+                      label="NIN"
+                      name="nin"
+                      placeholder="Enter National Identification Number"
+                      value={formData.nin}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -496,32 +688,34 @@ const ManageBDsPage = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <InputField
-                    label="Bank Name"
-                    name="bankName"
-                    placeholder="Enter bank name"
-                    value={formData.bankName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <InputField
-                    label="Account Name"
-                    name="accountName"
-                    placeholder="Enter account name"
-                    value={formData.accountName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  <InputField
-                    label="Account Number"
-                    name="accountNumber"
-                    placeholder="Enter account number"
-                    value={formData.accountNumber}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+                {!isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <InputField
+                      label="Bank Name"
+                      name="bankName"
+                      placeholder="Enter bank name"
+                      value={formData.bankName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <InputField
+                      label="Account Name"
+                      name="accountName"
+                      placeholder="Enter account name"
+                      value={formData.accountName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <InputField
+                      label="Account Number"
+                      name="accountNumber"
+                      placeholder="Enter account number"
+                      value={formData.accountNumber}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -587,7 +781,7 @@ const ManageBDsPage = () => {
                         Saving...
                       </div>
                     ) : (
-                      "Save Business Developer"
+                      isEditing ? "Update BD" : "Save Business Developer"
                     )}
                   </button>
                 </div>
@@ -608,9 +802,7 @@ const ManageBDsPage = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Contact Info
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Role
-                  </th>
+                  
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
@@ -678,14 +870,6 @@ const ManageBDsPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border bg-blue-100 text-blue-800 border-blue-200`}
-                          >
-                            {bd.type?.charAt(0).toUpperCase() +
-                              bd.type?.slice(1) || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${status.class}`}
                           >
                             <span
@@ -697,17 +881,52 @@ const ManageBDsPage = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-3">
+                          <div>
                             <button
-                              onClick={() => handleSuspendToggle(bd)}
-                              className={`font-semibold text-sm px-4 py-2 rounded-lg transition-colors ${
-                                bd.suspended
-                                  ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                  : "bg-red-50 text-red-700 hover:bg-red-100"
-                              }`}
+                              onClick={(e) => toggleDropdown(e, bd._id)}
+                              className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors actions-dropdown-btn"
                             >
-                              {bd.suspended ? "Unsuspend" : "Suspend"}
+                              <FaEllipsisV />
                             </button>
+                            
+                            {activeDropdown === bd._id && (
+                              <div 
+                                className="fixed bg-white rounded-xl shadow-lg border border-gray-100 z-[9999] overflow-hidden actions-dropdown-menu w-48"
+                                style={{ top: dropdownPos.top, left: dropdownPos.left }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    handleEditClick(bd);
+                                    setActiveDropdown(null);
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                >
+                                  <FaEdit className="text-blue-500" />
+                                  Edit Details
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleSuspendToggle(bd);
+                                    setActiveDropdown(null);
+                                  }}
+                                  className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 transition-colors ${
+                                    bd.suspended
+                                      ? "text-green-600 hover:bg-green-50"
+                                      : "text-red-600 hover:bg-red-50"
+                                  }`}
+                                >
+                                  {bd.suspended ? (
+                                    <>
+                                      <FaUserCheck /> Unsuspend User
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FaBan /> Suspend User
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

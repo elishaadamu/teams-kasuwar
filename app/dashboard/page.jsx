@@ -342,7 +342,7 @@ const DashboardHome = () => {
             <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl shadow-lg p-4 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500 rounded-full opacity-20 -mr-20 -mt-20"></div>
 
-              <div className="relative z-10">
+              <div className="relative ">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
                   <div className="mb-3 sm:mb-0">
@@ -509,6 +509,36 @@ const DashboardHome = () => {
                           <td className="px-3 py-2">Inactive Entities</td>
                           <td className="px-3 py-2">
                             {performanceData.summary.inactiveEntities}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2">Agents Count</td>
+                          <td className="px-3 py-2">
+                            {performanceData.agents?.count || 0}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2">Fully Active Users</td>
+                          <td className="px-3 py-2">
+                            {performanceData.fullyActiveUsers?.count || 0}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2">Inactive Users</td>
+                          <td className="px-3 py-2">
+                            {performanceData.inactiveUsers?.count || 0}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2">Fully Active Vendors</td>
+                          <td className="px-3 py-2">
+                            {performanceData.fullyActiveVendors?.count || 0}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2">Inactive Vendors</td>
+                          <td className="px-3 py-2">
+                            {performanceData.inactiveVendors?.count || 0}
                           </td>
                         </tr>
                         <tr>

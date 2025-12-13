@@ -61,14 +61,7 @@ const page = () => {
       toast.success("Signin successful!");
 
       const userRole = response.data?.role;
-      if (userRole === "vendor") {
-        router.push("/vendor-dashboard");
-      } else if (userRole === "delivery") {
-        router.push("/delivery-dashboard");
-      } else {
-        // For 'user' and 'admin'
         router.push("/dashboard");
-      }
     } catch (error) {
       console.error("Error signing in:", error);
       toast.error(

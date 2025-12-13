@@ -18,6 +18,7 @@ export const API_CONFIG = {
       SUSPEND_AGENT: "/bdm/suspend-agent/",
       SUSPEND_BD: "/bdm/suspend-bd/",
       AGENT_COMMISSION: "/agent/my-commission/",
+      UPDATE_BD: "/bdm/update-bd/",
     },
     SETTLEMENT: {
       CREATE: "/settlement/create",
