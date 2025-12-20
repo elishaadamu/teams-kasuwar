@@ -184,8 +184,9 @@ const DashboardHome = () => {
       inactiveUsers,
       fullyActiveVendors,
       inactiveVendors,
-      downlines = [],
     } = performanceData;
+
+    const agentsList = agents?.names || [];
 
     doc.setFontSize(18);
     doc.text(`Performance Report for ${bdName}`, 14, 22);
@@ -217,13 +218,13 @@ const DashboardHome = () => {
     doc.text("Full Download", 14, doc.lastAutoTable.finalY + 15);
 
     // Sorting by performance
-    const sortedDownlines = [...downlines].sort((a, b) => {
+    const sortedAgents = [...agentsList].sort((a, b) => {
       const performanceA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
       const performanceB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
       return performanceB - performanceA;
     });
 
-    const detailedTableData = sortedDownlines.map((item, index) => [
+    const detailedTableData = sortedAgents.map((item, index) => [
       index + 1,
       item.name || "N/A",
       item.noOfActiveVendors || 0,
@@ -549,7 +550,7 @@ const DashboardHome = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
-                            {[...(performanceData.downlines || [])]
+                            {[...(performanceData.agents?.names || [])]
                               .sort((a, b) => {
                                 const perfA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
                                 const perfB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
