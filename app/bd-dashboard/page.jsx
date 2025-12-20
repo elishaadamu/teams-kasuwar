@@ -184,7 +184,7 @@ const DashboardHome = () => {
       inactiveUsers,
       fullyActiveVendors,
       inactiveVendors,
-      bdsUnderBDM = [],
+      downlines = [],
     } = performanceData;
 
     doc.setFontSize(18);
@@ -193,24 +193,61 @@ const DashboardHome = () => {
     doc.setTextColor(100);
     doc.text(`Period: ${period}`, 14, 29);
 
-    const tableData = [
-      ["Total New Registrations", summary.totalNewRegistrations],
-      ["Total Active Entities", summary.activeEntities],
-      ["Total Inactive Entities", summary.inactiveEntities],
-      ["Agents Count", agents.count],
-      ["Fully Active Users", fullyActiveUsers.count],
-      ["Inactive Users", inactiveUsers.count],
-      ["Fully Active Vendors", fullyActiveVendors.count],
-      ["Inactive Vendors", inactiveVendors.count],
-      ["Number of BDs", bdsUnderBDM.length],
+    // Summary Section
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Summary", 14, 40);
+
+    const summaryData = [
+      ["Total Agents", agents?.count || 0],
+      ["Total Vendors", (fullyActiveVendors?.count || 0) + (inactiveVendors?.count || 0)],
+      ["Total Customers", (fullyActiveUsers?.count || 0) + (inactiveUsers?.count || 0)],
     ];
 
     autoTable(doc, {
-      startY: 35,
+      startY: 45,
       head: [["Metric", "Value"]],
-      body: tableData,
+      body: summaryData,
       theme: "striped",
-      headStyles: { fillColor: [22, 160, 133] },
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
+    // Detailed Section
+    doc.setFontSize(14);
+    doc.text("Full Download", 14, doc.lastAutoTable.finalY + 15);
+
+    // Sorting by performance
+    const sortedDownlines = [...downlines].sort((a, b) => {
+      const performanceA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
+      const performanceB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+      return performanceB - performanceA;
+    });
+
+    const detailedTableData = sortedDownlines.map((item, index) => [
+      index + 1,
+      item.name || "N/A",
+      item.noOfActiveVendors || 0,
+      item.noOfInactiveVendors || 0,
+      item.noOfActiveCustomers || 0,
+      item.noOfInactiveCustomers || 0,
+    ]);
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 20,
+      head: [
+        [
+          "S/N",
+          "Agents NAME",
+          "No of Active Vendors",
+          "No of Inactive Vendors",
+          "No of Active Customers",
+          "No of inactive Customers",
+        ],
+      ],
+      body: detailedTableData,
+      theme: "grid",
+      headStyles: { fillColor: [22, 160, 133], fontSize: 8 },
+      styles: { fontSize: 8 },
     });
 
     doc.save(
@@ -457,45 +494,81 @@ const DashboardHome = () => {
                 </div>
               ) : performanceData ? (
                 performanceData.summary && (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
-                            Summary
-                          </th>
-                          <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
-                            Value
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-3 py-2">Total New Registrations</td>
-                          <td className="px-3 py-2">
-                            {performanceData.summary.totalNewRegistrations}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-3 py-2">Active Entities</td>
-                          <td className="px-3 py-2">
-                            {performanceData.summary.activeEntities}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-3 py-2">Inactive Entities</td>
-                          <td className="px-3 py-2">
-                            {performanceData.summary.inactiveEntities}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-3 py-2">Number of BDs</td>
-                          <td className="px-3 py-2">
-                            {performanceData.numberOfBDs}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div className="space-y-6">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
+                              Summary
+                            </th>
+                            <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          <tr>
+                            <td className="px-3 py-2">Total Agents</td>
+                            <td className="px-3 py-2">
+                              {performanceData.agents?.count || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2">Total Vendors</td>
+                            <td className="px-3 py-2">
+                              {(performanceData.fullyActiveVendors?.count || 0) +
+                                (performanceData.inactiveVendors?.count || 0)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2">Total Customers</td>
+                            <td className="px-3 py-2">
+                              {(performanceData.fullyActiveUsers?.count || 0) +
+                                (performanceData.inactiveUsers?.count || 0)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        Detailed Agent Performance
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 text-[10px] text-left">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">S/N</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Agent Name</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Active Vendors</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Inactive Vendors</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Active Customers</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Inactive Customers</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {[...(performanceData.downlines || [])]
+                              .sort((a, b) => {
+                                const perfA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
+                                const perfB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+                                return perfB - perfA;
+                              })
+                              .map((agent, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-2 py-2">{index + 1}</td>
+                                  <td className="px-2 py-2 font-medium">{agent.name || "N/A"}</td>
+                                  <td className="px-2 py-2 text-green-600">{agent.noOfActiveVendors || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{agent.noOfInactiveVendors || 0}</td>
+                                  <td className="px-2 py-2 text-green-600">{agent.noOfActiveCustomers || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{agent.noOfInactiveCustomers || 0}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 )
               ) : (
