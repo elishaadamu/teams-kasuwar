@@ -180,13 +180,9 @@ const DashboardHome = () => {
       period = "",
       summary,
       agents,
-      fullyActiveUsers,
-      inactiveUsers,
-      fullyActiveVendors,
-      inactiveVendors,
     } = performanceData;
 
-    const agentsList = agents?.names || [];
+    const agentsList = agents || [];
 
     doc.setFontSize(18);
     doc.text(`Performance Report for ${bdName}`, 14, 22);
@@ -200,9 +196,9 @@ const DashboardHome = () => {
     doc.text("Summary", 14, 40);
 
     const summaryData = [
-      ["Total Agents", agents?.count || 0],
-      ["Total Vendors", (fullyActiveVendors?.count || 0) + (inactiveVendors?.count || 0)],
-      ["Total Customers", (fullyActiveUsers?.count || 0) + (inactiveUsers?.count || 0)],
+      ["Total Agents", summary?.agentsCount || 0],
+      ["Total Vendors", summary?.totalVendors || 0],
+      ["Total Customers", summary?.totalUsers || 0],
     ];
 
     autoTable(doc, {
@@ -215,22 +211,22 @@ const DashboardHome = () => {
 
     // Detailed Section
     doc.setFontSize(14);
-    doc.text("Full Download", 14, doc.lastAutoTable.finalY + 15);
+    doc.text("Agent Performance", 14, doc.lastAutoTable.finalY + 15);
 
     // Sorting by performance
     const sortedAgents = [...agentsList].sort((a, b) => {
-      const performanceA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
-      const performanceB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+      const performanceA = (a.fullyActiveVendors?.length || 0) + (a.fullyActiveCustomers?.length || 0);
+      const performanceB = (b.fullyActiveVendors?.length || 0) + (b.fullyActiveCustomers?.length || 0);
       return performanceB - performanceA;
     });
 
     const detailedTableData = sortedAgents.map((item, index) => [
       index + 1,
       item.name || "N/A",
-      item.noOfActiveVendors || 0,
-      item.noOfInactiveVendors || 0,
-      item.noOfActiveCustomers || 0,
-      item.noOfInactiveCustomers || 0,
+      item.fullyActiveVendors?.length || 0,
+      item.inactiveVendors?.length || 0,
+      item.fullyActiveCustomers?.length || 0,
+      item.inactiveCustomers?.length || 0,
     ]);
 
     autoTable(doc, {
@@ -250,6 +246,74 @@ const DashboardHome = () => {
       headStyles: { fillColor: [22, 160, 133], fontSize: 8 },
       styles: { fontSize: 8 },
     });
+
+    // Active Vendors List
+    const activeVendors = agentsList.flatMap((a) =>
+      (a.fullyActiveVendors || []).map((v) => ({ ...v, agentName: a.name }))
+    );
+
+    if (activeVendors.length > 0) {
+      let finalY = doc.lastAutoTable.finalY + 15;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      // Check if we have enough space for title + header (approx 30mm buffer)
+      if (finalY + 30 > pageHeight) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Active Vendors List", 14, finalY);
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [["S/N", "Vendor Name", "Business Name", "Phone", "Agent", "Date"]],
+        body: activeVendors.map((v, i) => [
+          i + 1,
+          v.name,
+          v.businessName || "N/A",
+          v.phone,
+          v.agentName,
+          new Date(v.registrationDate).toLocaleDateString(),
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [46, 204, 113], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
+
+    // Inactive Vendors List
+    const inactiveVendorsList = agentsList.flatMap((a) =>
+      (a.inactiveVendors || []).map((v) => ({ ...v, agentName: a.name }))
+    );
+
+    if (inactiveVendorsList.length > 0) {
+      let finalY = doc.lastAutoTable.finalY + 15;
+      const pageHeight = doc.internal.pageSize.height;
+
+      // Check if we have enough space for title + header (approx 30mm buffer)
+      if (finalY + 30 > pageHeight) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Inactive Vendors List", 14, finalY);
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [["S/N", "Vendor Name", "Business Name", "Phone", "Agent", "Date"]],
+        body: inactiveVendorsList.map((v, i) => [
+          i + 1,
+          v.name,
+          v.businessName || "N/A",
+          v.phone,
+          v.agentName,
+          new Date(v.registrationDate).toLocaleDateString(),
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [231, 76, 60], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
 
     doc.save(
       `performance-report-${bdName.replace(/\s+/g, "_")}-${period.replace(
@@ -512,21 +576,19 @@ const DashboardHome = () => {
                           <tr>
                             <td className="px-3 py-2">Total Agents</td>
                             <td className="px-3 py-2">
-                              {performanceData.agents?.count || 0}
+                              {performanceData.summary?.agentsCount || 0}
                             </td>
                           </tr>
                           <tr>
                             <td className="px-3 py-2">Total Vendors</td>
                             <td className="px-3 py-2">
-                              {(performanceData.fullyActiveVendors?.count || 0) +
-                                (performanceData.inactiveVendors?.count || 0)}
+                              {performanceData.summary?.totalVendors || 0}
                             </td>
                           </tr>
                           <tr>
                             <td className="px-3 py-2">Total Customers</td>
                             <td className="px-3 py-2">
-                              {(performanceData.fullyActiveUsers?.count || 0) +
-                                (performanceData.inactiveUsers?.count || 0)}
+                              {performanceData.summary?.totalUsers || 0}
                             </td>
                           </tr>
                         </tbody>
@@ -550,20 +612,20 @@ const DashboardHome = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
-                            {[...(performanceData.agents?.names || [])]
+                            {[...(performanceData.agents || [])]
                               .sort((a, b) => {
-                                const perfA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
-                                const perfB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+                                const perfA = (a.fullyActiveVendors?.length || 0) + (a.fullyActiveCustomers?.length || 0);
+                                const perfB = (b.fullyActiveVendors?.length || 0) + (b.fullyActiveCustomers?.length || 0);
                                 return perfB - perfA;
                               })
                               .map((agent, index) => (
                                 <tr key={index} className="hover:bg-gray-50">
                                   <td className="px-2 py-2">{index + 1}</td>
                                   <td className="px-2 py-2 font-medium">{agent.name || "N/A"}</td>
-                                  <td className="px-2 py-2 text-green-600">{agent.noOfActiveVendors || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{agent.noOfInactiveVendors || 0}</td>
-                                  <td className="px-2 py-2 text-green-600">{agent.noOfActiveCustomers || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{agent.noOfInactiveCustomers || 0}</td>
+                                  <td className="px-2 py-2 text-green-600">{agent.fullyActiveVendors?.length || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{agent.inactiveVendors?.length || 0}</td>
+                                  <td className="px-2 py-2 text-green-600">{agent.fullyActiveCustomers?.length || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{agent.inactiveCustomers?.length || 0}</td>
                                 </tr>
                               ))}
                           </tbody>

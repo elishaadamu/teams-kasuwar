@@ -178,13 +178,9 @@ const DashboardHome = () => {
     const {
       bdmName,
       period,
-      summary,
-      agents,
-      fullyActiveUsers,
-      inactiveUsers,
-      fullyActiveVendors,
-      inactiveVendors,
-      bdsUnderBDM = [],
+      overallSummary,
+      bdPerformance = [],
+      totalBDs,
     } = performanceData;
 
     doc.setFontSize(18);
@@ -199,10 +195,10 @@ const DashboardHome = () => {
     doc.text("Summary", 14, 40);
 
     const summaryData = [
-      ["Total BD count", bdsUnderBDM.length],
-      ["Total Agents", agents?.count || 0],
-      ["Total Vendors", (fullyActiveVendors?.count || 0) + (inactiveVendors?.count || 0)],
-      ["Total Customers", (fullyActiveUsers?.count || 0) + (inactiveUsers?.count || 0)],
+      ["Total BD count", totalBDs || bdPerformance.length],
+      ["Total Agents", overallSummary?.totalAgents || 0],
+      ["Total Vendors", overallSummary?.totalVendors || 0],
+      ["Total Customers", overallSummary?.totalUsers || 0],
     ];
 
     autoTable(doc, {
@@ -218,20 +214,20 @@ const DashboardHome = () => {
     doc.text("Full Download", 14, doc.lastAutoTable.finalY + 15);
 
     // Sorting BDs by performance (Active Vendors + Active Customers)
-    const sortedBds = [...bdsUnderBDM].sort((a, b) => {
-      const performanceA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
-      const performanceB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+    const sortedBds = [...bdPerformance].sort((a, b) => {
+      const performanceA = (a.standaloneVendors?.fullyActive?.length || 0) + (a.users?.fullyActive?.length || 0);
+      const performanceB = (b.standaloneVendors?.fullyActive?.length || 0) + (b.users?.fullyActive?.length || 0);
       return performanceB - performanceA;
     });
 
     const bdTableData = sortedBds.map((bd, index) => [
       index + 1,
-      bd.bdName || bd.name || "N/A",
-      bd.noOfAgents || 0,
-      bd.noOfActiveVendors || 0,
-      bd.noOfInactiveVendors || 0,
-      bd.noOfActiveCustomers || 0,
-      bd.noOfInactiveCustomers || 0,
+      bd.bdName || "N/A",
+      bd.summary?.agentsCount || 0,
+      bd.standaloneVendors?.fullyActive?.length || 0,
+      bd.standaloneVendors?.inactive?.length || 0,
+      bd.users?.fullyActive?.length || 0,
+      bd.users?.inactive?.length || 0,
     ]);
 
     autoTable(doc, {
@@ -252,6 +248,84 @@ const DashboardHome = () => {
       headStyles: { fillColor: [22, 160, 133], fontSize: 8 },
       styles: { fontSize: 8 },
     });
+
+    // Active Vendors List (Aggregated from all BDs)
+    const activeVendors = bdPerformance.flatMap((bd) =>
+      (bd.standaloneVendors?.fullyActive || []).map((v) => ({
+        ...v,
+        bdName: bd.bdName || bd.name,
+      }))
+    );
+
+    if (activeVendors.length > 0) {
+      let finalY = doc.lastAutoTable.finalY + 15;
+      const pageHeight = doc.internal.pageSize.height;
+
+      // Check if we have enough space for title + header
+      if (finalY + 30 > pageHeight) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Active Vendors List", 14, finalY);
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [
+          ["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"],
+        ],
+        body: activeVendors.map((v, i) => [
+          i + 1,
+          v.name,
+          v.businessName || "N/A",
+          v.phone,
+          v.bdName,
+          new Date(v.registrationDate).toLocaleDateString(),
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [46, 204, 113], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
+
+    // Inactive Vendors List (Aggregated from all BDs)
+    const inactiveVendors = bdPerformance.flatMap((bd) =>
+      (bd.standaloneVendors?.inactive || []).map((v) => ({
+        ...v,
+        bdName: bd.bdName || bd.name,
+      }))
+    );
+
+    if (inactiveVendors.length > 0) {
+      let finalY = doc.lastAutoTable.finalY + 15;
+      const pageHeight = doc.internal.pageSize.height;
+
+      // Check if we have enough space for title + header
+      if (finalY + 30 > pageHeight) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Inactive Vendors List", 14, finalY);
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [
+          ["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"],
+        ],
+        body: inactiveVendors.map((v, i) => [
+          i + 1,
+          v.name,
+          v.businessName || "N/A",
+          v.phone,
+          v.bdName,
+          new Date(v.registrationDate).toLocaleDateString(),
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [231, 76, 60], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
 
     doc.save(
       `performance-report-${bdmName.replace(/\s+/g, "_")}-${period.replace(
@@ -519,7 +593,7 @@ const DashboardHome = () => {
                   </p>
                 </div>
               ) : performanceData ? (
-                performanceData.summary && (
+                performanceData.overallSummary && (
                   <div className="space-y-6">
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
@@ -537,27 +611,25 @@ const DashboardHome = () => {
                           <tr>
                             <td className="px-3 py-2">Total BD count</td>
                             <td className="px-3 py-2">
-                              {performanceData.bdsUnderBDM?.length || 0}
+                              {performanceData.totalBDs || 0}
                             </td>
                           </tr>
                           <tr>
                             <td className="px-3 py-2">Total Agents</td>
                             <td className="px-3 py-2">
-                              {performanceData.agents?.count || 0}
+                              {performanceData.overallSummary?.totalAgents || 0}
                             </td>
                           </tr>
                           <tr>
                             <td className="px-3 py-2">Total Vendors</td>
                             <td className="px-3 py-2">
-                              {(performanceData.fullyActiveVendors?.count || 0) +
-                                (performanceData.inactiveVendors?.count || 0)}
+                              {performanceData.overallSummary?.totalVendors || 0}
                             </td>
                           </tr>
                           <tr>
                             <td className="px-3 py-2">Total Customers</td>
                             <td className="px-3 py-2">
-                              {(performanceData.fullyActiveUsers?.count || 0) +
-                                (performanceData.inactiveUsers?.count || 0)}
+                              {performanceData.overallSummary?.totalUsers || 0}
                             </td>
                           </tr>
                         </tbody>
@@ -582,21 +654,21 @@ const DashboardHome = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
-                            {[...(performanceData.bdsUnderBDM || [])]
+                            {[...(performanceData.bdPerformance || [])]
                               .sort((a, b) => {
-                                const perfA = (a.noOfActiveVendors || 0) + (a.noOfActiveCustomers || 0);
-                                const perfB = (b.noOfActiveVendors || 0) + (b.noOfActiveCustomers || 0);
+                                const perfA = (a.standaloneVendors?.fullyActive?.length || 0) + (a.users?.fullyActive?.length || 0);
+                                const perfB = (b.standaloneVendors?.fullyActive?.length || 0) + (b.users?.fullyActive?.length || 0);
                                 return perfB - perfA;
                               })
                               .map((bd, index) => (
                                 <tr key={index} className="hover:bg-gray-50">
                                   <td className="px-2 py-2">{index + 1}</td>
-                                  <td className="px-2 py-2 font-medium">{bd.bdName || bd.name || "N/A"}</td>
-                                  <td className="px-2 py-2">{bd.noOfAgents || 0}</td>
-                                  <td className="px-2 py-2 text-green-600">{bd.noOfActiveVendors || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{bd.noOfInactiveVendors || 0}</td>
-                                  <td className="px-2 py-2 text-green-600">{bd.noOfActiveCustomers || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{bd.noOfInactiveCustomers || 0}</td>
+                                  <td className="px-2 py-2 font-medium">{bd.bdName || "N/A"}</td>
+                                  <td className="px-2 py-2">{bd.summary?.agentsCount || 0}</td>
+                                  <td className="px-2 py-2 text-green-600">{bd.standaloneVendors?.fullyActive?.length || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{bd.standaloneVendors?.inactive?.length || 0}</td>
+                                  <td className="px-2 py-2 text-green-600">{bd.users?.fullyActive?.length || 0}</td>
+                                  <td className="px-2 py-2 text-red-600">{bd.users?.inactive?.length || 0}</td>
                                 </tr>
                               ))}
                           </tbody>
