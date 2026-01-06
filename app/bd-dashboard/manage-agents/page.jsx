@@ -18,6 +18,16 @@ import { apiUrl, API_CONFIG } from "@/configs/api";
 
 const MySwal = withReactContent(Swal);
 
+// Utility function to mask phone numbers
+const maskPhoneNumber = (phone) => {
+  if (!phone || phone.length < 7) return phone;
+  const phoneStr = String(phone);
+  const firstPart = phoneStr.slice(0, 5);
+  const lastPart = phoneStr.slice(-2);
+  const maskedMiddle = '*'.repeat(Math.max(0, phoneStr.length - 7));
+  return `${firstPart}${maskedMiddle}${lastPart}`;
+};
+
 const ManageAgentsPage = () => {
   const { userData, states, lgas, fetchLgas } = useAppContext();
   const [agents, setAgents] = useState([]);
@@ -678,7 +688,7 @@ const ManageAgentsPage = () => {
                             {agent.email}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {agent.phone || "No phone"}
+                            {maskPhoneNumber(agent.phone) || "No phone"}
                           </div>
                         </td>
                         <td className="px-6 py-4">

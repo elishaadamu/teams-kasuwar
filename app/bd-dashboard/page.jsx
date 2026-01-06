@@ -52,6 +52,16 @@ ChartJS.register(
   TimeScale
 );
 
+// Utility function to mask phone numbers
+const maskPhoneNumber = (phone) => {
+  if (!phone || phone.length < 7) return phone;
+  const phoneStr = String(phone);
+  const firstPart = phoneStr.slice(0, 5);
+  const lastPart = phoneStr.slice(-2);
+  const maskedMiddle = '*'.repeat(Math.max(0, phoneStr.length - 7));
+  return `${firstPart}${maskedMiddle}${lastPart}`;
+};
+
 const DashboardHome = () => {
   const { userData: contextUserData, authLoading } = useAppContext();
   const [loading, setLoading] = useState(false);
@@ -271,7 +281,7 @@ const DashboardHome = () => {
           i + 1,
           v.name,
           v.businessName || "N/A",
-          v.phone,
+          maskPhoneNumber(v.phone),
           v.agentName,
           new Date(v.registrationDate).toLocaleDateString(),
         ]),
@@ -305,7 +315,7 @@ const DashboardHome = () => {
           i + 1,
           v.name,
           v.businessName || "N/A",
-          v.phone,
+          maskPhoneNumber(v.phone),
           v.agentName,
           new Date(v.registrationDate).toLocaleDateString(),
         ]),
