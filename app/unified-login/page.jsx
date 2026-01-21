@@ -56,7 +56,7 @@ const page = () => {
       toast.success("Signin successful!");
 
       const userRole = response.data?.user?.role;
-      console.log(userRole);
+
       if (userRole === "sm") {
         router.push("/sales-manager");
       } else if (userRole === "agent") {

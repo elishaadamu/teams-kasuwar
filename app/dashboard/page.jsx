@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { decryptData } from "@/lib/encryption";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -49,7 +48,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   Title,
-  TimeScale
+  TimeScale,
 );
 
 // Utility function to mask phone numbers
@@ -58,12 +57,12 @@ const maskPhoneNumber = (phone) => {
   const phoneStr = String(phone);
   const firstPart = phoneStr.slice(0, 5);
   const lastPart = phoneStr.slice(-2);
-  const maskedMiddle = '*'.repeat(Math.max(0, phoneStr.length - 7));
+  const maskedMiddle = "*".repeat(Math.max(0, phoneStr.length - 7));
   return `${firstPart}${maskedMiddle}${lastPart}`;
 };
 
 const DashboardHome = () => {
-  const { userData: contextUserData, authLoading } = useAppContext();
+  const { userData, authLoading } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     userName: "",
@@ -73,8 +72,6 @@ const DashboardHome = () => {
     totalProducts: 0,
   });
   const [walletBalance, setWalletBalance] = useState({ balance: 0 });
-  const [userData, setUserData] = useState(null);
-  const [accountDetails, setAccountDetails] = useState("");
   const [timePeriod, setTimePeriod] = useState("monthly");
   const [reportLoading, setReportLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
@@ -86,92 +83,84 @@ const DashboardHome = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!userData?.id) return;
+
       setLoading(true);
       try {
-        const encryptedUser = localStorage.getItem("user");
-        if (encryptedUser) {
-          const decryptedUserData = decryptData(encryptedUser);
-          setUserData(decryptedUserData);
-          setAccountDetails(decryptedUserData); // Set state for other parts of the component
-          setDashboardData((prev) => ({
-            ...prev,
-            userName: decryptedUserData.firstName,
-          }));
+        setDashboardData((prev) => ({
+          ...prev,
+          userName: userData.firstName,
+        }));
 
-          // Use decryptedUserData._id directly instead of relying on state
-          const userId = decryptedUserData._id;
-          if (!userId) {
-            toast.error("User ID not found. Please log in again.");
-            setLoading(false);
-            return;
-          }
+        const userId = userData.id;
 
-          const [walletResponse, downlinesResponse, withdrawalsResponse] =
-            await Promise.all([
-              axios.get(
-                apiUrl(
-                  API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                    userId +
-                    "/balance"
-                )
+        const [walletResponse, downlinesResponse, withdrawalsResponse] =
+          await Promise.all([
+            axios.get(
+              apiUrl(
+                API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
+                  userId +
+                  "/balance",
               ),
-              axios.get(
-                apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId)
+              { withCredentials: true },
+            ),
+            axios.get(
+              apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId),
+              { withCredentials: true },
+            ),
+            axios.get(
+              apiUrl(
+                API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
               ),
-              axios.get(
-                apiUrl(
-                  API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId
-                )
-              ),
-            ]);
+              { withCredentials: true },
+            ),
+          ]);
+        console.log(downlinesResponse);
+        setWalletBalance(walletResponse.data.data);
+        const downlines = downlinesResponse.data?.results?.entities;
+        const businessDevelopers = downlines?.bds?.list || [];
+        const agents = downlines?.agents?.list || [];
 
-          setWalletBalance(walletResponse.data.data);
-          const downlines = downlinesResponse.data?.results?.entities;
-          const businessDevelopers = downlines?.bds?.list || [];
-          const agents = downlines?.agents?.list || [];
+        // Assuming the API returns the most recent first, we take the top 5
+        setRecentBds(businessDevelopers.slice(0, 5));
+        setRecentAgents(agents.slice(0, 5));
 
-          // Assuming the API returns the most recent first, we take the top 5
-          setRecentBds(businessDevelopers.slice(0, 5));
-          setRecentAgents(agents.slice(0, 5));
-
-          const withdrawalsData = withdrawalsResponse.data || [];
-          const withdrawalsList = Array.isArray(withdrawalsData)
-            ? withdrawalsData
-            : withdrawalsData.withdrawals || [];
-          // Assuming the API returns the most recent first, we take the top 5
-          setRecentWithdrawals(withdrawalsList.slice(0, 5));
-        }
+        const withdrawalsData = withdrawalsResponse.data || [];
+        const withdrawalsList = Array.isArray(withdrawalsData)
+          ? withdrawalsData
+          : withdrawalsData.withdrawals || [];
+        // Assuming the API returns the most recent first, we take the top 5
+        setRecentWithdrawals(withdrawalsList.slice(0, 5));
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to fetch dashboard data. Please contact support.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [userData]);
 
   const fetchPerformanceReport = async () => {
-    if (!userData?._id) return;
+    if (!userData?.id) return;
     setReportLoading(true);
     setPerformanceData(null); // Clear previous data
     try {
       const payload = {
-        bdmId: userData._id,
+        bdmId: userData.id,
         month: selectedMonth,
         year: selectedYear,
       };
-      console.log(payload);
+
       const response = await axios.post(
         apiUrl(API_CONFIG.REPORTS.PERFORMANCE_REPORT),
-        payload
+        payload,
       );
-      console.log(response);
+
       setPerformanceData(response.data?.report || null);
     } catch (error) {
-      console.error("Error fetching performance report:", error);
       toast.error(
-        error.response?.data?.message || "Failed to fetch performance report."
+        error.response?.data?.message || "Failed to fetch performance report.",
       );
     } finally {
       setReportLoading(false);
@@ -225,8 +214,12 @@ const DashboardHome = () => {
 
     // Sorting BDs by performance (Active Vendors + Active Customers)
     const sortedBds = [...bdPerformance].sort((a, b) => {
-      const performanceA = (a.standaloneVendors?.fullyActive?.length || 0) + (a.users?.fullyActive?.length || 0);
-      const performanceB = (b.standaloneVendors?.fullyActive?.length || 0) + (b.users?.fullyActive?.length || 0);
+      const performanceA =
+        (a.standaloneVendors?.fullyActive?.length || 0) +
+        (a.users?.fullyActive?.length || 0);
+      const performanceB =
+        (b.standaloneVendors?.fullyActive?.length || 0) +
+        (b.users?.fullyActive?.length || 0);
       return performanceB - performanceA;
     });
 
@@ -264,7 +257,7 @@ const DashboardHome = () => {
       (bd.standaloneVendors?.fullyActive || []).map((v) => ({
         ...v,
         bdName: bd.bdName || bd.name,
-      }))
+      })),
     );
 
     if (activeVendors.length > 0) {
@@ -281,9 +274,7 @@ const DashboardHome = () => {
       doc.text("Active Vendors List", 14, finalY);
       autoTable(doc, {
         startY: finalY + 5,
-        head: [
-          ["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"],
-        ],
+        head: [["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"]],
         body: activeVendors.map((v, i) => [
           i + 1,
           v.name,
@@ -303,7 +294,7 @@ const DashboardHome = () => {
       (bd.standaloneVendors?.inactive || []).map((v) => ({
         ...v,
         bdName: bd.bdName || bd.name,
-      }))
+      })),
     );
 
     if (inactiveVendors.length > 0) {
@@ -320,9 +311,7 @@ const DashboardHome = () => {
       doc.text("Inactive Vendors List", 14, finalY);
       autoTable(doc, {
         startY: finalY + 5,
-        head: [
-          ["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"],
-        ],
+        head: [["S/N", "Vendor Name", "Business Name", "Phone", "BD", "Date"]],
         body: inactiveVendors.map((v, i) => [
           i + 1,
           v.name,
@@ -340,8 +329,8 @@ const DashboardHome = () => {
     doc.save(
       `performance-report-${bdmName.replace(/\s+/g, "_")}-${period.replace(
         "/",
-        "-"
-      )}.pdf`
+        "-",
+      )}.pdf`,
     );
   };
 
@@ -375,13 +364,12 @@ const DashboardHome = () => {
     try {
       const walletBalanceResponse = await axios.get(
         apiUrl(
-          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userData._id + "/balance"
-        )
+          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userData.id + "/balance",
+        ),
       );
 
       setWalletBalance(walletBalanceResponse.data.data);
     } catch (error) {
-      console.error("Error processing payment:", error);
       toast.error("Failed to process payment. Please contact support.");
     } finally {
       setLoading(false);
@@ -513,7 +501,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Name</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.accountName || "N/A"}
+                          {userData?.accountName || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -525,7 +513,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Number</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.accountNumber || "N/A"}
+                          {userData?.accountNumber || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -537,7 +525,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Bank Name</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.bankName || "N/A"}
+                          {userData?.bankName || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -633,7 +621,8 @@ const DashboardHome = () => {
                           <tr>
                             <td className="px-3 py-2">Total Vendors</td>
                             <td className="px-3 py-2">
-                              {performanceData.overallSummary?.totalVendors || 0}
+                              {performanceData.overallSummary?.totalVendors ||
+                                0}
                             </td>
                           </tr>
                           <tr>
@@ -654,31 +643,63 @@ const DashboardHome = () => {
                         <table className="min-w-full divide-y divide-gray-200 text-[10px] text-left">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">S/N</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">BD Name</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Agents</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Active Vendors</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Inactive Vendors</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Active Customers</th>
-                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">Inactive Customers</th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                S/N
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                BD Name
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                Agents
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                Active Vendors
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                Inactive Vendors
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                Active Customers
+                              </th>
+                              <th className="px-2 py-2 font-medium text-gray-500 uppercase">
+                                Inactive Customers
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {[...(performanceData.bdPerformance || [])]
                               .sort((a, b) => {
-                                const perfA = (a.standaloneVendors?.fullyActive?.length || 0) + (a.users?.fullyActive?.length || 0);
-                                const perfB = (b.standaloneVendors?.fullyActive?.length || 0) + (b.users?.fullyActive?.length || 0);
+                                const perfA =
+                                  (a.standaloneVendors?.fullyActive?.length ||
+                                    0) + (a.users?.fullyActive?.length || 0);
+                                const perfB =
+                                  (b.standaloneVendors?.fullyActive?.length ||
+                                    0) + (b.users?.fullyActive?.length || 0);
                                 return perfB - perfA;
                               })
                               .map((bd, index) => (
                                 <tr key={index} className="hover:bg-gray-50">
                                   <td className="px-2 py-2">{index + 1}</td>
-                                  <td className="px-2 py-2 font-medium">{bd.bdName || "N/A"}</td>
-                                  <td className="px-2 py-2">{bd.summary?.agentsCount || 0}</td>
-                                  <td className="px-2 py-2 text-green-600">{bd.standaloneVendors?.fullyActive?.length || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{bd.standaloneVendors?.inactive?.length || 0}</td>
-                                  <td className="px-2 py-2 text-green-600">{bd.users?.fullyActive?.length || 0}</td>
-                                  <td className="px-2 py-2 text-red-600">{bd.users?.inactive?.length || 0}</td>
+                                  <td className="px-2 py-2 font-medium">
+                                    {bd.bdName || "N/A"}
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    {bd.summary?.agentsCount || 0}
+                                  </td>
+                                  <td className="px-2 py-2 text-green-600">
+                                    {bd.standaloneVendors?.fullyActive
+                                      ?.length || 0}
+                                  </td>
+                                  <td className="px-2 py-2 text-red-600">
+                                    {bd.standaloneVendors?.inactive?.length ||
+                                      0}
+                                  </td>
+                                  <td className="px-2 py-2 text-green-600">
+                                    {bd.users?.fullyActive?.length || 0}
+                                  </td>
+                                  <td className="px-2 py-2 text-red-600">
+                                    {bd.users?.inactive?.length || 0}
+                                  </td>
                                 </tr>
                               ))}
                           </tbody>
@@ -865,10 +886,10 @@ const DashboardHome = () => {
                                 w.status === "approved"
                                   ? "bg-green-100 text-green-800"
                                   : w.status === "pending"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : w.status === "rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : w.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
                               <span
@@ -876,10 +897,10 @@ const DashboardHome = () => {
                                   w.status === "approved"
                                     ? "bg-green-500"
                                     : w.status === "pending"
-                                    ? "bg-blue-500"
-                                    : w.status === "rejected"
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
+                                      ? "bg-blue-500"
+                                      : w.status === "rejected"
+                                        ? "bg-red-500"
+                                        : "bg-yellow-500"
                                 }`}
                               ></span>
                               {w.status}

@@ -1,13 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { decryptData, encryptData } from "@/lib/encryption";
 import { ToastContainer, toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { FaUserEdit } from "react-icons/fa";
 import Image from "next/image";
 import "react-toastify/dist/ReactToastify.css";
 import Loading from "@/components/Loading";
+import { useAppContext } from "@/context/AppContext";
 
 const FormField = ({
   label,
@@ -47,6 +47,7 @@ const FormField = ({
 );
 
 const PersonalDetails = () => {
+  const { userData, fetchUserData } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -63,22 +64,12 @@ const PersonalDetails = () => {
   });
 
   useEffect(() => {
-    const fetchUserData = () => {
-      try {
-        const encryptedUser = localStorage.getItem("user");
-
-        if (encryptedUser) {
-          const userData = decryptData(encryptedUser);
-          console.log("My details", userData);
-          setProfile(userData);
-        }
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+    if (userData) {
+      console.log("My details", userData);
+      setProfile(userData);
+      setPageLoading(false);
+    }
+  }, [userData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -89,32 +80,35 @@ const PersonalDetails = () => {
   };
 
   const fetchProfile = async () => {
+    if (!userData?.id) return;
+
     setLoading(true);
     try {
-      const encryptedUser = localStorage.getItem("user");
-      const userData = decryptData(encryptedUser);
-
       const response = await axios.get(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData._id}`
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
+        { withCredentials: true },
       );
       console.log("Profile data", response.data);
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      console.error("Error fetching profile:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch profile");
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [userData]);
 
   const handleUpdateProfile = async () => {
+    if (!userData?.id) {
+      toast.error("User data not available");
+      return;
+    }
+
     setLoading(true);
     try {
-      const encryptedUser = localStorage.getItem("user");
-      const userData = decryptData(encryptedUser);
-
       let payload;
       if (userData.role === "vendor") {
         payload = {
@@ -132,17 +126,14 @@ const PersonalDetails = () => {
       }
 
       const response = await axios.put(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.UPDATE_USER)}/${userData._id}`,
-        payload
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.UPDATE_USER)}/${userData.id}`,
+        payload,
+        { withCredentials: true },
       );
 
       if (response.data) {
-        // Update the stored user data
-        const updatedUser = {
-          ...userData,
-          ...profile,
-        };
-        localStorage.setItem("user", encryptData(updatedUser));
+        // Refresh user data from context to sync across all components
+        await fetchUserData();
 
         toast.success("Profile updated successfully!");
         setIsEditing(false);

@@ -3,40 +3,33 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { decryptData } from "../../lib/encryption";
 import Logo from "@/assets/logo/logo.png";
-import axios from "axios";
-import { apiUrl, API_CONFIG } from "@/configs/api";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "@/components/dashboard/Sidebar";
+import { useAppContext } from "@/context/AppContext";
 
 const DashboardLayout = ({ children }) => {
   const router = useRouter();
+  const { userData, logout, authLoading } = useAppContext();
   const [openOrders, setOpenOrders] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
   const [openDelivery, setOpenDelivery] = useState(false);
   const [openProducts, setOpenProducts] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [userData, setUserData] = useState(null);
   const [hasWallet, setHasWallet] = useState(true);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [nin, setNin] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/signin");
-    } else {
-      const decryptedData = decryptData(user);
-      setUserData(decryptedData);
+    if (!authLoading && !userData) {
+      router.push("/");
     }
-  }, [router]);
+  }, [userData, authLoading, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (

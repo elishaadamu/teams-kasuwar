@@ -27,7 +27,7 @@ const maskPhoneNumber = (phone) => {
   const phoneStr = String(phone);
   const firstPart = phoneStr.slice(0, 5);
   const lastPart = phoneStr.slice(-2);
-  const maskedMiddle = '*'.repeat(Math.max(0, phoneStr.length - 7));
+  const maskedMiddle = "*".repeat(Math.max(0, phoneStr.length - 7));
   return `${firstPart}${maskedMiddle}${lastPart}`;
 };
 
@@ -72,7 +72,11 @@ const ManageBDsPage = () => {
       // Logic modified to simply close on any click outside the specific open dropdown mechanism
       // or we can rely on scroll/resize to close it to avoid drifting.
       // For simplicity, close on any click if it's not the button or menu
-      if (activeDropdown && !event.target.closest(".actions-dropdown-btn") && !event.target.closest(".actions-dropdown-menu")) {
+      if (
+        activeDropdown &&
+        !event.target.closest(".actions-dropdown-btn") &&
+        !event.target.closest(".actions-dropdown-menu")
+      ) {
         setActiveDropdown(null);
       }
     };
@@ -95,10 +99,10 @@ const ManageBDsPage = () => {
       const rect = e.currentTarget.getBoundingClientRect();
       const dropdownHeight = 100; // Approximate height, or calculate dynamically if needed
       const spaceBelow = window.innerHeight - rect.bottom;
-      
+
       let top = rect.bottom + 5;
       if (spaceBelow < dropdownHeight) {
-          top = rect.top - dropdownHeight - 5; // Flip up if no space below
+        top = rect.top - dropdownHeight - 5; // Flip up if no space below
       }
 
       setDropdownPos({
@@ -132,11 +136,12 @@ const ManageBDsPage = () => {
   };
 
   const fetchBDs = async () => {
-    if (!userData?._id) return;
+    if (!userData?.id) return;
     setListLoading(true);
     try {
       const response = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userData._id)
+        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userData.id),
+        { withCredentials: true },
       );
       const businessDevelopers =
         response.data?.results?.entities?.bds?.list || [];
@@ -145,7 +150,7 @@ const ManageBDsPage = () => {
     } catch (error) {
       console.error("Error fetching BDs:", error);
       toast.error(
-        error.response?.data?.message || "Failed to fetch Business Developers."
+        error.response?.data?.message || "Failed to fetch Business Developers.",
       );
     } finally {
       setListLoading(false);
@@ -174,14 +179,14 @@ const ManageBDsPage = () => {
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           bd.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bd.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+          bd.phone?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
     if (statusFilter !== "all") {
       results = results.filter((bd) =>
-        statusFilter === "active" ? !bd.suspended : bd.suspended
+        statusFilter === "active" ? !bd.suspended : bd.suspended,
       );
     }
 
@@ -198,12 +203,18 @@ const ManageBDsPage = () => {
       firstName: bd.firstName || "",
       middleName: bd.middleName || "",
       lastName: bd.lastName || "",
-      skills: Array.isArray(bd.skills) ? bd.skills : (bd.skills ? [bd.skills] : []),
+      skills: Array.isArray(bd.skills)
+        ? bd.skills
+        : bd.skills
+          ? [bd.skills]
+          : [],
       email: bd.email || "",
       phoneNumber: bd.phone || "",
       gender: bd.gender || "",
       maritalStatus: bd.maritalStatus || "",
-      dateOfBirth: bd.dateOfBirth ? new Date(bd.dateOfBirth).toISOString().split('T')[0] : "",
+      dateOfBirth: bd.dateOfBirth
+        ? new Date(bd.dateOfBirth).toISOString().split("T")[0]
+        : "",
       address: bd.address || "",
       state: bd.state || "",
       localGovt: bd.localGovt || bd.lga || "",
@@ -237,23 +248,23 @@ const ManageBDsPage = () => {
 
   const handleAddSkill = () => {
     if (currentSkill.trim()) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        skills: [...prev.skills, currentSkill.trim()]
+        skills: [...prev.skills, currentSkill.trim()],
       }));
       setCurrentSkill("");
     }
   };
 
   const handleRemoveSkill = (indexToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      skills: prev.skills.filter((_, index) => index !== indexToRemove)
+      skills: prev.skills.filter((_, index) => index !== indexToRemove),
     }));
   };
 
   const handleSkillKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddSkill();
     }
@@ -284,7 +295,11 @@ const ManageBDsPage = () => {
           passportPhoto: passportPhotoBase64,
           bdId: currentBdId,
         };
-        await axios.put(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.UPDATE_BD +  userData._id), updatePayload); 
+        await axios.put(
+          apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.UPDATE_BD + userData.id),
+          updatePayload,
+          { withCredentials: true },
+        );
         toast.success("Business Developer updated successfully!");
       } else {
         const createPayload = {
@@ -308,16 +323,24 @@ const ManageBDsPage = () => {
           email: formData.email,
           type: "bd",
           role: "bdm",
-          managerId: userData._id,
+          managerId: userData.id,
         };
-        await axios.post(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE), createPayload);
+        await axios.post(
+          apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE),
+          createPayload,
+          { withCredentials: true },
+        );
         toast.success("Business Developer added successfully!");
       }
       closeModal();
       fetchBDs();
     } catch (error) {
       console.error(error);
-      const msg = error.response?.data?.message || (isEditing ? "Failed to update Business Developer." : "Failed to add Business Developer.");
+      const msg =
+        error.response?.data?.message ||
+        (isEditing
+          ? "Failed to update Business Developer."
+          : "Failed to add Business Developer.");
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -351,8 +374,9 @@ const ManageBDsPage = () => {
 
     try {
       await axios.put(
-        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.SUSPEND_BD + userData._id),
-        payload
+        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.SUSPEND_BD + userData.id),
+        payload,
+        { withCredentials: true },
       );
 
       fetchBDs();
@@ -506,7 +530,9 @@ const ManageBDsPage = () => {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {isEditing ? "Edit Business Developer" : "Add New Business Developer"}
+                    {isEditing
+                      ? "Edit Business Developer"
+                      : "Add New Business Developer"}
                   </h2>
                   <p className="text-gray-600 mt-1">
                     Fill in the details to add a new team member
@@ -647,7 +673,9 @@ const ManageBDsPage = () => {
                         </div>
                       ))}
                       {formData.skills.length === 0 && (
-                        <p className="text-sm text-gray-400 italic">No skills added yet</p>
+                        <p className="text-sm text-gray-400 italic">
+                          No skills added yet
+                        </p>
                       )}
                     </div>
                   </div>
@@ -790,8 +818,10 @@ const ManageBDsPage = () => {
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Saving...
                       </div>
+                    ) : isEditing ? (
+                      "Update BD"
                     ) : (
-                      isEditing ? "Update BD" : "Save Business Developer"
+                      "Save Business Developer"
                     )}
                   </button>
                 </div>
@@ -812,7 +842,7 @@ const ManageBDsPage = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Contact Info
                   </th>
-                  
+
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
@@ -898,11 +928,14 @@ const ManageBDsPage = () => {
                             >
                               <FaEllipsisV />
                             </button>
-                            
+
                             {activeDropdown === bd._id && (
-                              <div 
+                              <div
                                 className="fixed bg-white rounded-xl shadow-lg border border-gray-100 z-[9999] overflow-hidden actions-dropdown-menu w-48"
-                                style={{ top: dropdownPos.top, left: dropdownPos.left }}
+                                style={{
+                                  top: dropdownPos.top,
+                                  left: dropdownPos.left,
+                                }}
                               >
                                 <button
                                   onClick={() => {

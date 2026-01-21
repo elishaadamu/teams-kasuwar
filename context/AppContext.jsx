@@ -45,7 +45,7 @@ export const AppContextProvider = (props) => {
       });
 
       if (decryptedUser) {
-        setUserData(decryptedUser.user);
+        setUserData(decryptedUser?.user);
       } else {
         localStorage.removeItem("user");
         setUserData(null);

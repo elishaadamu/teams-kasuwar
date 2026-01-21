@@ -1,29 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
 import { FaUsers, FaWallet } from "react-icons/fa";
-import { decryptData } from "@/lib/encryption";
+import { useAppContext } from "@/context/AppContext";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState(null);
-
-  useEffect(() => {
-    const getUserRoleFromStorage = () => {
-      try {
-        const raw = localStorage.getItem("user");
-        if (!raw) return null;
-        const user = decryptData(raw) || null;
-        return user?.role || null;
-      } catch (err) {
-        return null;
-      }
-    };
-    setUserRole(getUserRoleFromStorage());
-  }, []);
+  const { userData } = useAppContext();
+  const userRole = userData?.role || null;
 
   return (
     <aside

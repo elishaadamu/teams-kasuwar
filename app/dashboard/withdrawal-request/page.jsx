@@ -1,11 +1,12 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { decryptData } from "@/lib/encryption";
 import { toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
+import { useAppContext } from "@/context/AppContext";
 
 const WithdrawalRequestPage = () => {
+  const { userData } = useAppContext();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -14,39 +15,26 @@ const WithdrawalRequestPage = () => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
 
-  const getUserFromStorage = () => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return null;
-      return decryptData(raw) || null;
-    } catch (err) {
-      return null;
-    }
-  };
-
-  const getUserId = () => {
-    const u = getUserFromStorage();
-    return u?._id || null;
-  };
-
   const fetchWalletBalance = useCallback(async () => {
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
       setWalletBalance(0);
       return;
     }
     try {
       const response = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance")
+        apiUrl(
+          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
+        ),
       );
       setWalletBalance(response.data.data.balance || 0);
     } catch (error) {
       console.error("Failed to fetch wallet balance", error);
     }
-  }, []);
+  }, [userData]);
 
   const fetchWithdrawals = useCallback(async () => {
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
       setWithdrawals([]);
       setLoadingWithdrawals(false);
@@ -57,7 +45,7 @@ const WithdrawalRequestPage = () => {
     try {
       // API_CONFIG.DELIVERY_WITHDRAWAL.GET_BY_USER ends with '/withdrawal/'
       const resp = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId)
+        apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId),
       );
       console.log("Fetched withdrawals", resp.data);
       const data = resp.data || [];
@@ -69,7 +57,7 @@ const WithdrawalRequestPage = () => {
     } finally {
       setLoadingWithdrawals(false);
     }
-  }, []);
+  }, [userData]);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -92,7 +80,7 @@ const WithdrawalRequestPage = () => {
       return;
     }
 
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
       toast.error("You must be signed in to make a withdrawal.");
       return;
@@ -103,7 +91,7 @@ const WithdrawalRequestPage = () => {
       const payload = { userId, amount };
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.CREATE),
-        payload
+        payload,
       );
       toast.success("Withdrawal request submitted successfully.");
       setWithdrawalAmount("");
@@ -114,7 +102,7 @@ const WithdrawalRequestPage = () => {
     } catch (err) {
       console.error("Withdrawal submit error", err);
       toast.error(
-        err?.response?.data?.message || "Failed to submit withdrawal."
+        err?.response?.data?.message || "Failed to submit withdrawal.",
       );
     } finally {
       setSubmittingWithdrawal(false);
@@ -131,8 +119,6 @@ const WithdrawalRequestPage = () => {
       return `₦${n}`;
     }
   };
-
-  const currentUser = getUserFromStorage();
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -245,10 +231,10 @@ const WithdrawalRequestPage = () => {
                           w.status === "approved"
                             ? "bg-green-100 text-green-800"
                             : w.status === "pending"
-                            ? "bg-blue-100 text-blue-800"
-                            : w.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
+                              ? "bg-blue-100 text-blue-800"
+                              : w.status === "rejected"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
                         {w.status || "pending"}

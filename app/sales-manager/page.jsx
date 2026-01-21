@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { decryptData } from "@/lib/encryption";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -22,9 +21,8 @@ import ManageCustomers from "@/components/sm-dashboard/ManageCustomers";
 import TaskChart from "@/components/sm-dashboard/TaskChart";
 
 const DashboardHome = () => {
+  const { userData, states, lgas, fetchLgas } = useAppContext();
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState(null);
-  const { states, lgas, fetchLgas } = useAppContext();
 
   // POS States
   const [posTab, setPosTab] = useState("product"); // 'product' | 'delivery'
@@ -85,49 +83,44 @@ const DashboardHome = () => {
     };
 
     const init = async () => {
+      if (!userData?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const encryptedUser = localStorage.getItem("user");
-        let userId = null;
-        if (encryptedUser) {
-          const decrypted = decryptData(encryptedUser);
-          setUserData(decrypted);
-          userId = decrypted.id || decrypted._id;
-        }
-
-        const promises = [fetchProducts()];
-
-        if (userId) {
-          promises.push(
-            axios.get(
-              apiUrl(
-                API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                  userId +
-                  "/balance",
-              ),
-              { withCredentials: true },
+        const userId = userData.id;
+        const promises = [
+          fetchProducts(),
+          axios.get(
+            apiUrl(
+              API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
             ),
-            axios.get(apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET + "/" + userId), {
-              withCredentials: true,
-            }),
-          );
-        }
+            { withCredentials: true },
+          ),
+          axios.get(apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET + "/" + userId), {
+            withCredentials: true,
+          }),
+        ];
 
         const results = await Promise.allSettled(promises);
 
-        // Handle Wallet Results if they exist (indices 1 and 2)
-        if (userId && results[1] && results[1].status === "fulfilled") {
+        // Handle Wallet Results (indices 1 and 2)
+        if (results[1] && results[1].status === "fulfilled") {
           setWalletBalance(results[1].value.data.data);
         }
-        if (userId && results[2] && results[2].status === "fulfilled") {
+        if (results[2] && results[2].status === "fulfilled") {
           setAccountDetails(results[2].value.data.user);
         }
       } catch (err) {
+        console.error("Error initializing dashboard:", err);
       } finally {
         setLoading(false);
       }
     };
+
     init();
-  }, []);
+  }, [userData]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {

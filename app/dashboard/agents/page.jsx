@@ -24,7 +24,7 @@ const maskPhoneNumber = (phone) => {
   const phoneStr = String(phone);
   const firstPart = phoneStr.slice(0, 5);
   const lastPart = phoneStr.slice(-2);
-  const maskedMiddle = '*'.repeat(Math.max(0, phoneStr.length - 7));
+  const maskedMiddle = "*".repeat(Math.max(0, phoneStr.length - 7));
   return `${firstPart}${maskedMiddle}${lastPart}`;
 };
 
@@ -77,17 +77,18 @@ const ManageAgentsPage = () => {
   };
 
   const fetchAgents = async () => {
-    if (!userData?._id) return;
+    if (!userData?.id) return;
     setListLoading(true);
     try {
       const response = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userData._id)
+        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userData.id),
+        { withCredentials: true },
       );
+
       const agentsList = response.data?.results?.entities?.agents?.list || [];
       setAgents(agentsList);
       setFilteredAgents(agentsList);
     } catch (error) {
-      console.error("Error fetching Agents:", error);
       toast.error(error.response?.data?.message || "Failed to fetch Agents.");
     } finally {
       setListLoading(false);
@@ -117,14 +118,14 @@ const ManageAgentsPage = () => {
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          agent.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+          agent.phone?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
     if (statusFilter !== "all") {
       results = results.filter((agent) =>
-        statusFilter === "active" ? !agent.suspended : agent.suspended
+        statusFilter === "active" ? !agent.suspended : agent.suspended,
       );
     }
 
@@ -181,11 +182,13 @@ const ManageAgentsPage = () => {
       email: formData.email,
       type: "agent",
       role: "bdm",
-      managerId: userData._id,
+      managerId: userData.id,
     };
 
     try {
-      await axios.post(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE), payload);
+      await axios.post(apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE), payload, {
+        withCredentials: true,
+      });
       toast.success("Agent added successfully!");
       closeModal();
       fetchAgents();
@@ -222,8 +225,9 @@ const ManageAgentsPage = () => {
 
     try {
       await axios.put(
-        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.SUSPEND_AGENT + userData._id),
-        payload
+        apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.SUSPEND_AGENT + userData.id),
+        payload,
+        { withCredentials: true },
       );
 
       fetchAgents();
