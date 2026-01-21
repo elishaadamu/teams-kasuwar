@@ -62,7 +62,7 @@ const page = () => {
       } else if (userRole === "agent") {
         router.push("/agent-dashboard");
       } else if (userRole === "bdm") {
-        router.push("/bdm-dashboard");
+        router.push("/dashboard");
       } else if (userRole === "bd") {
         router.push("/bd-dashboard");
       } else {
