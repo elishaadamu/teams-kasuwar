@@ -5,6 +5,9 @@ export const API_CONFIG = {
       SIGNIN_BDM: "/bdm/login",
       SIGNIN_BD: "/bdm/login",
       SIGNIN_AGENT: "/agent/login",
+      SIGNIN_SM: "/auth/login-sm",
+      UNIFIED_LOGIN: "/auth/unified-login",
+      LOGOUT: "/auth/logout",
     },
     USER_SIDE: {
       UPDATE: "/me",
@@ -36,6 +39,21 @@ export const API_CONFIG = {
       GET_SELLER_ORDERS: "/orders/seller",
       UPDATE_STATUS: "/orders/status",
       CREATE: "/order/create",
+    },
+    PROFILE: {
+      UPDATE: "/user/update/",
+      GET: "/user/profile/",
+      UPDATE_USER: "/user/update",
+      DELETE: "/user/delete/",
+      SHIPPING: "/profile/shipping",
+    },
+    POS: {
+      CREATE: "/pos/create",
+      CHECK_CUSTOMER: "/pos/check-customer",
+      MY_ORDERS: "/pos/my-orders",
+      UPLOAD_PAYMENT: (posOrderId) => `/pos/upload-payment/${posOrderId}`,
+      CREATE_CUSTOMER: "/pos/create-customer",
+      GET_CUSTOMERS: "/pos/my-customers",
     },
     PROFILE: {
       UPDATE: "/profile/update",

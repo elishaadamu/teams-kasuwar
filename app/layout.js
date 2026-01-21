@@ -12,6 +12,7 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isSpecialRoute =
+    pathname.startsWith("/") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/signin") ||
     pathname.startsWith("/signup") ||

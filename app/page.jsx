@@ -1,5 +1,5 @@
 import React from "react";
-import HomeClient from "@/components/HomeClient";
+import HomeClient from "@/app/unified-login/page";
 
 export const metadata = {
   title: "Kasuwar Zamani - Your One-Stop Online Shop",

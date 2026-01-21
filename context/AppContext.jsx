@@ -45,7 +45,7 @@ export const AppContextProvider = (props) => {
       });
 
       if (decryptedUser) {
-        setUserData(decryptedUser);
+        setUserData(decryptedUser.user);
       } else {
         localStorage.removeItem("user");
         setUserData(null);
@@ -62,14 +62,28 @@ export const AppContextProvider = (props) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    setUserData(null);
-    setCartItems({}); // Clear cart on logout
-    setWishlistItems([]); // Clear wishlist on logout
-    console.log("Logging out and redirecting to homepage...");
-    // It's better to show toast notifications in the component that calls logout.
-    router.push("/"); // Redirect to the homepage
+  const logout = async () => {
+    try {
+      // Call the logout API endpoint to clear cookies on the server side
+      await axios.post(
+        apiUrl(API_CONFIG.ENDPOINTS.AUTH.LOGOUT),
+        {},
+        { withCredentials: true },
+      );
+      console.log("Server-side logout successful, cookies cleared");
+    } catch (error) {
+      console.error("Error during server-side logout:", error);
+      // Continue with client-side logout even if server-side fails
+    } finally {
+      // Clear local storage and state
+      localStorage.removeItem("user");
+      setUserData(null);
+      setCartItems({}); // Clear cart on logout
+      setWishlistItems([]); // Clear wishlist on logout
+      console.log("Logging out and redirecting to homepage...");
+      // It's better to show toast notifications in the component that calls logout.
+      router.push("/"); // Redirect to the homepage
+    }
   };
 
   const fetchLgas = (stateName) => {
@@ -214,7 +228,7 @@ export const AppContextProvider = (props) => {
       const cartStorageKey = `cartItems_storage_${userId}`;
       localStorage.setItem(
         cartStorageKey,
-        JSON.stringify({ data: cartItems, timestamp: Date.now() })
+        JSON.stringify({ data: cartItems, timestamp: Date.now() }),
       );
     }
   }, [cartItems, userData]); // Depend on userData to get the key
@@ -226,7 +240,7 @@ export const AppContextProvider = (props) => {
       const wishlistStorageKey = `wishlistItems_storage_${userId}`;
       localStorage.setItem(
         wishlistStorageKey,
-        JSON.stringify({ data: wishlistItems, timestamp: Date.now() })
+        JSON.stringify({ data: wishlistItems, timestamp: Date.now() }),
       );
     }
   }, [wishlistItems, userData]); // Depend on userData to get the key
