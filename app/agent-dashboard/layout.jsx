@@ -24,7 +24,7 @@ const DashboardLayout = ({ children }) => {
 
   useEffect(() => {
     if (!authLoading && !userData) {
-      router.push("/signin");
+      router.push("/");
     }
   }, [userData, authLoading, router]);
 

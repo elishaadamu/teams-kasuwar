@@ -88,9 +88,7 @@ const PersonalDetails = () => {
         `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
         { withCredentials: true },
       );
-      console.log("Profile data", response.data);
     } catch (error) {
-      console.error("Error fetching profile:", error);
       toast.error(error.response?.data?.message || "Failed to fetch profile");
     } finally {
       setLoading(false);
@@ -119,7 +117,6 @@ const PersonalDetails = () => {
           businessName: profile.businessName,
           businessDesc: profile.businessDesc,
         };
-        console.log(payload);
       } else {
         const { role, ...userPayload } = profile;
         payload = userPayload;
@@ -140,7 +137,7 @@ const PersonalDetails = () => {
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.error || "Failed to update profile");
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }

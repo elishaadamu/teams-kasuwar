@@ -16,42 +16,28 @@ import {
   FaUpload,
   FaMoneyBillWave,
 } from "react-icons/fa";
-import { decryptData } from "@/lib/encryption";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import Modal from "@/components/Modal";
 import SmWalletCard from "@/components/sm-dashboard/SmWalletCard";
+import { useAppContext } from "@/context/AppContext";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState(null);
+  const { userData } = useAppContext();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [walletBalance, setWalletBalance] = useState(null);
   const [accountDetails, setAccountDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const getUserRoleFromStorage = () => {
-      try {
-        const raw = localStorage.getItem("user");
-        if (!raw) return null;
-        const user = decryptData(raw) || null;
-        return user?.role || null;
-      } catch (err) {
-        return null;
-      }
-    };
-    setUserRole(getUserRoleFromStorage());
-  }, []);
+  const userRole = userData?.role || null;
 
   useEffect(() => {
     const fetchWalletData = async () => {
+      if (!userData?.id) return;
+
       try {
         setLoading(true);
-        const raw = localStorage.getItem("user");
-        if (!raw) return;
-        const user = decryptData(raw);
-        const userId = user?.id;
-        if (!userId) return;
+        const userId = userData.id;
 
         const response = await axios.get(
           apiUrl(
@@ -60,7 +46,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
           { withCredentials: true },
         );
 
-        setWalletBalance({ balance: response.data.data.balance || 0 });
+        setWalletBalance(response.data.data.wallet || 0);
 
         const profileResponse = await axios.get(
           apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET + "/" + userId),
@@ -82,7 +68,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
     };
 
     fetchWalletData();
-  }, []);
+  }, [userData]);
 
   const NavItem = ({ href, icon: Icon, label, active }) => (
     <Link

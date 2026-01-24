@@ -26,11 +26,10 @@ const WithdrawalRequestPage = () => {
         apiUrl(
           API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
         ),
+        { withCredentials: true },
       );
       setWalletBalance(response.data.data.balance || 0);
-    } catch (error) {
-      console.error("Failed to fetch wallet balance", error);
-    }
+    } catch (error) {}
   }, [userData]);
 
   const fetchWithdrawals = useCallback(async () => {
@@ -46,12 +45,11 @@ const WithdrawalRequestPage = () => {
       // API_CONFIG.DELIVERY_WITHDRAWAL.GET_BY_USER ends with '/withdrawal/'
       const resp = await axios.get(
         apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId),
+        { withCredentials: true },
       );
-      console.log("Fetched withdrawals", resp.data);
       const data = resp.data || [];
       setWithdrawals(Array.isArray(data) ? data : data.withdrawals || []);
     } catch (err) {
-      console.error("Failed to fetch withdrawals", err);
       toast.error("Failed to load withdrawal history.");
       setWithdrawals([]);
     } finally {
@@ -92,6 +90,7 @@ const WithdrawalRequestPage = () => {
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.CREATE),
         payload,
+        { withCredentials: true },
       );
       toast.success("Withdrawal request submitted successfully.");
       setWithdrawalAmount("");
@@ -100,7 +99,6 @@ const WithdrawalRequestPage = () => {
       fetchWithdrawals();
       fetchWalletBalance(); // Refresh balance
     } catch (err) {
-      console.error("Withdrawal submit error", err);
       toast.error(
         err?.response?.data?.message || "Failed to submit withdrawal.",
       );

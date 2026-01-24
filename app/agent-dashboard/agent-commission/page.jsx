@@ -14,7 +14,7 @@ const AgentCommissionPage = () => {
 
   useEffect(() => {
     const fetchCommissions = async () => {
-      if (!userData?._id) {
+      if (!userData?.id) {
         setLoading(false);
         return;
       }
@@ -23,16 +23,16 @@ const AgentCommissionPage = () => {
         setLoading(true);
 
         const response = await axios.get(
-          apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.AGENT_COMMISSION + userData._id)
+          apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.AGENT_COMMISSION + userData.id),
+          { withCredentials: true },
         );
-        console.log(response.data);
+
         setCommissions(response.data.commissions || []);
         setError(null);
       } catch (err) {
         const errorMessage =
           err.response?.data?.message ||
           "An error occurred while fetching commissions.";
-        console.error("Error fetching commissions:", err);
         setError(errorMessage);
         toast.error(errorMessage);
       } finally {

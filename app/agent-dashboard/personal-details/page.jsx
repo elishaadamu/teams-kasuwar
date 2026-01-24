@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { decryptData, encryptData } from "@/lib/encryption";
+
+import { useAppContext } from "@/context/AppContext";
 import { ToastContainer, toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { FaUserEdit } from "react-icons/fa";
@@ -49,6 +50,7 @@ const FormField = ({
 const PersonalDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [getProfile, setgetProfile] = useState("");
   const [pageLoading, setPageLoading] = useState(true);
   const [profile, setProfile] = useState({
     firstName: "",
@@ -61,24 +63,7 @@ const PersonalDetails = () => {
     avatar: null,
     banner: null,
   });
-
-  useEffect(() => {
-    const fetchUserData = () => {
-      try {
-        const encryptedUser = localStorage.getItem("user");
-
-        if (encryptedUser) {
-          const userData = decryptData(encryptedUser);
-          console.log("My details", userData);
-          setProfile(userData);
-        }
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+  const { userData, states, lgas, fetchLgas } = useAppContext();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -89,15 +74,12 @@ const PersonalDetails = () => {
   };
 
   const fetchProfile = async () => {
-    setLoading(true);
     try {
-      const encryptedUser = localStorage.getItem("user");
-      const userData = decryptData(encryptedUser);
-
       const response = await axios.get(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData._id}`
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
+        { withCredentials: true },
       );
-      console.log("Profile data", response.data);
+      setgetProfile(response.data.user);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error(error.response?.data?.message || "Failed to update profile");
@@ -112,9 +94,6 @@ const PersonalDetails = () => {
   const handleUpdateProfile = async () => {
     setLoading(true);
     try {
-      const encryptedUser = localStorage.getItem("user");
-      const userData = decryptData(encryptedUser);
-
       let payload;
       if (userData.role === "vendor") {
         payload = {
@@ -132,8 +111,9 @@ const PersonalDetails = () => {
       }
 
       const response = await axios.put(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.UPDATE_USER)}/${userData._id}`,
-        payload
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.UPDATE_USER)}/${userData.id}`,
+        payload,
+        { withCredentials: true },
       );
 
       if (response.data) {
@@ -191,28 +171,28 @@ const PersonalDetails = () => {
           <FormField
             label="First Name"
             name="firstName"
-            value={profile.firstName}
+            value={getProfile.firstName}
             isEditing={isEditing}
             onChange={handleInputChange}
           />
           <FormField
             label="Last Name"
             name="lastName"
-            value={profile.lastName}
+            value={getProfile.lastName}
             isEditing={isEditing}
             onChange={handleInputChange}
           />
           <FormField
             label="Email"
             name="email"
-            value={profile.email}
+            value={getProfile.email}
             isEditing={isEditing}
             readOnly
           />
           <FormField
             label="Phone Number"
             name="phone"
-            value={profile.phone}
+            value={getProfile.phone}
             isEditing={isEditing}
             onChange={handleInputChange}
             type="tel"
@@ -221,14 +201,14 @@ const PersonalDetails = () => {
             <FormField
               label="Address"
               name="address"
-              value={profile.address}
+              value={getProfile.address}
               isEditing={isEditing}
               onChange={handleInputChange}
               type="textarea"
             />
           </div>
 
-          {profile.role === "vendor" && (
+          {getProfile.role === "vendor" && (
             <>
               <div className="md:col-span-2 pt-4 border-t mt-4">
                 <h2 className="text-xl font-bold text-gray-700">
@@ -239,7 +219,7 @@ const PersonalDetails = () => {
                 <FormField
                   label="Business Name"
                   name="businessName"
-                  value={profile.businessName}
+                  value={getProfile.businessName}
                   isEditing={isEditing}
                   onChange={handleInputChange}
                 />
@@ -248,7 +228,7 @@ const PersonalDetails = () => {
                 <FormField
                   label="Business Description"
                   name="businessDesc"
-                  value={profile.businessDesc}
+                  value={getProfile.businessDesc}
                   isEditing={isEditing}
                   onChange={handleInputChange}
                   type="textarea"
@@ -261,7 +241,7 @@ const PersonalDetails = () => {
             <FormField
               label="Role"
               name="role"
-              value={profile.role}
+              value={getProfile.role}
               isEditing={false}
             />
           </div>

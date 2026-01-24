@@ -1,11 +1,12 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { decryptData } from "@/lib/encryption";
+import { toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
-import Swal from "sweetalert2";
+import { useAppContext } from "@/context/AppContext";
 
 const WithdrawalRequestPage = () => {
+  const { userData } = useAppContext();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -14,39 +15,25 @@ const WithdrawalRequestPage = () => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
 
-  const getUserFromStorage = () => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return null;
-      return decryptData(raw) || null;
-    } catch (err) {
-      return null;
-    }
-  };
-
-  const getUserId = () => {
-    const u = getUserFromStorage();
-    return u?._id || null;
-  };
-
   const fetchWalletBalance = useCallback(async () => {
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
       setWalletBalance(0);
       return;
     }
     try {
       const response = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance")
+        apiUrl(
+          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
+        ),
+        { withCredentials: true },
       );
       setWalletBalance(response.data.data.balance || 0);
-    } catch (error) {
-      console.error("Failed to fetch wallet balance", error);
-    }
-  }, []);
+    } catch (error) {}
+  }, [userData]);
 
   const fetchWithdrawals = useCallback(async () => {
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
       setWithdrawals([]);
       setLoadingWithdrawals(false);
@@ -57,23 +44,18 @@ const WithdrawalRequestPage = () => {
     try {
       // API_CONFIG.DELIVERY_WITHDRAWAL.GET_BY_USER ends with '/withdrawal/'
       const resp = await axios.get(
-        apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId)
+        apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId),
+        { withCredentials: true },
       );
-      console.log("Fetched withdrawals", resp.data);
       const data = resp.data || [];
       setWithdrawals(Array.isArray(data) ? data : data.withdrawals || []);
     } catch (err) {
-      console.error("Failed to fetch withdrawals", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to load withdrawal history.",
-      });
+      toast.error("Failed to load withdrawal history.");
       setWithdrawals([]);
     } finally {
       setLoadingWithdrawals(false);
     }
-  }, []);
+  }, [userData]);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -86,59 +68,40 @@ const WithdrawalRequestPage = () => {
   const handleWithdrawalSubmit = async (e) => {
     e.preventDefault();
     if (!withdrawalAmount || Number(withdrawalAmount) <= 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Amount",
-        text: "Please enter a valid withdrawal amount.",
-      });
+      toast.warn("Please enter a valid withdrawal amount.");
       return;
     }
 
     const amount = Number(withdrawalAmount);
     if (amount < 100) {
-      Swal.fire({
-        icon: "warning",
-        title: "Invalid Amount",
-        text: "Minimum withdrawal amount is ₦100.",
-      });
+      toast.warn("Minimum withdrawal amount is ₦100.");
       return;
     }
 
-    const userId = getUserId();
+    const userId = userData?.id;
     if (!userId) {
-      Swal.fire({
-        icon: "error",
-        title: "Authentication Error",
-        text: "You must be signed in to make a withdrawal.",
-      });
+      toast.error("You must be signed in to make a withdrawal.");
       return;
     }
 
     setSubmittingWithdrawal(true);
     try {
       const payload = { userId, amount };
-      console.log("Submitting withdrawal", payload);
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.CREATE),
-        payload
+        payload,
+        { withCredentials: true },
       );
-      Swal.fire({
-        icon: "success",
-        title: "Success!",
-        text: "Withdrawal request submitted successfully.",
-      });
+      toast.success("Withdrawal request submitted successfully.");
       setWithdrawalAmount("");
       closeWithdrawModal();
       // Refresh the history
       fetchWithdrawals();
       fetchWalletBalance(); // Refresh balance
     } catch (err) {
-      console.error("Withdrawal submit error", err);
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text: err?.response?.data?.message || "Failed to submit withdrawal.",
-      });
+      toast.error(
+        err?.response?.data?.message || "Failed to submit withdrawal.",
+      );
     } finally {
       setSubmittingWithdrawal(false);
     }
@@ -154,8 +117,6 @@ const WithdrawalRequestPage = () => {
       return `₦${n}`;
     }
   };
-
-  const currentUser = getUserFromStorage();
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -268,10 +229,10 @@ const WithdrawalRequestPage = () => {
                           w.status === "approved"
                             ? "bg-green-100 text-green-800"
                             : w.status === "pending"
-                            ? "bg-blue-100 text-blue-800"
-                            : w.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
+                              ? "bg-blue-100 text-blue-800"
+                              : w.status === "rejected"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
                         {w.status || "pending"}

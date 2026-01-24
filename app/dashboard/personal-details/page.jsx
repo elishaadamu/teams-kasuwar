@@ -65,7 +65,6 @@ const PersonalDetails = () => {
 
   useEffect(() => {
     if (userData) {
-      console.log("My details", userData);
       setProfile(userData);
       setPageLoading(false);
     }
@@ -119,7 +118,6 @@ const PersonalDetails = () => {
           businessName: profile.businessName,
           businessDesc: profile.businessDesc,
         };
-        console.log(payload);
       } else {
         const { role, ...userPayload } = profile;
         payload = userPayload;
@@ -139,8 +137,7 @@ const PersonalDetails = () => {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.error || "Failed to update profile");
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }

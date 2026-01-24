@@ -19,12 +19,16 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
       } md:translate-x-0`}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <Link href={"/"}>
-            <Image className="w-[12rem] mx-auto" src={Logo} alt="logo" />
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+          <Link href={"/"} className="mx-auto block">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
+              Kasuwar Team
+            </h1>
+            {/* <Image className="w-32 mx-auto" src={Logo} alt="logo" /> */}
           </Link>
           <button
-            className="p-2 rounded-md hover:bg-gray-700 md:hidden"
+            className="p-2 rounded-lg text-gray-400 hover:bg-slate-800 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           >
             <svg

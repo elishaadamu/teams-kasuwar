@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { decryptData } from "@/lib/encryption";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import {
@@ -24,7 +23,7 @@ import {
 import { toast } from "react-toastify";
 
 const DashboardHome = () => {
-  const { userData: contextUserData, authLoading } = useAppContext();
+  const { userData, authLoading } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     userName: "",
@@ -34,8 +33,6 @@ const DashboardHome = () => {
     totalProducts: 0,
   });
   const [walletBalance, setWalletBalance] = useState({ balance: 0 });
-  const [userData, setUserData] = useState(null);
-  const [accountDetails, setAccountDetails] = useState("");
 
   const [recentVendors, setRecentVendors] = useState([]);
   const [recentCustomers, setRecentCustomers] = useState([]);
@@ -50,86 +47,74 @@ const DashboardHome = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!userData?.id) return;
+
       setLoading(true);
       try {
-        const encryptedUser = localStorage.getItem("user");
-        if (encryptedUser) {
-          const decryptedUserData = decryptData(encryptedUser);
-          console.log("my data", decryptedUserData);
-          setUserData(decryptedUserData);
-          setAccountDetails(decryptedUserData); // Set state for other parts of the component
-          setDashboardData((prev) => ({
-            ...prev,
-            userName: decryptedUserData.firstName,
-          }));
+        setDashboardData((prev) => ({
+          ...prev,
+          userName: userData.firstName,
+        }));
 
-          // Use decryptedUserData._id directly instead of relying on state
-          const userId = decryptedUserData._id;
-          if (!userId) {
-            toast.error("User ID not found. Please log in again.");
-            setLoading(false);
-            return;
-          }
+        const userId = userData.id;
 
-          const [walletResponse, downlinesResponse, withdrawalsResponse] =
-            await Promise.all([
-              axios.get(
-                apiUrl(
-                  API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                    userId +
-                    "/balance"
-                )
+        const [walletResponse, downlinesResponse, withdrawalsResponse] =
+          await Promise.all([
+            axios.get(
+              apiUrl(
+                API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
+                  userId +
+                  "/balance",
               ),
-              axios.get(
-                apiUrl(
-                  API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userId
-                )
+              { withCredentials: true },
+            ),
+            axios.get(
+              apiUrl(
+                API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userId,
               ),
-              axios.get(
-                apiUrl(
-                  API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId
-                )
+              { withCredentials: true },
+            ),
+            axios.get(
+              apiUrl(
+                API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
               ),
-            ]);
+              { withCredentials: true },
+            ),
+          ]);
 
-          console.log(downlinesResponse.data);
-          console.log(walletResponse.data);
-          console.log(withdrawalsResponse.data);
+        setWalletBalance(walletResponse.data.data);
+        const referredUsers = downlinesResponse.data?.referredUsers || [];
 
-          setWalletBalance(walletResponse.data.data);
-          const referredUsers = downlinesResponse.data?.referredUsers || [];
+        const vendors = referredUsers.filter((u) => u.role === "vendor");
+        const customers = referredUsers.filter((u) => u.role === "user");
 
-          const vendors = referredUsers.filter((u) => u.role === "vendor");
-          const customers = referredUsers.filter((u) => u.role === "user");
+        setUserStats({
+          totalUsers: referredUsers.length,
+          activeVendors: vendors.filter((v) => v.fullyActive).length,
+          inactiveVendors: vendors.filter((v) => !v.fullyActive).length,
+          activeCustomers: customers.filter((c) => c.fullyActive).length,
+          inactiveCustomers: customers.filter((c) => !c.fullyActive).length,
+        });
 
-          setUserStats({
-            totalUsers: referredUsers.length,
-            activeVendors: vendors.filter((v) => v.fullyActive).length,
-            inactiveVendors: vendors.filter((v) => !v.fullyActive).length,
-            activeCustomers: customers.filter((c) => c.fullyActive).length,
-            inactiveCustomers: customers.filter((c) => !c.fullyActive).length,
-          });
+        // Assuming the API returns the most recent first, we take the top 5
+        setRecentVendors(vendors.slice(0, 5));
+        setRecentCustomers(customers.slice(0, 5));
 
-          // Assuming the API returns the most recent first, we take the top 5
-          setRecentVendors(vendors.slice(0, 5));
-          setRecentCustomers(customers.slice(0, 5));
-
-          const withdrawalsData = withdrawalsResponse.data || [];
-          const withdrawalsList = Array.isArray(withdrawalsData)
-            ? withdrawalsData
-            : withdrawalsData.withdrawals || [];
-          // Assuming the API returns the most recent first, we take the top 5
-          setRecentWithdrawals(withdrawalsList.slice(0, 5));
-        }
+        const withdrawalsData = withdrawalsResponse.data || [];
+        const withdrawalsList = Array.isArray(withdrawalsData)
+          ? withdrawalsData
+          : withdrawalsData.withdrawals || [];
+        // Assuming the API returns the most recent first, we take the top 5
+        setRecentWithdrawals(withdrawalsList.slice(0, 5));
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to fetch dashboard data. Please contact support.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [userData]);
 
   const handlePayment = async () => {
     if (!amount || amount < 100) {
@@ -161,13 +146,13 @@ const DashboardHome = () => {
     try {
       const walletBalanceResponse = await axios.get(
         apiUrl(
-          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userData._id + "/balance"
-        )
+          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userData.id + "/balance",
+        ),
+        { withCredentials: true },
       );
 
       setWalletBalance(walletBalanceResponse.data.data);
     } catch (error) {
-      console.error("Error processing payment:", error);
       toast.error("Failed to process payment. Please contact support.");
     } finally {
       setLoading(false);
@@ -338,7 +323,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Name</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.accountName || "N/A"}
+                          {userData?.accountName || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -350,7 +335,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Number</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.accountNumber || "N/A"}
+                          {userData?.accountNumber || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -362,7 +347,7 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Bank Name</p>
                         <p className="text-white font-medium text-sm">
-                          {accountDetails.bankName || "N/A"}
+                          {userData?.bankName || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -553,10 +538,10 @@ const DashboardHome = () => {
                                 w.status === "approved"
                                   ? "bg-green-100 text-green-800"
                                   : w.status === "pending"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : w.status === "rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : w.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
                               <span
@@ -564,10 +549,10 @@ const DashboardHome = () => {
                                   w.status === "approved"
                                     ? "bg-green-500"
                                     : w.status === "pending"
-                                    ? "bg-blue-500"
-                                    : w.status === "rejected"
-                                    ? "bg-red-500"
-                                    : "bg-yellow-500"
+                                      ? "bg-blue-500"
+                                      : w.status === "rejected"
+                                        ? "bg-red-500"
+                                        : "bg-yellow-500"
                                 }`}
                               ></span>
                               {w.status}

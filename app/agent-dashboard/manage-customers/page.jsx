@@ -53,13 +53,13 @@ const ManageCustomersPage = () => {
   };
 
   const fetchCustomers = async () => {
-    if (!userData?._id) return;
+    if (!userData?.id) return;
     setListLoading(true);
     try {
       const response = await axios.get(
         apiUrl(
-          API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userData?._id
-        )
+          API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userData?.id,
+        ),
       );
       console.log(response);
       const referredUsers = response.data?.referredUsers || [];
@@ -69,7 +69,7 @@ const ManageCustomersPage = () => {
     } catch (error) {
       console.error("Error fetching Customers:", error);
       toast.error(
-        error.response?.data?.message || "Failed to fetch Business Agent."
+        error.response?.data?.message || "Failed to fetch Business Agent.",
       );
     } finally {
       setListLoading(false);
@@ -98,14 +98,16 @@ const ManageCustomersPage = () => {
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+          customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
     if (statusFilter !== "all") {
       results = results.filter((customer) =>
-        statusFilter === "active" ? customer.fullyActive : !customer.fullyActive
+        statusFilter === "active"
+          ? customer.fullyActive
+          : !customer.fullyActive,
       );
     }
 
@@ -139,7 +141,7 @@ const ManageCustomersPage = () => {
     setLoading(true);
 
     const payload = {
-      agentId: userData._id,
+      agentId: userData.id,
       firstName: formData.firstName,
       lastName: formData.lastName,
       gender: formData.gender,
@@ -153,7 +155,7 @@ const ManageCustomersPage = () => {
     try {
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE_CUSTOMER),
-        payload
+        payload,
       );
       toast.success("Customer added successfully!");
       closeModal();

@@ -61,13 +61,13 @@ const ManageVendorsPage = () => {
   };
 
   const fetchVendors = async () => {
-    if (!userData?._id) return;
+    if (!userData?.id) return;
     setListLoading(true);
     try {
       const response = await axios.get(
         apiUrl(
-          API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userData._id
-        )
+          API_CONFIG.ENDPOINTS.USER_SIDE.GET_AGENTS_DOWNLINES + userData.id,
+        ),
       );
       console.log(response.data);
       // Assuming vendors are returned in a 'vendors' property
@@ -103,14 +103,14 @@ const ManageVendorsPage = () => {
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           bd.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bd.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+          bd.phone?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
     if (statusFilter !== "all") {
       results = results.filter((vendor) =>
-        statusFilter === "active" ? vendor.fullyActive : !vendor.fullyActive
+        statusFilter === "active" ? vendor.fullyActive : !vendor.fullyActive,
       );
     }
 
@@ -144,7 +144,7 @@ const ManageVendorsPage = () => {
     setLoading(true);
 
     const payload = {
-      agentId: userData._id,
+      agentId: userData.id,
       firstName: formData.firstName,
       lastName: formData.lastName,
       middleName: formData.middleName,
@@ -163,7 +163,7 @@ const ManageVendorsPage = () => {
     try {
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE_VENDOR),
-        payload
+        payload,
       );
       toast.success("Vendor added successfully!");
       closeModal();
