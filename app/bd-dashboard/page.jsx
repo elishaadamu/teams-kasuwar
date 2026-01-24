@@ -71,7 +71,7 @@ const DashboardHome = () => {
     recentOrders: [],
     totalProducts: 0,
   });
-  const [walletBalance, setWalletBalance] = useState({ balance: 0 });
+  const [walletBalance, setWalletBalance] = useState(0);
   const [timePeriod, setTimePeriod] = useState("monthly");
   const [reportLoading, setReportLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
@@ -80,6 +80,7 @@ const DashboardHome = () => {
   const [recentBds, setRecentBds] = useState([]);
   const [recentAgents, setRecentAgents] = useState([]);
   const [recentWithdrawals, setRecentWithdrawals] = useState([]);
+  const [accountDetails, setAccountDetails] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -94,29 +95,45 @@ const DashboardHome = () => {
 
         const userId = userData.id;
 
-        const [walletResponse, downlinesResponse, withdrawalsResponse] =
-          await Promise.all([
-            axios.get(
-              apiUrl(
-                API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                  userId +
-                  "/balance",
-              ),
-              { withCredentials: true },
+        const [
+          walletResponse,
+          downlinesResponse,
+          withdrawalsResponse,
+          profileResponse,
+        ] = await Promise.all([
+          axios.get(
+            apiUrl(
+              API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
             ),
-            axios.get(
-              apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId),
-              { withCredentials: true },
+            { withCredentials: true },
+          ),
+          axios.get(
+            apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId),
+            { withCredentials: true },
+          ),
+          axios.get(
+            apiUrl(
+              API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
             ),
-            axios.get(
-              apiUrl(
-                API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
-              ),
-              { withCredentials: true },
-            ),
-          ]);
+            { withCredentials: true },
+          ),
+          axios.get(apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET_BDM), {
+            withCredentials: true,
+          }),
+        ]);
 
-        setWalletBalance(walletResponse.data.data);
+        console.log(downlinesResponse);
+        setWalletBalance(walletResponse.data.data.wallet);
+
+        if (profileResponse.data?.data?.manager) {
+          const user = profileResponse.data.data.manager;
+          setAccountDetails({
+            accountName: user.accountName || user.accName,
+            accountNumber: user.accountNumber || user.accNumber,
+            bankName: user.bankName,
+          });
+        }
+
         const downlines = downlinesResponse.data?.results?.entities;
         const businessDevelopers = downlines?.bds?.list || [];
         const agents = downlines?.agents?.list || [];
@@ -471,7 +488,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Name</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.accountName || "N/A"}
+                          {accountDetails?.accountName ||
+                            userData?.accountName ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>
@@ -483,7 +502,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Number</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.accountNumber || "N/A"}
+                          {accountDetails?.accountNumber ||
+                            userData?.accountNumber ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>
@@ -495,7 +516,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Bank Name</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.bankName || "N/A"}
+                          {accountDetails?.bankName ||
+                            userData?.bankName ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>

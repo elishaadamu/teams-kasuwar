@@ -1,14 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-
-import { useAppContext } from "@/context/AppContext";
 import { ToastContainer, toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { FaUserEdit } from "react-icons/fa";
 import Image from "next/image";
 import "react-toastify/dist/ReactToastify.css";
 import Loading from "@/components/Loading";
+import { useAppContext } from "@/context/AppContext";
 
 const FormField = ({
   label,
@@ -40,7 +39,7 @@ const FormField = ({
         />
       )
     ) : (
-      <p className="mt-1 p-3 text-gray-900 font-medium  bg-gray-50 rounded-md min-h-[42px]">
+      <p className="mt-1 p-3 text-gray-900 font-medium p-2 bg-gray-50 rounded-md min-h-[42px]">
         {value || <span className="text-gray-400">Not provided</span>}
       </p>
     )}
@@ -48,9 +47,9 @@ const FormField = ({
 );
 
 const PersonalDetails = () => {
+  const { userData, fetchUserData } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [getProfile, setgetProfile] = useState("");
   const [pageLoading, setPageLoading] = useState(true);
   const [profile, setProfile] = useState({
     firstName: "",
@@ -63,7 +62,13 @@ const PersonalDetails = () => {
     avatar: null,
     banner: null,
   });
-  const { userData, states, lgas, fetchLgas } = useAppContext();
+
+  useEffect(() => {
+    if (userData) {
+      setProfile(userData);
+      setPageLoading(false);
+    }
+  }, [userData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,24 +79,31 @@ const PersonalDetails = () => {
   };
 
   const fetchProfile = async () => {
+    if (!userData?.id) return;
+
+    setLoading(true);
     try {
       const response = await axios.get(
         `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
         { withCredentials: true },
       );
-      setgetProfile(response.data.user);
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(error.response?.data?.message || "Failed to fetch profile");
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [userData]);
 
   const handleUpdateProfile = async () => {
+    if (!userData?.id) {
+      toast.error("User data not available");
+      return;
+    }
+
     setLoading(true);
     try {
       let payload;
@@ -104,7 +116,6 @@ const PersonalDetails = () => {
           businessName: profile.businessName,
           businessDesc: profile.businessDesc,
         };
-        console.log(payload);
       } else {
         const { role, ...userPayload } = profile;
         payload = userPayload;
@@ -117,19 +128,15 @@ const PersonalDetails = () => {
       );
 
       if (response.data) {
-        // Update the stored user data
-        const updatedUser = {
-          ...userData,
-          ...profile,
-        };
-        localStorage.setItem("user", encryptData(updatedUser));
+        // Refresh user data from context to sync across all components
+        await fetchUserData();
 
         toast.success("Profile updated successfully!");
         setIsEditing(false);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.error || "Failed to update profile");
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -171,28 +178,28 @@ const PersonalDetails = () => {
           <FormField
             label="First Name"
             name="firstName"
-            value={getProfile.firstName}
+            value={profile.firstName}
             isEditing={isEditing}
             onChange={handleInputChange}
           />
           <FormField
             label="Last Name"
             name="lastName"
-            value={getProfile.lastName}
+            value={profile.lastName}
             isEditing={isEditing}
             onChange={handleInputChange}
           />
           <FormField
             label="Email"
             name="email"
-            value={getProfile.email}
+            value={profile.email}
             isEditing={isEditing}
             readOnly
           />
           <FormField
             label="Phone Number"
             name="phone"
-            value={getProfile.phone}
+            value={profile.phone}
             isEditing={isEditing}
             onChange={handleInputChange}
             type="tel"
@@ -201,14 +208,14 @@ const PersonalDetails = () => {
             <FormField
               label="Address"
               name="address"
-              value={getProfile.address}
+              value={profile.address}
               isEditing={isEditing}
               onChange={handleInputChange}
               type="textarea"
             />
           </div>
 
-          {getProfile.role === "vendor" && (
+          {profile.role === "vendor" && (
             <>
               <div className="md:col-span-2 pt-4 border-t mt-4">
                 <h2 className="text-xl font-bold text-gray-700">
@@ -219,7 +226,7 @@ const PersonalDetails = () => {
                 <FormField
                   label="Business Name"
                   name="businessName"
-                  value={getProfile.businessName}
+                  value={profile.businessName}
                   isEditing={isEditing}
                   onChange={handleInputChange}
                 />
@@ -228,7 +235,7 @@ const PersonalDetails = () => {
                 <FormField
                   label="Business Description"
                   name="businessDesc"
-                  value={getProfile.businessDesc}
+                  value={profile.businessDesc}
                   isEditing={isEditing}
                   onChange={handleInputChange}
                   type="textarea"
@@ -241,7 +248,7 @@ const PersonalDetails = () => {
             <FormField
               label="Role"
               name="role"
-              value={getProfile.role}
+              value={profile.role}
               isEditing={false}
             />
           </div>

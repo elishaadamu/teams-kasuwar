@@ -65,7 +65,6 @@ const PersonalDetails = () => {
 
   useEffect(() => {
     if (userData) {
-      console.log("My details", userData);
       setProfile(userData);
       setPageLoading(false);
     }

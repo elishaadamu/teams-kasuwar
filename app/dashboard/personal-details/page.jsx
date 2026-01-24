@@ -47,7 +47,7 @@ const FormField = ({
 );
 
 const PersonalDetails = () => {
-  const { userData, fetchUserData } = useAppContext();
+  const { userData, fetchUserData, states, lgas, fetchLgas } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -61,6 +61,11 @@ const PersonalDetails = () => {
     businessDesc: "",
     avatar: null,
     banner: null,
+    state: "",
+    localGovt: "",
+    bankName: "",
+    accountName: "",
+    accountNumber: "",
   });
 
   useEffect(() => {
@@ -76,6 +81,10 @@ const PersonalDetails = () => {
       ...prev,
       [name]: value,
     }));
+    if (name === "state") {
+      fetchLgas(value);
+      setProfile((prev) => ({ ...prev, localGovt: "" }));
+    }
   };
 
   const fetchProfile = async () => {
@@ -84,12 +93,17 @@ const PersonalDetails = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET_BDM)}`,
         { withCredentials: true },
       );
-      console.log("Profile data", response.data);
+      console.log("Profile", response.data);
+      if (response.data && response.data.data.manager) {
+        setProfile(response.data.data.manager);
+        if (response.data.data.manager.state) {
+          fetchLgas(response.data.data.manager.state);
+        }
+      }
     } catch (error) {
-      console.error("Error fetching profile:", error);
       toast.error(error.response?.data?.message || "Failed to fetch profile");
     } finally {
       setLoading(false);
@@ -118,6 +132,18 @@ const PersonalDetails = () => {
           businessName: profile.businessName,
           businessDesc: profile.businessDesc,
         };
+      } else if (userData.role === "bdm") {
+        payload = {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+          address: profile.address,
+          state: profile.state,
+          localGovt: profile.localGovt,
+          bankName: profile.bankName,
+          accountName: profile.accountName,
+          accountNumber: profile.accountNumber,
+        };
       } else {
         const { role, ...userPayload } = profile;
         payload = userPayload;
@@ -137,6 +163,7 @@ const PersonalDetails = () => {
         setIsEditing(false);
       }
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setLoading(false);
@@ -246,6 +273,9 @@ const PersonalDetails = () => {
           )}
 
           <div className="md:col-span-2 pt-4 border-t mt-4">
+            <h2 className="text-xl font-bold text-gray-700">
+              Role Information
+            </h2>
             <FormField
               label="Role"
               name="role"
@@ -253,6 +283,70 @@ const PersonalDetails = () => {
               isEditing={false}
             />
           </div>
+
+          {profile.role === "bdm" && (
+            <>
+              <div className="md:col-span-2 pt-4 border-t mt-4">
+                <h2 className="text-xl font-bold text-gray-700">
+                  Location Information
+                </h2>
+              </div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    State
+                  </label>
+                  {isEditing ? (
+                    <select
+                      name="state"
+                      value={profile.state || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 p-3 block w-full rounded-md border border-gray-300 bg-gray-50 focus:bg-white focus:border-gray-300 focus:ring-0 sm:text-sm transition"
+                    >
+                      <option value="">Select State</option>
+                      {states.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 p-3 text-gray-900 font-medium bg-gray-50 rounded-md min-h-[42px]">
+                      {profile.state || (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Local Government
+                  </label>
+                  {isEditing ? (
+                    <select
+                      name="localGovt"
+                      value={profile.localGovt || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 p-3 block w-full rounded-md border border-gray-300 bg-gray-50 focus:bg-white focus:border-gray-300 focus:ring-0 sm:text-sm transition"
+                    >
+                      <option value="">Select LGA</option>
+                      {lgas.map((lga) => (
+                        <option key={lga} value={lga}>
+                          {lga}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 p-3 text-gray-900 font-medium bg-gray-50 rounded-md min-h-[42px]">
+                      {profile.localGovt || (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {isEditing && (

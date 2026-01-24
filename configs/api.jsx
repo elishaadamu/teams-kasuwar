@@ -42,6 +42,7 @@ export const API_CONFIG = {
     },
     PROFILE: {
       UPDATE: "/user/update/",
+      GET_BDM: "/bdm/profile",
       GET: "/user/profile/",
       UPDATE_USER: "/user/update",
       DELETE: "/user/delete/",
@@ -54,13 +55,6 @@ export const API_CONFIG = {
       UPLOAD_PAYMENT: (posOrderId) => `/pos/upload-payment/${posOrderId}`,
       CREATE_CUSTOMER: "/pos/create-customer",
       GET_CUSTOMERS: "/pos/my-customers",
-    },
-    PROFILE: {
-      UPDATE: "/profile/update",
-      GET: "/user/profile",
-      UPDATE_USER: "/user/update",
-      DELETE: "/user/delete/",
-      SHIPPING: "/profile/shipping",
     },
     SECURITY: {
       SET_PIN: "/wallet/setPin",

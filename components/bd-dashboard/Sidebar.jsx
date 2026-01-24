@@ -1,29 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
 import { FaUsers, FaWallet } from "react-icons/fa";
-import { decryptData } from "@/lib/encryption";
+import { useAppContext } from "@/context/AppContext";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState(null);
-
-  useEffect(() => {
-    const getUserRoleFromStorage = () => {
-      try {
-        const raw = localStorage.getItem("user");
-        if (!raw) return null;
-        const user = decryptData(raw) || null;
-        return user?.role || null;
-      } catch (err) {
-        return null;
-      }
-    };
-    setUserRole(getUserRoleFromStorage());
-  }, []);
+  const { userData } = useAppContext();
+  const userRole = userData?.role;
 
   return (
     <aside
@@ -33,7 +20,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
     >
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+        <div className="flex items-center justify-between p-6 border-b border-slate-500">
           <Link href={"/"} className="mx-auto block">
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
               Kasuwar Team

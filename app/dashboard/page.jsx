@@ -71,7 +71,7 @@ const DashboardHome = () => {
     recentOrders: [],
     totalProducts: 0,
   });
-  const [walletBalance, setWalletBalance] = useState({ balance: 0 });
+  const [walletBalance, setWalletBalance] = useState(0);
   const [timePeriod, setTimePeriod] = useState("monthly");
   const [reportLoading, setReportLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
@@ -80,6 +80,7 @@ const DashboardHome = () => {
   const [recentBds, setRecentBds] = useState([]);
   const [recentAgents, setRecentAgents] = useState([]);
   const [recentWithdrawals, setRecentWithdrawals] = useState([]);
+  const [accountDetails, setAccountDetails] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -94,29 +95,49 @@ const DashboardHome = () => {
 
         const userId = userData.id;
 
-        const [walletResponse, downlinesResponse, withdrawalsResponse] =
-          await Promise.all([
-            axios.get(
-              apiUrl(
-                API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                  userId +
-                  "/balance",
-              ),
-              { withCredentials: true },
+        const [
+          walletResponse,
+          downlinesResponse,
+          withdrawalsResponse,
+          profileResponse,
+        ] = await Promise.all([
+          axios.get(
+            apiUrl(
+              API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userId + "/balance",
             ),
-            axios.get(
-              apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId),
-              { withCredentials: true },
+            { withCredentials: true },
+          ),
+          axios.get(
+            apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_DOWNLINES + userId),
+            { withCredentials: true },
+          ),
+          axios.get(
+            apiUrl(
+              API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
             ),
-            axios.get(
-              apiUrl(
-                API_CONFIG.ENDPOINTS.DELIVERY_WITHDRAWAL.GET_BY_USER + userId,
-              ),
-              { withCredentials: true },
-            ),
-          ]);
-        console.log(downlinesResponse);
-        setWalletBalance(walletResponse.data.data);
+            { withCredentials: true },
+          ),
+          axios.get(apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET_BDM), {
+            withCredentials: true,
+          }),
+        ]);
+        console.log(walletResponse.data);
+
+        setWalletBalance(walletResponse.data.data.wallet);
+
+        if (
+          profileResponse.data &&
+          profileResponse.data.data &&
+          profileResponse.data.data.manager
+        ) {
+          const manager = profileResponse.data.data.manager;
+          setAccountDetails({
+            accountName: manager.accountName,
+            accountNumber: manager.accountNumber,
+            bankName: manager.bankName,
+          });
+        }
+
         const downlines = downlinesResponse.data?.results?.entities;
         const businessDevelopers = downlines?.bds?.list || [];
         const agents = downlines?.agents?.list || [];
@@ -132,6 +153,7 @@ const DashboardHome = () => {
         // Assuming the API returns the most recent first, we take the top 5
         setRecentWithdrawals(withdrawalsList.slice(0, 5));
       } catch (error) {
+        console.log(error);
         toast.error("Failed to fetch dashboard data. Please contact support.");
       } finally {
         setLoading(false);
@@ -359,28 +381,6 @@ const DashboardHome = () => {
     });
   };
 
-  const onSuccess = async (transaction) => {
-    setLoading(true);
-    try {
-      const walletBalanceResponse = await axios.get(
-        apiUrl(
-          API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance + userData.id + "/balance",
-        ),
-      );
-
-      setWalletBalance(walletBalanceResponse.data.data);
-    } catch (error) {
-      toast.error("Failed to process payment. Please contact support.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onClose = () => {
-    toast.info("Payment cancelled");
-    setShowFundModal(false);
-  };
-
   return (
     <div className="max-w-6xl mx-auto pb-20 md:pb-0 px-4">
       {loading ? (
@@ -392,7 +392,7 @@ const DashboardHome = () => {
           {/* Welcome Section - Compact */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
-              Welcome back, {dashboardData.userName}!
+              Welcome back, {userData?.firstName}!
             </h1>
             <p className="mt-1 text-gray-600 text-sm">
               Here's what's happening with your account today.
@@ -501,7 +501,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Name</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.accountName || "N/A"}
+                          {accountDetails?.accountName ||
+                            userData?.accountName ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>
@@ -513,7 +515,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Account Number</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.accountNumber || "N/A"}
+                          {accountDetails?.accountNumber ||
+                            userData?.accountNumber ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>
@@ -525,7 +529,9 @@ const DashboardHome = () => {
                       <div>
                         <p className="text-blue-100 text-xs">Bank Name</p>
                         <p className="text-white font-medium text-sm">
-                          {userData?.bankName || "N/A"}
+                          {accountDetails?.bankName ||
+                            userData?.bankName ||
+                            "N/A"}
                         </p>
                       </div>
                     </div>

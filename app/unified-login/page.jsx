@@ -72,6 +72,7 @@ const page = () => {
     } catch (error) {
       toast.error(
         error.response?.data?.message || "An error occurred during signin.",
+        console.error(error),
       );
     } finally {
       setLoading(false);
