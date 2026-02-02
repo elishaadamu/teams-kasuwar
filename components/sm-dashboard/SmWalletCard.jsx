@@ -1,13 +1,15 @@
 "use client";
 import React from "react";
 import { FaCreditCard, FaUniversity as FaBank, FaWallet } from "react-icons/fa";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const SmWalletCard = ({
   walletBalance,
   accountDetails,
   showWithdrawButton = true,
+  onWithdraw,
 }) => {
+  const router = useRouter();
   return (
     <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-2 md:p-6 text-white shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-20 -mt-20 blur-2xl"></div>
@@ -24,11 +26,15 @@ const SmWalletCard = ({
 
         {showWithdrawButton && (
           <div className="flex gap-3">
-            <Link href="/sales-manager/withdrawal-request">
-              <button className="bg-white text-blue-600 px-4 md:px-6 py-2.5 rounded-lg font-semibold shadow hover:bg-blue-50 transition active:scale-95">
-                Withdraw Funds
-              </button>
-            </Link>
+            <button
+              onClick={() => {
+                if (onWithdraw) onWithdraw();
+                router.push("/sales-manager/withdrawal-request");
+              }}
+              className="bg-white text-blue-600 px-4 md:px-6 py-2.5 rounded-lg font-semibold shadow hover:bg-blue-50 transition active:scale-95"
+            >
+              Withdraw Funds
+            </button>
           </div>
         )}
       </div>

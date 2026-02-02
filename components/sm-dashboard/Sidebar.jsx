@@ -246,6 +246,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               walletBalance={walletBalance}
               accountDetails={accountDetails}
               showWithdrawButton={true}
+              onWithdraw={() => setIsWalletModalOpen(false)}
             />
           </Modal>
         )}
