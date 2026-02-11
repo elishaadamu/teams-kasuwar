@@ -143,10 +143,28 @@ export const API_CONFIG = {
       DELETE: "/coupons/", // append couponId
       VALIDATE: "/coupons/validate",
     },
+    REGIONAL: {
+      GET_ZONES: "/admin/regional/zones",
+      GET_ZONE_TEAMS: "/admin/regional/zones/", // append zoneId/teams
+      GET_METRICS: "/admin/regional/zones/", // append zoneId/metrics
+      ASSIGN_MEMBER: "/admin/regional/management/assign-member",
+      GET_STATS: "/admin/regional/management/regions-stats",
+      GET_DETAILS: "/admin/regional/management/regions/", // append zoneId/details
+      REASSIGN_MEMBER: "/admin/regional/management/reassign-member",
+      SET_TEAM_LEAD: "/admin/regional/management/team-lead",
+    },
+    ZONE_WALLET: {
+      GET_ALL_REGIONAL: "/zone-wallet/regional/all",
+      GET_REGIONAL: "/zone-wallet/regional/", // append zoneId
+      GET_REGIONAL_TEAMS: "/zone-wallet/regional/", // append zoneId/teams
+      GET_TEAM: "/zone-wallet/team/", // append teamId
+    },
   },
   SHIPPING_FEE: {
+    CREATE: "/shipping-fee/create",
     GET_ALL: "/shipping-fee/all",
   },
+
   REPORTS: {
     PERFORMANCE_REPORT: "/report/bdm/my-performance",
     PERFORMANCE_REPORT_BD: "/report/bd/my-performance",

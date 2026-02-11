@@ -35,7 +35,7 @@ const page = () => {
 
     try {
       const response = await axios.post(
-        apiUrl(API_CONFIG.ENDPOINTS.AUTH.UNIFIED_LOGIN),
+        apiUrl(API_CONFIG.ENDPOINTS.AUTH.SIGNIN_SM),
         payload,
         { withCredentials: true },
       );
@@ -55,26 +55,11 @@ const page = () => {
       fetchUserData();
       toast.success("Signin successful!");
 
-      const userRole = response.data?.user?.role;
-
-      if (userRole === "sm") {
-        router.push("/sales-manager");
-      } else if (userRole === "agent") {
-        router.push("/agent-dashboard");
-      } else if (userRole === "bdm") {
-        router.push("/dashboard");
-      } else if (userRole === "bd") {
-        router.push("/bd-dashboard");
-      } else if (userRole === "admin") {
-        router.push("/regional-dashboard");
-      } else {
-        router.push("/");
-        alert("You are not authorized to sign in");
-      }
+      const userRole = response.data?.role;
+      router.push("/sales-manager");
     } catch (error) {
       toast.error(
         error.response?.data?.message || "An error occurred during signin.",
-        console.error(error),
       );
     } finally {
       setLoading(false);
@@ -97,7 +82,7 @@ const page = () => {
         </Link>
 
         <p className="text-center font-semibold text-xl">Welcome back!</p>
-        <h2 className="text-left text-gray-500">Signin to your account</h2>
+        <h2 className="text-left text-gray-500">Signin as a Sales Manager</h2>
         <div className="flex flex-col gap-1">
           <label>Email</label>
           <input
