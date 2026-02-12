@@ -172,17 +172,11 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               Finance
             </p>
 
-           
-
-           
-
-           
-
             <NavItem
-              href="/sales-manager/personal-details"
+              href="/regional-dashboard/personal-details"
               icon={FaUserCog}
               label="Settings"
-              active={pathname.includes("/sales-manager/personal-details")}
+              active={pathname.includes("/regional-dashboard/personal-details")}
             />
           </nav>
         </div>
