@@ -24,7 +24,7 @@ const RegionalFinancials = ({ onViewTeamDetails, modalLoading }) => {
           setZones(response.data.zones);
         }
       } catch (error) {
-        console.error("Failed to fetch zones", error);
+        // Silently fail or use a logger in production
       }
     };
     fetchZones();
@@ -35,27 +35,23 @@ const RegionalFinancials = ({ onViewTeamDetails, modalLoading }) => {
       setLoading(true);
       try {
         let url = apiUrl(API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_ALL_REGIONAL);
+        const responseZone = await axios.get(url, { withCredentials: true });
         if (selectedZone) {
-             url = apiUrl(`${API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL}${selectedZone}`);
+             url = apiUrl(`${API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL}${selectedZone}/teams`);
         }
-        
         const response = await axios.get(url, { withCredentials: true });
-        
         if (response.data) {
-            console.log("Regional Wallet Response:", response.data);
-            
             let data = response.data.wallets || response.data.wallet || response.data.data || response.data;
             
             if (Array.isArray(data)) {
                  const aggregated = data.reduce((acc, curr) => ({
                      mainWallet: (acc.mainWallet || 0) + (curr.balance || curr.mainWallet || 0),
-                     secondWallet: (acc.secondWallet || 0) + (curr.secondWallet || 0),
                      commissions: {
                          sales: (acc.commissions?.sales || 0) + (curr.commissions?.sales || 0),
                          delivery: (acc.commissions?.delivery || 0) + (curr.commissions?.delivery || 0),
                          subscriptions: (acc.commissions?.subscriptions || 0) + (curr.commissions?.subscriptions || 0),
                      }
-                 }), { mainWallet: 0, secondWallet: 0, commissions: { sales: 0, delivery: 0, subscriptions: 0 } });
+                 }), { mainWallet: 0, commissions: { sales: 0, delivery: 0, subscriptions: 0 } });
                  setFinancials(aggregated);
             } else {
                  if (data.balance !== undefined && data.mainWallet === undefined) {
@@ -76,7 +72,6 @@ const RegionalFinancials = ({ onViewTeamDetails, modalLoading }) => {
         }
 
       } catch (error) {
-        console.error("Failed to fetch financial data", error);
         toast.error("Failed to load financial data");
       } finally {
         setLoading(false);
@@ -115,16 +110,11 @@ const RegionalFinancials = ({ onViewTeamDetails, modalLoading }) => {
         </div>
       ) : (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <WalletCard 
-                    title="Main Wallet Balance" 
+                    title="Wallet Balance" 
                     amount={financials?.mainWallet || financials?.balance || 0} 
                     subtext="Available for withdrawal"
-                />
-                <WalletCard 
-                    title="Second Wallet Balance" 
-                    amount={financials?.secondWallet || 0} 
-                    subtext="Reserved / Pending"
                 />
             </div>
 

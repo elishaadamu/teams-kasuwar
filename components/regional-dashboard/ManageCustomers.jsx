@@ -58,7 +58,7 @@ const ManageCustomers = () => {
 
       setFilteredCustomers(registeredCustomers);
     } catch (error) {
-      console.error("Error fetching Customers:", error);
+     
       toast.error(
         error.response?.data?.message || "Failed to fetch Customers.",
       );

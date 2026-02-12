@@ -15,6 +15,7 @@ import {
   FaClipboardList,
   FaUpload,
   FaMoneyBillWave,
+  FaPlus,
 } from "react-icons/fa";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import Modal from "@/components/Modal";
@@ -61,7 +62,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
           });
         }
       } catch (err) {
-        console.error("Error fetching wallet data:", err);
+      
       } finally {
         setLoading(false);
       }
@@ -151,18 +152,18 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               Management
             </p>
 
-            {/* Regional specific links */}
-            <NavItem
-              href="/regional-dashboard/teams"
-              icon={FaUsers}
-              label="Team Management"
-              active={pathname.includes("/regional-dashboard/teams")}
-            />
+           
              <NavItem
-              href="/regional-dashboard/financials"
+              href="/regional-dashboard/financial-report"
               icon={FaMoneyBillWave}
               label="Financial Reports"
-              active={pathname.includes("/regional-dashboard/financials")}
+              active={pathname.includes("/regional-dashboard/financial-report")}
+            />
+            <NavItem
+              href="/regional-dashboard/create-team"
+              icon={FaPlus}
+              label="Create Team"
+              active={pathname.includes("/regional-dashboard/create-team")}
             />
 
             {/* Role specific links - defaulting to show if SM or fallback */}
@@ -171,23 +172,11 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               Finance
             </p>
 
-            <NavItem
-              href="/sales-manager/upload-payment"
-              icon={FaUpload}
-              label="Upload Payment"
-              active={pathname.includes("/sales-manager/upload-payment")}
-            />
+           
 
-            <NavItem
-              href="/sales-manager/withdrawal-request"
-              icon={FaMoneyBillWave}
-              label="Withdrawal Request"
-              active={pathname.includes("/sales-manager/withdrawal-request")}
-            />
+           
 
-            <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
-              Account
-            </p>
+           
 
             <NavItem
               href="/sales-manager/personal-details"

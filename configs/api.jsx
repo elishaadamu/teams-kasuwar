@@ -146,12 +146,14 @@ export const API_CONFIG = {
     REGIONAL: {
       GET_ZONES: "/admin/regional/zones",
       GET_ZONE_TEAMS: "/admin/regional/zones/", // append zoneId/teams
+      GET_ZONE_STATES: "/admin/regional/zones/", // append zoneId/states
       GET_METRICS: "/admin/regional/zones/", // append zoneId/metrics
       ASSIGN_MEMBER: "/admin/regional/management/assign-member",
       GET_STATS: "/admin/regional/management/regions-stats",
-      GET_DETAILS: "/admin/regional/management/regions/", // append zoneId/details
+      GET_DETAILS: "/admin/regional/management/region/", // append zoneId/details
       REASSIGN_MEMBER: "/admin/regional/management/reassign-member",
       SET_TEAM_LEAD: "/admin/regional/management/team-lead",
+      CREATE_TEAM: "/admin/regional/zones/", // append {zoneId}/teams
     },
     ZONE_WALLET: {
       GET_ALL_REGIONAL: "/zone-wallet/regional/all",

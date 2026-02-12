@@ -6,10 +6,11 @@ import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import RegionalStats from "@/components/regional-dashboard/RegionalStats";
 import RegionalFinancials from "@/components/regional-dashboard/RegionalFinancials";
-import RegionalTeamList from "@/components/regional-dashboard/RegionalTeamList";
+// import RegionalTeamList from "@/components/regional-dashboard/RegionalTeamList";
 import RegionalTeamManagement from "@/components/regional-dashboard/RegionalTeamManagement";
 import { toast } from "react-toastify";
-import { FaSpinner, FaTimes } from "react-icons/fa";
+import { FaSpinner, FaTimes, FaPlus } from "react-icons/fa";
+import Link from "next/link";
 import { WalletCard, CommissionCard } from "@/components/regional-dashboard/FinancialCards";
 
 // Shared cards imported from FinancialCards.jsx
@@ -33,14 +34,9 @@ const TeamDetailsModal = ({ team, isOpen, onClose }) => {
                 <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <WalletCard 
-                            title="Main Wallet" 
+                            title="Wallet Balance" 
                             amount={team.wallet?.balance || team.balance || 0} 
                             subtext="Active Balance"
-                        />
-                        <WalletCard 
-                            title="Second Wallet" 
-                            amount={team.wallet?.secondWallet || 0} 
-                            subtext="Pending / Reserved"
                         />
                     </div>
 
@@ -120,7 +116,6 @@ const RegionalDashboard = () => {
         setLoading(true);
         // Fetch Stats
         const statsRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_STATS), { withCredentials: true });
-       
         if (statsRes.data?.success) {
              setStats({ totalMembers: statsRes.data.totalMembers }); // Using available data
              // setFinancials(statsRes.data.financials || null); // Not in response yet
@@ -157,11 +152,19 @@ const RegionalDashboard = () => {
   return (
     <div className="space-y-8 pb-10">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Regional Overview</h1>
-        <p className="text-gray-500 text-sm">
-          Welcome back, {userData?.firstName || "Regional Manager"}
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Regional Overview</h1>
+          <p className="text-gray-500 text-sm">
+            Welcome back, {userData?.firstName || "Regional Manager"}
+          </p>
+        </div>
+        <Link 
+          href="/regional-dashboard/create-team"
+          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+        >
+          <FaPlus className="text-sm" /> Create Team
+        </Link>
       </div>
 
       {/* Stats Section */}
@@ -175,14 +178,12 @@ const RegionalDashboard = () => {
         {/* Left Col: Financials & Team List */}
         <div className="lg:col-span-2 space-y-8">
             <RegionalFinancials onViewTeamDetails={fetchTeamDetails} modalLoading={modalLoading} />
-            <RegionalTeamList teams={teams} onViewWallet={fetchTeamDetails} />
+            {/* <RegionalTeamList teams={teams} onViewWallet={fetchTeamDetails} /> */}
         </div>
-
-<div className="lg:col-span-1">
+      <div className="lg:col-span-1">
             <RegionalTeamManagement />
         </div>
       </div>
-
       <TeamDetailsModal 
           isOpen={showModal} 
           onClose={() => setShowModal(false)} 

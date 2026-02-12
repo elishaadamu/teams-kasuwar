@@ -12,7 +12,7 @@ const RegionalTeamList = ({ teams, onViewWallet }) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-              <th className="px-6 py-4 font-semibold">State / Team</th>
+              <th className="px-6 py-4 font-semibold">Team</th>
               <th className="px-6 py-4 font-semibold">Active Vendors</th>
               <th className="px-6 py-4 font-semibold">Active Customers</th>
               <th className="px-6 py-4 font-semibold">Delivery Men</th>
@@ -26,8 +26,8 @@ const RegionalTeamList = ({ teams, onViewWallet }) => {
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-800">{team.state}</span>
-                      <span className="text-xs text-gray-500">{team.teamName || 'No Team Name'}</span>
+                      <span className="font-semibold text-gray-800">{team.name || team.teamName || 'No Team Name'}</span>
+                     
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{team.activeVendors || 0}</td>
@@ -44,8 +44,9 @@ const RegionalTeamList = ({ teams, onViewWallet }) => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button 
-                      onClick={() => onViewWallet(team.teamId || team._id)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors title='View Wallet Details'"
+                      onClick={() => onViewWallet(team._id || team.teamId)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Wallet Details"
                     >
                       <FaWallet className="w-5 h-5" />
                     </button>

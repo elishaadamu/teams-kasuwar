@@ -40,9 +40,6 @@ export const AppContextProvider = (props) => {
       }
 
       const decryptedUser = decryptData(encryptedUser);
-      console.log("Decryption result:", {
-        decryptedUser,
-      });
 
       if (decryptedUser) {
         setUserData(decryptedUser?.user);
@@ -51,10 +48,7 @@ export const AppContextProvider = (props) => {
         setUserData(null);
       }
     } catch (error) {
-      console.error("Error in fetchUserData:", {
-        message: error.message,
-        stack: error.stack,
-      });
+     
       localStorage.removeItem("user");
       setUserData(null);
     } finally {
@@ -70,9 +64,9 @@ export const AppContextProvider = (props) => {
         {},
         { withCredentials: true },
       );
-      console.log("Server-side logout successful, cookies cleared");
+    
     } catch (error) {
-      console.error("Error during server-side logout:", error);
+      
       // Continue with client-side logout even if server-side fails
     } finally {
       // Clear local storage and state
@@ -80,7 +74,7 @@ export const AppContextProvider = (props) => {
       setUserData(null);
       setCartItems({}); // Clear cart on logout
       setWishlistItems([]); // Clear wishlist on logout
-      console.log("Logging out and redirecting to homepage...");
+      
       // It's better to show toast notifications in the component that calls logout.
       router.push("/"); // Redirect to the homepage
     }
@@ -183,7 +177,7 @@ export const AppContextProvider = (props) => {
               setCartItems({});
             }
           } catch (e) {
-            console.error("Error parsing cart data from localStorage", e);
+            
             localStorage.removeItem(cartStorageKey);
             setCartItems({});
           }
@@ -206,7 +200,7 @@ export const AppContextProvider = (props) => {
               setWishlistItems([]);
             }
           } catch (e) {
-            console.error("Error parsing wishlist data from localStorage", e);
+            
             localStorage.removeItem(wishlistStorageKey);
             setWishlistItems([]);
           }

@@ -11,11 +11,12 @@ const RegionalTeamManagement = () => {
   const [loading, setLoading] = useState(false);
   
   // Form States
-  const [assignForm, setAssignForm] = useState({ email: "", role: "BD", stateId: "", zoneId: "" });
-  const [reassignForm, setReassignForm] = useState({ email: "", stateId: "", zoneId: "" });
-  const [teamLeadForm, setTeamLeadForm] = useState({ email: "", teamId: "" }); // Changed stateId to teamId as per requirement
+  const [assignForm, setAssignForm] = useState({ email: "", role: "BD", teamId: "", zoneId: "", stateId: "" });
+  const [reassignForm, setReassignForm] = useState({ email: "", teamId: "", zoneId: "", stateId: "" });
+  const [teamLeadForm, setTeamLeadForm] = useState({ email: "", teamId: "", zoneId: "" });
 
   const [selectedZoneStates, setSelectedZoneStates] = useState([]);
+  const [teamLeadZoneStates, setTeamLeadZoneStates] = useState([]);
 
   
   const fetchZones = async () => {
@@ -36,37 +37,49 @@ const RegionalTeamManagement = () => {
   }, []);
 
   // Fetch states when zone changes
-  const fetchStates = async (zoneId) => {
+  const fetchStates = async (zoneId, type = "assign") => {
     if (!zoneId) return;
     try {
-      const response = await axios.get(apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${zoneId}/teams`), { withCredentials: true });
+      const endpoint = type === "teamlead" 
+        ? `${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_STATES}${zoneId}/teams`
+        : `${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${zoneId}/teams`;
+        
+      const response = await axios.get(apiUrl(endpoint), { withCredentials: true });
     
       if (response.data) {
-        setSelectedZoneStates(response.data.teams || []);
+        if (type === "teamlead") {
+          setTeamLeadZoneStates(response.data.states || response.data.teams || response.data.data || []);
+        } else {
+          setSelectedZoneStates(response.data.teams || response.data.states || response.data.data || []);
+        }
       }
     } catch (error) {
      
-      toast.error("Failed to fetch states for selected zone");
+      toast.error(`Failed to fetch ${type === "teamlead" ? "states" : "teams"} for selected zone`);
     }
   };
 
-  const handleZoneChange = (e, formSetter, currentForm) => {
+  const handleZoneChange = (e, formSetter, currentForm, type = "assign") => {
     const zoneId = e.target.value;
-    formSetter({ ...currentForm, zoneId, stateId: "" });
-    fetchStates(zoneId);
+    formSetter({ ...currentForm, zoneId, teamId: "", stateId: "" });
+    fetchStates(zoneId, type);
   };
 
   const handleAssignMember = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const payload = {
+      email: assignForm.email,
+      role: assignForm.role,
+      teamId: assignForm.teamId || assignForm.stateId
+    }
+    console.log(payload);
     try {
-      await axios.post(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.ASSIGN_MEMBER), {
-        email: assignForm.email,
-        role: assignForm.role,
-        teamId: assignForm.teamId
-      }, { withCredentials: true });
+      await axios.post(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.ASSIGN_MEMBER), 
+       payload
+       , { withCredentials: true });
       toast.success("Member assigned successfully!");
-      setAssignForm({ email: "", role: "BD", stateId: "", zoneId: "" });
+      setAssignForm({ email: "", role: "BD", teamId: "", zoneId: "", stateId: "" });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to assign member");
     } finally {
@@ -80,10 +93,10 @@ const RegionalTeamManagement = () => {
     try {
       await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.REASSIGN_MEMBER), {
         email: reassignForm.email,
-        teamId: reassignForm.teamId
+        teamId: reassignForm.teamId || reassignForm.stateId
       }, { withCredentials: true });
       toast.success("Member reassigned successfully!");
-      setReassignForm({ email: "", stateId: "", zoneId: "" });
+      setReassignForm({ email: "", teamId: "", zoneId: "", stateId: "" });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to reassign member");
     } finally {
@@ -100,7 +113,7 @@ const RegionalTeamManagement = () => {
         teamId: teamLeadForm.teamId
       }, { withCredentials: true });
       toast.success("Team Lead updated successfully!");
-      setTeamLeadForm({ email: "", teamId: "" });
+      setTeamLeadForm({ email: "", teamId: "", zoneId: "" });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to set team lead");
     } finally {
@@ -161,10 +174,12 @@ const RegionalTeamManagement = () => {
               onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="BD">Business Developer (BD)</option>
-              <option value="BDM">Business Development Manager (BDM)</option>
-              <option value="SM">Sales Manager (SM)</option>
-              <option value="Agent">Agent</option>
+              <option value="agent">Agent</option>
+              <option value="user">User</option>
+              <option value="vendor">Vendor</option>
+              <option value="bd">Business Developer (BD)</option>
+              <option value="bdm">Business Development Manager (BDM)</option>
+              <option value="sm">Sales Manager (SM)</option> 
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -172,6 +187,7 @@ const RegionalTeamManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
                 <select
                 value={assignForm.zoneId}
+                required
                 onChange={(e) => handleZoneChange(e, setAssignForm, assignForm)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
@@ -182,16 +198,17 @@ const RegionalTeamManagement = () => {
                 </select>
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State / Team</label>
                 <select
-                value={assignForm.stateId}
-                onChange={(e) => setAssignForm({ ...assignForm, stateId: e.target.value })}
+                value={assignForm.teamId || assignForm.stateId}
+                required
+                onChange={(e) => setAssignForm({ ...assignForm, teamId: e.target.value, stateId: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 disabled={!assignForm.zoneId}
                 >
-                <option value="">Select State</option>
+                <option value="">Select Team</option>
                 {selectedZoneStates.map(state => (
-                    <option key={state.id} value={state.id}>{state.name}</option>
+                    <option key={state._id || state.id} value={state._id || state.id}>{state.name}</option>
                 ))}
                 </select>
             </div>
@@ -225,7 +242,8 @@ const RegionalTeamManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">New Zone</label>
                 <select
                 value={reassignForm.zoneId}
-                onChange={(e) => handleZoneChange(e, setReassignForm, reassignForm)}
+                required
+                onChange={(e) => handleZoneChange(e, setReassignForm, reassignForm, "reassign")}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                 <option value="">Select Zone</option>
@@ -235,16 +253,17 @@ const RegionalTeamManagement = () => {
                 </select>
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New State</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New State / Team</label>
                 <select
-                value={reassignForm.stateId}
-                onChange={(e) => setReassignForm({ ...reassignForm, stateId: e.target.value })}
+                value={reassignForm.teamId || reassignForm.stateId}
+                required
+                onChange={(e) => setReassignForm({ ...reassignForm, teamId: e.target.value, stateId: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 disabled={!reassignForm.zoneId}
                 >
-                <option value="">Select State</option>
+                <option value="">Select Team</option>
                 {selectedZoneStates.map(state => (
-                    <option key={state.id} value={state.id}>{state.name}</option>
+                    <option key={state._id || state.id} value={state._id || state.id}>{state.name}</option>
                 ))}
                 </select>
             </div>
@@ -273,16 +292,36 @@ const RegionalTeamManagement = () => {
               placeholder="lead@example.com"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Team ID / State ID</label>
-             <input
-              type="text"
-              required
-              value={teamLeadForm.teamId}
-              onChange={(e) => setTeamLeadForm({ ...teamLeadForm, teamId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Enter Team or State ID"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                <select
+                value={teamLeadForm.zoneId}
+                required
+                onChange={(e) => handleZoneChange(e, setTeamLeadForm, teamLeadForm, "teamlead")}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                <option value="">Select Zone</option>
+                {zones?.map(zone => (
+                    <option key={zone._id} value={zone._id}>{zone.name}</option>
+                ))}
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Team / State</label>
+                <select
+                value={teamLeadForm.teamId}
+                required
+                onChange={(e) => setTeamLeadForm({ ...teamLeadForm, teamId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                disabled={!teamLeadForm.zoneId}
+                >
+                <option value="">Select Team</option>
+                {teamLeadZoneStates.map(state => (
+                    <option key={state._id || state.id} value={state._id || state.id}>{state.name}</option>
+                ))}
+                </select>
+            </div>
           </div>
           <button
             type="submit"
