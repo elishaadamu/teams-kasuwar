@@ -6,7 +6,7 @@ import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import RegionalStats from "@/components/regional-dashboard/RegionalStats";
 import RegionalFinancials from "@/components/regional-dashboard/RegionalFinancials";
-// import RegionalTeamList from "@/components/regional-dashboard/RegionalTeamList";
+import RegionalTeamList from "@/components/regional-dashboard/RegionalTeamList";
 import RegionalTeamManagement from "@/components/regional-dashboard/RegionalTeamManagement";
 import { toast } from "react-toastify";
 import { FaSpinner, FaTimes, FaPlus } from "react-icons/fa";
@@ -117,10 +117,13 @@ const RegionalDashboard = () => {
         // Fetch Stats
         const statsRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_STATS), { withCredentials: true });
         if (statsRes.data?.success) {
-             setStats({ totalMembers: statsRes.data.totalMembers }); // Using available data
-             // setFinancials(statsRes.data.financials || null); // Not in response yet
-             // setTeams(statsRes.data.regions || []); // Using regions as teams for now? Or separate endpoint?
-             setTeams(statsRes.data.regions); 
+             setStats({ totalMembers: statsRes.data.totalMembers }); 
+        }
+
+        // Fetch My Region Teams
+        const teamsRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true });
+        if (teamsRes.data?.success) {
+            setTeams(teamsRes.data.teams || teamsRes.data.data || []);
         }
 
         // Fetch Zones for management
@@ -178,7 +181,7 @@ const RegionalDashboard = () => {
         {/* Left Col: Financials & Team List */}
         <div className="lg:col-span-2 space-y-8">
             <RegionalFinancials onViewTeamDetails={fetchTeamDetails} modalLoading={modalLoading} />
-            {/* <RegionalTeamList teams={teams} onViewWallet={fetchTeamDetails} /> */}
+            <RegionalTeamList teams={teams} onViewWallet={fetchTeamDetails} />
         </div>
       <div className="lg:col-span-1">
             <RegionalTeamManagement />

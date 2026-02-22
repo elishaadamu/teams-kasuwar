@@ -16,6 +16,8 @@ import {
   FaUpload,
   FaMoneyBillWave,
   FaPlus,
+  FaLayerGroup,
+  FaUser,
 } from "react-icons/fa";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import Modal from "@/components/Modal";
@@ -30,7 +32,14 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const [accountDetails, setAccountDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // New state for dynamic team data
+  const [teamData, setTeamData] = useState(null);
+  const [isRegionalLeader, setIsRegionalLeader] = useState(false);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
+
   const userRole = userData?.role || null;
+  // Hardcoded ID for specific regional leader check as requested
+  const REGIONAL_LEADER_ID = "255391858487471";
 
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -71,22 +80,51 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
     fetchWalletData();
   }, [userData]);
 
-  const NavItem = ({ href, icon: Icon, label, active }) => (
+  // Fetch Team Dashboard Data for Sidebar
+  useEffect(() => {
+      const fetchTeamData = async () => {
+          if (!userData) return;
+          try {
+              const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+              if (response.data.success) {
+                  const data = response.data;
+                  setTeamData(data);
+                  
+                  // Check if Regional Leader
+                  // Condition: ID matches OR (has teams array and not just members)
+                  if (String(userData.id) === REGIONAL_LEADER_ID || (data.teams && data.teams.length > 0)) {
+                      setIsRegionalLeader(true);
+                  } 
+                  // Check if Team Leader
+                  // Condition: has specific team data and members
+                  else if (data.team && data.members) {
+                      setIsTeamLeader(true);
+                  }
+              }
+          } catch (error) {
+              console.error("Sidebar Team Fetch Error:", error);
+          }
+      };
+
+      fetchTeamData();
+  }, [userData]);
+
+  const NavItem = ({ href, icon: Icon, label, active, subItem = false }) => (
     <Link
       href={href}
       className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
         active
           ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
           : "text-gray-400 hover:bg-slate-800 hover:text-white"
-      }`}
+      } ${subItem ? "ml-4 text-sm py-2" : ""}`}
     >
       <Icon
         className={`w-5 h-5 ${
           active ? "text-white" : "text-gray-400 group-hover:text-white"
-        }`}
+        } ${subItem ? "w-4 h-4" : ""}`}
       />
-      <span className="font-medium text-sm">{label}</span>
-      {active && (
+      <span className={`font-medium ${subItem ? "text-xs" : "text-sm"}`}>{label}</span>
+      {active && !subItem && (
         <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-lg"></div>
       )}
     </Link>
@@ -148,6 +186,44 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               active={pathname === "/regional-dashboard"}
             />
 
+           
+
+            <NavItem
+              href="/regional-dashboard/regional-leader"
+              icon={FaUsers}
+              label="Regional Leader"
+              active={pathname === "/regional-dashboard/regional-leader"}
+            />
+
+            {/* Dynamic Team Section */}
+            {(isRegionalLeader || isTeamLeader) && (
+                 <div className="mt-4 mb-4">
+                    <p className="px-4 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        {isRegionalLeader ? "Region Teams" : "Team Members"}
+                    </p>
+                    <div className="space-y-1">
+                        {isRegionalLeader && teamData?.teams?.map((team) => (
+                             <NavItem
+                                key={team._id || team.id}
+                                 href={`/regional-dashboard/team?id=${team._id || team.id}`} // Assuming route exists or placeholder
+                                 icon={FaLayerGroup}
+                                 label={team.name}
+                                 active={pathname.includes(`/team`) && new URLSearchParams(window.location.search).get('id') === (team._id || team.id)}
+                                 subItem={true}
+                             />
+                        ))}
+
+                        {isTeamLeader && teamData?.members?.map((member) => (
+                            <div key={member.email} className="flex items-center space-x-3 px-4 py-2 ml-4 text-gray-400 hover:text-white transition-colors">
+                                <FaUser className="w-3 h-3" />
+                                <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
+                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="Team Lead" />}
+                            </div>
+                        ))}
+                    </div>
+                 </div>
+            )}
+
             <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
               Management
             </p>
@@ -165,8 +241,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               label="Create Team"
               active={pathname.includes("/regional-dashboard/create-team")}
             />
-
-            {/* Role specific links - defaulting to show if SM or fallback */}
 
             <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
               Finance

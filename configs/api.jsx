@@ -154,6 +154,9 @@ export const API_CONFIG = {
       REASSIGN_MEMBER: "/admin/regional/management/reassign-member",
       SET_TEAM_LEAD: "/admin/regional/management/team-lead",
       CREATE_TEAM: "/admin/regional/zones/", // append {zoneId}/teams
+      GET_MY_REGION_TEAMS: "/admin/regional/management/my-region-teams",
+      GET_MY_TEAM_DASHBOARD: "/admin/regional/management/my-team-dashboard",
+      GET_TEAM_MEMBERS: "/team-members/team/", // append teamId
     },
     ZONE_WALLET: {
       GET_ALL_REGIONAL: "/zone-wallet/regional/all",

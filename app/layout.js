@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import axios from "axios";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
@@ -26,6 +28,22 @@ export default function RootLayout({ children }) {
     pathname.startsWith("/bd-dashboard") ||
     pathname.startsWith("/seller") ||
     pathname.startsWith("/vendor-dashboard");
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          window.location.href = "/";
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
 
   return (
     <html lang="en">

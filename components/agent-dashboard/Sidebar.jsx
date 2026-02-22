@@ -1,16 +1,59 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
-import { FaUsers, FaWallet, FaPercentage } from "react-icons/fa";
+import { FaUsers, FaWallet, FaPercentage, FaLayerGroup, FaUser, FaUserTie } from "react-icons/fa";
 import { useAppContext } from "@/context/AppContext";
+import axios from "axios";
+import { apiUrl, API_CONFIG } from "@/configs/api";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
   const { userData } = useAppContext();
   const userRole = userData?.role || null;
+
+  // New state for dynamic team data
+  const [teamData, setTeamData] = useState(null);
+  const [isRegionalLeader, setIsRegionalLeader] = useState(false);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
+
+  useEffect(() => {
+      const fetchTeamData = async () => {
+          if (!userData) return;
+          try {
+              const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+              if (response.data.success) {
+                  const data = response.data;
+                  setTeamData(data);
+                  
+                  if (data.teams && data.teams.length > 0) {
+                      setIsRegionalLeader(true);
+                  } 
+                  else if (data.team && data.members) {
+                      setIsTeamLeader(true);
+                  }
+              }
+          } catch (error) {
+              console.error("Sidebar Team Fetch Error:", error);
+          }
+      };
+
+      fetchTeamData();
+  }, [userData]);
+
+  const NavItem = ({ href, icon: Icon, label, active }) => (
+    <Link
+      href={href}
+      className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+        active ? "bg-gray-700" : ""
+      }`}
+    >
+      <Icon className="w-5 h-5" />
+      <span>{label}</span>
+    </Link>
+  );
 
   return (
     <aside
@@ -75,78 +118,94 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
             {userRole === "agent" && (
               <>
                 {/* Team Management */}
-                <Link
+                <NavItem 
                   href="/agent-dashboard/manage-customers"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/agent-dashboard/manage-customers"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
-                >
-                  <FaUsers className="w-5 h-5" />
-                  <span>Manage Customer</span>
-                </Link>
-                <Link
+                  icon={FaUsers}
+                  label="Manage Customer"
+                  active={pathname === "/agent-dashboard/manage-customers"}
+                />
+                
+                <NavItem 
+                  href="/agent-dashboard/regional-leader"
+                  icon={FaUsers}
+                  label="Regional Leader"
+                  active={pathname === "/agent-dashboard/regional-leader"}
+                />
+
+                {/* Dynamic Team Section */}
+                {(isRegionalLeader || isTeamLeader) && (
+                    <div className="mt-2 mb-2 ml-4 border-l border-gray-700 pl-2">
+                        <p className="px-2 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            {isRegionalLeader ? "Region Teams" : "Team Members"}
+                        </p>
+                        <div className="space-y-1">
+                            {isRegionalLeader && teamData?.teams?.map((team) => (
+                                <Link
+                                    key={team._id || team.id}
+                                    href={`/agent-dashboard/team?id=${team._id || team.id}`} 
+                                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors ${
+                                        pathname.includes(`/team`) && new URLSearchParams(window.location.search).get('id') === (team._id || team.id) ? "text-white bg-gray-700" : ""
+                                    }`}
+                                >
+                                    <FaLayerGroup className="w-4 h-4" />
+                                    <span>{team.name}</span>
+                                </Link>
+                            ))}
+
+                            {isTeamLeader && teamData?.members?.map((member) => (
+                                <div key={member.email} className="flex items-center space-x-3 px-3 py-1.5 text-gray-400 hover:text-white transition-colors">
+                                    <FaUser className="w-3 h-3" />
+                                    <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
+                                    {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="Team Lead" />}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <NavItem
                   href="/agent-dashboard/manage-vendors"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/agent-dashboard/manage-vendors"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
-                >
-                  <FaUsers className="w-5 h-5" />
-                  <span>Manage Vendors</span>
-                </Link>
+                  icon={FaUsers}
+                  label="Manage Vendors"
+                  active={pathname === "/agent-dashboard/manage-vendors"}
+                />
 
                 {/* Withdraw and Settlement */}
 
-                <Link
+                <NavItem
                   href="/agent-dashboard/withdrawal-request"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/agent-dashboard/withdrawal-request"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
-                >
-                  <FaWallet className="w-5 h-5" />
-                  <span>Withdrawal Requests</span>
-                </Link>
+                  icon={FaWallet}
+                  label="Withdrawal Requests"
+                  active={pathname === "/agent-dashboard/withdrawal-request"}
+                />
                 {/* Agent Commission */}
-                <Link
+                <NavItem
                   href="/agent-dashboard/agent-commission"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/agent-dashboard/agent-commission"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
-                >
-                  <FaPercentage className="w-5 h-5" />
-                  <span>Agent Commission</span>
-                </Link>
+                  icon={FaPercentage}
+                  label="Agent Commission"
+                  active={pathname === "/agent-dashboard/agent-commission"}
+                />
                 {/* Settings */}
-                <Link
+                <NavItem
                   href="/agent-dashboard/personal-details"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/agent-dashboard/personal-details"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                    />
-                  </svg>
-                  <span>Personal Details</span>
-                </Link>
+                  icon={(props) => (
+                      <svg
+                        {...props}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                        />
+                      </svg>
+                  )}
+                  label="Personal Details"
+                  active={pathname === "/agent-dashboard/personal-details"}
+                />
               </>
             )}
           </nav>

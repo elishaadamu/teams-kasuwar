@@ -1,16 +1,47 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
-import { FaUsers, FaWallet } from "react-icons/fa";
+import { FaUsers, FaWallet, FaLayerGroup, FaUser, FaUserTie } from "react-icons/fa";
 import { useAppContext } from "@/context/AppContext";
+import axios from "axios";
+import { apiUrl, API_CONFIG } from "@/configs/api";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
   const { userData } = useAppContext();
   const userRole = userData?.role;
+
+  // New state for dynamic team data
+  const [teamData, setTeamData] = useState(null);
+  const [isRegionalLeader, setIsRegionalLeader] = useState(false);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
+
+  useEffect(() => {
+      const fetchTeamData = async () => {
+          if (!userData) return;
+          try {
+              const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+              if (response.data.success) {
+                  const data = response.data;
+                  setTeamData(data);
+                  
+                  if (data.teams && data.teams.length > 0) {
+                      setIsRegionalLeader(true);
+                  } 
+                  else if (data.team && data.members) {
+                      setIsTeamLeader(true);
+                  }
+              }
+          } catch (error) {
+              console.error("Sidebar Team Fetch Error:", error);
+          }
+      };
+
+      fetchTeamData();
+  }, [userData]);
 
   return (
     <aside
@@ -86,6 +117,49 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   <FaUsers className="w-5 h-5" />
                   <span>Manage Agents</span>
                 </Link>
+              
+                <Link
+                  href="/bd-dashboard/regional-leader"
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+                    pathname === "/bd-dashboard/regional-leader"
+                      ? "bg-gray-700"
+                      : ""
+                  }`}
+                >
+                  <FaUsers className="w-5 h-5" />
+                  <span>Regional Leader</span>
+                </Link>
+
+                {/* Dynamic Team Section */}
+                {(isRegionalLeader || isTeamLeader) && (
+                    <div className="mt-2 mb-2 ml-4 border-l border-gray-700 pl-2">
+                        <p className="px-2 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            {isRegionalLeader ? "Region Teams" : "Team Members"}
+                        </p>
+                        <div className="space-y-1">
+                            {isRegionalLeader && teamData?.teams?.map((team) => (
+                                <Link
+                                    key={team._id || team.id}
+                                    href={`/bd-dashboard/team?id=${team._id || team.id}`} 
+                                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors ${
+                                        pathname.includes(`/team`) && new URLSearchParams(window.location.search).get('id') === (team._id || team.id) ? "text-white bg-gray-700" : ""
+                                    }`}
+                                >
+                                    <FaLayerGroup className="w-4 h-4" />
+                                    <span>{team.name}</span>
+                                </Link>
+                            ))}
+
+                            {isTeamLeader && teamData?.members?.map((member) => (
+                                <div key={member.email} className="flex items-center space-x-3 px-3 py-1.5 text-gray-400 hover:text-white transition-colors">
+                                    <FaUser className="w-3 h-3" />
+                                    <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
+                                    {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="Team Lead" />}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Withdraw and Settlement */}
 
