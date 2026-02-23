@@ -12,6 +12,7 @@ import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import Link from "next/link";
 
 const StatCard = ({ title, count, icon: Icon, color, subtext }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
@@ -160,6 +161,15 @@ const RegionalStats = ({ stats }) => {
             </div>
           )}
         </div>
+        
+        {(selectedZone || selectedSubregion) && (
+          <Link
+            href={`/state-dashboard?id=${selectedSubregion || selectedZone}`}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm"
+          >
+            View Detailed Dashboard
+          </Link>
+        )}
         
         {selectedSubregion && (
           <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">

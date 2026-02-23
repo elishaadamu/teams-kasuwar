@@ -317,9 +317,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                                              </div>
                                              <div>
                                                  <p className="text-xs text-gray-500">Team Lead</p>
-                                                 <p className="text-sm font-semibold text-gray-800">
-                                                 {team.teamLeadId?.firstName ? `${team.teamLeadId.firstName} ${team.teamLeadId.lastName}` : "Not Assigned"}
-                                             </p>
+                                                  <p className="text-sm font-semibold text-gray-800">
+                                                  {(team.teamLeadId?.firstName || team.teamLead?.firstName) ? `${team.teamLeadId?.firstName || team.teamLead?.firstName} ${team.teamLeadId?.lastName || team.teamLead?.lastName}` : "Not Assigned"}
+                                              </p>
                                              </div>
                                         </div>
                                          <button 
@@ -391,14 +391,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
                                     <FaUserTie className="text-lg" />
                                 </div>
-                                <div>
+                                 <div>
                                     <p className="font-semibold text-gray-800">
-                                        {selectedTeam.teamLeadId?.firstName 
-                                            ? `${selectedTeam.teamLeadId.firstName} ${selectedTeam.teamLeadId.lastName}` 
+                                        {(selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName) 
+                                            ? `${selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName} ${selectedTeam.teamLeadId?.lastName || selectedTeam.teamLead?.lastName}` 
                                             : "Not Assigned"}
                                     </p>
-                                    {selectedTeam.teamLeadId?.email && (
-                                        <p className="text-sm text-gray-500">{selectedTeam.teamLeadId.email}</p>
+                                    {(selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email) && (
+                                        <p className="text-sm text-gray-500">{selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email}</p>
                                     )}
                                 </div>
                             </div>
@@ -445,12 +445,12 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                                                 <td className="px-6 py-4 text-sm">
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                        (member.isTeamLead || member.role === 'team_lead' || member.email === selectedTeam?.teamLeadId?.email) 
+                                                     <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                        (member.isTeamLead || member.role === 'team_lead' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
                                                             ? 'bg-indigo-100 text-indigo-700' 
                                                             : 'bg-gray-100 text-gray-600'
                                                     }`}>
-                                                        {(member.isTeamLead || member.role === 'team_lead' || member.email === selectedTeam?.teamLeadId?.email) 
+                                                        {(member.isTeamLead || member.role === 'team_lead' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
                                                             ? 'Team Lead' 
                                                             : (member.role?.toUpperCase() || 'MEMBER')}
                                                     </span>
