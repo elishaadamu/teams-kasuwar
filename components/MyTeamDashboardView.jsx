@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, teams, showTeamSelect }) => {
@@ -80,6 +80,60 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
     );
 };
 
+const ReassignMemberModal = ({ isOpen, onClose, onReassign, loading, form, setForm, teams }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Reassign Member</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <FaTimes />
+                    </button>
+                </div>
+                <form onSubmit={onReassign} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Member Email</label>
+                        <input
+                            type="email"
+                            readOnly
+                            value={form.email}
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 outline-none"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Move to Team</label>
+                        <select
+                            value={form.teamId}
+                            required
+                            onChange={(e) => setForm({ ...form, teamId: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        >
+                            <option value="">Select Target Team</option>
+                            {teams.map(team => (
+                                <option key={team._id || team.id} value={team._id || team.id}>
+                                    {team.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full mt-6 px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {loading ? <FaSpinner className="animate-spin" /> : <FaExchangeAlt />}
+                        {loading ? "Reassigning..." : "Reassign Member"}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }) => {
     if (!isOpen) return null;
 
@@ -125,6 +179,9 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState(null);
     const [teamMembers, setTeamMembers] = useState([]);
+    const [walletData, setWalletData] = useState(null);
+    const [teamWallets, setTeamWallets] = useState({});
+    const [walletLoading, setWalletLoading] = useState(false);
     
     // Assign Modal State
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -135,6 +192,11 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [showSetLeadModal, setShowSetLeadModal] = useState(false);
     const [setLeadLoading, setSetLeadLoading] = useState(false);
     const [setLeadForm, setSetLeadForm] = useState({ email: "", teamId: "" });
+
+    // Reassign Modal State
+    const [showReassignModal, setShowReassignModal] = useState(false);
+    const [reassignLoading, setReassignLoading] = useState(false);
+    const [reassignForm, setReassignForm] = useState({ email: "", teamId: "" });
 
     const fetchData = async () => {
         try {
@@ -171,11 +233,69 @@ const MyTeamDashboardView = ({ teamId }) => {
         }
     };
 
+    const fetchWalletData = async () => {
+        try {
+            setWalletLoading(true);
+            let endpoint = "";
+            
+            if (teamId) {
+                endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_TEAM + teamId;
+            } else if (dashboardData?.zone?._id || dashboardData?.zone?.id) {
+                endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL + (dashboardData.zone._id || dashboardData.zone.id);
+            } else if (userData?.zoneId) {
+                endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL + userData.zoneId;
+            }
+
+            if (endpoint) {
+                try {
+                    const response = await axios.get(apiUrl(endpoint), { withCredentials: true });
+                    console.log("Main Wallet Response:", response.data);
+                    if (response.data.success) {
+                        setWalletData(response.data.wallet || response.data.data || { balance: 0, currency: "NGN" });
+                    } else {
+                        setWalletData({ balance: 0, currency: "NGN" });
+                    }
+                } catch (err) {
+                    console.warn(`Wallet API error for ${endpoint}:`, err.message);
+                    setWalletData({ balance: 0, currency: "NGN" });
+                }
+            }
+
+            // Also fetch all team wallets if in regional view
+            if (!teamId && (dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId)) {
+                try {
+                    const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData.zoneId;
+                    const teamsWalletRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL_TEAMS + zoneId + "/teams"), { withCredentials: true });
+                    console.log("All Teams Wallets Response:", teamsWalletRes.data);
+                    if (teamsWalletRes.data.success) {
+                        const walletMap = {};
+                        (teamsWalletRes.data.teamWallets || teamsWalletRes.data.data || []).forEach(w => {
+                            walletMap[w.teamId] = w;
+                        });
+                        setTeamWallets(walletMap);
+                    }
+                } catch (err) {
+                    console.warn("Error fetching all teams wallets:", err.message);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching wallet data:", error);
+        } finally {
+            setWalletLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (userData) {
             fetchData();
         }
     }, [userData, teamId]);
+
+    useEffect(() => {
+        if (dashboardData || userData?.zoneId) {
+            fetchWalletData();
+        }
+    }, [dashboardData, userData, teamId]);
 
     const handleAssignMember = async (e) => {
         e.preventDefault();
@@ -184,9 +304,14 @@ const MyTeamDashboardView = ({ teamId }) => {
             const payload = {
                 email: assignForm.email,
                 role: assignForm.role,
-                teamId: assignForm.teamId || dashboardData.team?._id
+                teamId: assignForm.teamId || teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id)
             };
-            console.log(payload);
+            console.log("Assign Member Payload:", payload);
+            if (!payload.teamId) {
+                toast.error("Team ID is missing. Please select a team.");
+                setAssignLoading(false);
+                return;
+            }
             await axios.post(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.ASSIGN_MEMBER), payload, { withCredentials: true });
             toast.success("Member assigned successfully!");
             setShowAssignModal(false);
@@ -222,9 +347,36 @@ const MyTeamDashboardView = ({ teamId }) => {
         }
     };
 
+    const handleReassignMember = async (e) => {
+        e.preventDefault();
+        setReassignLoading(true);
+        try {
+            const payload = {
+                email: reassignForm.email,
+                teamId: reassignForm.teamId
+            };
+            
+            await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.REASSIGN_MEMBER), payload, { withCredentials: true });
+            toast.success("Member reassigned successfully!");
+            setShowReassignModal(false);
+            setReassignForm({ email: "", teamId: "" });
+            fetchData(); // Refresh data
+        } catch (error) {
+            console.error("Reassignment error:", error);
+            toast.error(error?.response?.data?.message || "Failed to reassign member");
+        } finally {
+            setReassignLoading(false);
+        }
+    };
+
     const openSetLeadModal = (teamId) => {
         setSetLeadForm({ email: "", teamId });
         setShowSetLeadModal(true);
+    };
+
+    const openReassignModal = (email) => {
+        setReassignForm({ email, teamId: "" });
+        setShowReassignModal(true);
     };
 
     if (loading) {
@@ -266,7 +418,10 @@ const MyTeamDashboardView = ({ teamId }) => {
     // Prepare teams for modal
     const availableTeams = isRegionalView 
         ? (dashboardData.teams || []) 
-        : (selectedTeam ? [selectedTeam] : (dashboardData.team ? [dashboardData.team] : []));
+        : (dashboardData.teams || (selectedTeam ? [selectedTeam] : (dashboardData.team ? [dashboardData.team] : [])));
+
+    const isUserRegionalLeader = userData?.role === 'bdm' || userData?.role === 'bd' || userData?.role === 'vendor' || userData?.role === 'sm' || userData?.role === 'agent' || userData?.role === 'user';
+
 
     return (
         <div className="space-y-8 pb-10">
@@ -285,12 +440,61 @@ const MyTeamDashboardView = ({ teamId }) => {
                 {/* Show assign button if we have teams (Regional) or a specific team (Team Lead) */}
                 {(isRegionalView || isTeamView) && (
                     <button 
-                        onClick={() => setShowAssignModal(true)}
+                        onClick={() => {
+                            if (!isRegionalView) {
+                                const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
+                                if (currentTeamId) {
+                                    setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                                }
+                            }
+                            setShowAssignModal(true);
+                        }}
                         className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
                     >
                         <FaUserPlus className="text-sm" /> Assign Member
                     </button>
                 )}
+            </div>
+
+            {/* Wallet Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <FaWallet className="text-8xl" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-4 opacity-80">
+                            <FaWallet className="text-sm" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Current Balance</span>
+                        </div>
+                        {walletLoading ? (
+                             <FaSpinner className="animate-spin text-2xl" />
+                        ) : (
+                            <h2 className="text-3xl font-bold">₦{walletData?.balance?.toLocaleString() || "0"}</h2>
+                        )}
+                        <p className="text-xs mt-2 opacity-60">Currency: {walletData?.currency || "NGN"}</p>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <FaChartLine className="text-xl" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Orders</p>
+                        <h3 className="text-2xl font-bold text-gray-800">{dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0}</h3>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
+                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                        <FaUsers className="text-xl" />
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Region Members</p>
+                        <h3 className="text-2xl font-bold text-gray-800">{dashboardData?.stats?.totalMembers || dashboardData?.totalMembers || teamMembers?.length || 0}</h3>
+                    </div>
+                </div>
             </div>
 
             {/* Content: Regional View - Show all teams */}
@@ -333,17 +537,21 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         
                                       <div className="grid grid-cols-2 gap-2 mt-2">
                                          <div className="text-center p-2 bg-blue-50 rounded-lg">
-                                             <p className="text-xs text-blue-600">Members</p>
+                                             <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Members</p>
                                              <p className="font-bold text-blue-900">{team.totalMembers || 0}</p>
                                          </div>
-                                         <div className="text-center p-2 bg-green-50 rounded-lg">
-                                             <p className="text-xs text-green-600">Performance</p>
-                                             <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                         <div className="text-center p-2 bg-purple-50 rounded-lg">
+                                             <p className="text-xs text-purple-600 font-bold uppercase tracking-widest text-[10px]">Wallet</p>
+                                             <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
                                          </div>
-                                     </div>
-                                 </div>
-                             </div>
-                         ))}
+                                      </div>
+                                      <div className="text-center p-2 bg-green-50 rounded-lg">
+                                          <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
+                                          <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                      </div>
+                                  </div>
+                              </div>
+                          ))}
                     </div>
                     {(!dashboardData.teams || dashboardData.teams.length === 0) && dashboardData.zone && (
                         <div className="bg-blue-50 p-8 rounded-2xl border border-blue-100 text-center">
@@ -372,10 +580,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="text-center px-4 py-2 bg-blue-50 rounded-xl">
-                                    <p className="text-xs text-blue-600">Total Members</p>
+                                    <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Total Members</p>
                                     <p className="font-bold text-blue-900">{selectedTeam.totalMembers || 0}</p>
                                 </div>
-                                <div className="text-center px-4 py-2 bg-green-50 rounded-xl">
+                                <div className="text-center px-4 py-2 bg-purple-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                                    <p className="text-xs text-purple-600">Wallet</p>
+                                    <p className="font-bold text-purple-900">₦{(walletData?.balance || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="text-center px-4 py-2 bg-green-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
                                     <p className="text-xs text-green-600">Performance</p>
                                     <p className="font-bold text-green-900">{selectedTeam.performance || 0}%</p>
                                 </div>
@@ -428,6 +640,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
                                             <th className="px-6 py-4 font-semibold">Joined Date</th>
+                                            {isUserRegionalLeader && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -465,6 +678,17 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                                 </td>
+                                                {isUserRegionalLeader && (
+                                                    <td className="px-6 py-4">
+                                                        <button 
+                                                            onClick={() => openReassignModal(member.email)}
+                                                            className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
+                                                            title="Reassign to another team"
+                                                        >
+                                                            <FaExchangeAlt className="text-[10px]" /> Reassign
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -510,6 +734,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
                                     <th className="px-6 py-4 font-semibold">Joined Date</th>
+                                    {isUserRegionalLeader && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -543,6 +768,17 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                         </td>
+                                        {isUserRegionalLeader && (
+                                            <td className="px-6 py-4">
+                                                <button 
+                                                    onClick={() => openReassignModal(member.email)}
+                                                    className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
+                                                    title="Reassign to another team"
+                                                >
+                                                    <FaExchangeAlt className="text-[10px]" /> Reassign
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -579,6 +815,16 @@ const MyTeamDashboardView = ({ teamId }) => {
                 loading={setLeadLoading}
                 form={setLeadForm}
                 setForm={setSetLeadForm}
+            />
+
+            <ReassignMemberModal
+                isOpen={showReassignModal}
+                onClose={() => setShowReassignModal(false)}
+                onReassign={handleReassignMember}
+                loading={reassignLoading}
+                form={reassignForm}
+                setForm={setReassignForm}
+                teams={availableTeams}
             />
         </div>
     );
