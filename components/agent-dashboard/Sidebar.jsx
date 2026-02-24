@@ -28,10 +28,10 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   const data = response.data;
                   setTeamData(data);
                   
-                  if (data.teams && data.teams.length > 0) {
+                  if (data.role === "regional-leader") {
                       setIsRegionalLeader(true);
                   } 
-                  else if (data.team && data.members) {
+                  else if (data.role === "team-lead") {
                       setIsTeamLeader(true);
                   }
               }
@@ -128,7 +128,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                 <NavItem 
                   href="/agent-dashboard/regional-leader"
                   icon={FaUsers}
-                  label="Regional Leader"
+                  label={isTeamLeader ? "Team Leader" : "Regional Leader"}
                   active={pathname === "/agent-dashboard/regional-leader"}
                 />
 
@@ -177,6 +177,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   icon={FaWallet}
                   label="Withdrawal Requests"
                   active={pathname === "/agent-dashboard/withdrawal-request"}
+                />
+                {/* Transactions */}
+                <NavItem
+                  href="/agent-dashboard/transactions"
+                  icon={FaLayerGroup}
+                  label="Transactions"
+                  active={pathname === "/agent-dashboard/transactions"}
                 />
                 {/* Agent Commission */}
                 <NavItem

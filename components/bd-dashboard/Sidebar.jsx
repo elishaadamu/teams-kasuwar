@@ -28,10 +28,10 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   const data = response.data;
                   setTeamData(data);
                   
-                  if (data.teams && data.teams.length > 0) {
+                  if (data.role === "regional-leader") {
                       setIsRegionalLeader(true);
                   } 
-                  else if (data.team && data.members) {
+                  else if (data.role === "team-lead") {
                       setIsTeamLeader(true);
                   }
               }
@@ -127,7 +127,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   }`}
                 >
                   <FaUsers className="w-5 h-5" />
-                  <span>Regional Leader</span>
+                  <span>{isTeamLeader ? "Team Leader" : "Regional Leader"}</span>
                 </Link>
 
                 {/* Dynamic Team Section */}
@@ -173,6 +173,18 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                 >
                   <FaWallet className="w-5 h-5" />
                   <span>Withdrawal Requests</span>
+                </Link>
+
+                <Link
+                  href="/bd-dashboard/transactions"
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+                    pathname === "/bd-dashboard/transactions"
+                      ? "bg-gray-700"
+                      : ""
+                  }`}
+                >
+                  <FaLayerGroup className="w-5 h-5" />
+                  <span>Transactions</span>
                 </Link>
 
                 {/* Settings */}

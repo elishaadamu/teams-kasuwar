@@ -275,9 +275,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true }),
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_TEAM_MEMBERS + teamId), { withCredentials: true })
                 ]);
-
-
-
                 if (teamsRes.data.success) {
                     setDashboardData(teamsRes.data);
                 }
@@ -285,14 +282,14 @@ const MyTeamDashboardView = ({ teamId }) => {
             } else {
                 // No team selected: use default dashboard endpoint
                 const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-
+                console.log(response.data)
                 if (response.data.success) {
                     setDashboardData(response.data);
+                    setTeamMembers(response.data.members || []);
                 }
-                setTeamMembers([]);
+              
             }
         } catch (error) {
-            console.error("Error fetching team dashboard:", error);
             toast.error(error?.response?.data?.message || "Failed to load team data");
         } finally {
             setLoading(false);
@@ -303,9 +300,10 @@ const MyTeamDashboardView = ({ teamId }) => {
         try {
             setWalletLoading(true);
             let endpoint = "";
+            const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
             
-            if (teamId) {
-                endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_TEAM + teamId;
+            if (currentTeamId) {
+                endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_TEAM + currentTeamId;
             } else if (dashboardData?.zone?._id || dashboardData?.zone?.id) {
                 endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL + (dashboardData.zone._id || dashboardData.zone.id);
             } else if (userData?.zoneId) {
@@ -322,7 +320,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                         setWalletData({ balance: 0, currency: "NGN" });
                     }
                 } catch (err) {
-                    console.warn(`Wallet API error for ${endpoint}:`, err.message);
                     setWalletData({ balance: 0, currency: "NGN" });
                 }
             }
@@ -341,11 +338,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                         setTeamWallets(walletMap);
                     }
                 } catch (err) {
-                    console.warn("Error fetching all teams wallets:", err.message);
                 }
             }
         } catch (error) {
-            console.error("Error fetching wallet data:", error);
         } finally {
             setWalletLoading(false);
         }
@@ -384,7 +379,6 @@ const MyTeamDashboardView = ({ teamId }) => {
             setAssignForm({ email: "", role: "bd", teamId: "" });
             fetchData(); // Refresh data
         } catch (error) {
-            console.error("Assignment error:", error);
             toast.error(error?.response?.data?.message || "Failed to assign member");
         } finally {
             setAssignLoading(false);
@@ -406,7 +400,6 @@ const MyTeamDashboardView = ({ teamId }) => {
             setSetLeadForm({ email: "", teamId: "" });
             fetchData(); // Refresh data
         } catch (error) {
-            console.error("Set Team Lead error:", error);
             toast.error(error?.response?.data?.message || "Failed to set Team Leader");
         } finally {
             setSetLeadLoading(false);
@@ -428,7 +421,6 @@ const MyTeamDashboardView = ({ teamId }) => {
             setReassignForm({ email: "", teamId: "" });
             fetchData(); // Refresh data
         } catch (error) {
-            console.error("Reassignment error:", error);
             toast.error(error?.response?.data?.message || "Failed to reassign member");
         } finally {
             setReassignLoading(false);
@@ -549,7 +541,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                     <p className="text-gray-500 text-sm">
                         {isSingleTeamFromRegion 
                             ? `Team: ${selectedTeam.name || "Selected Team"}`
-                            : `Overview of your ${isRegionalView ? "Region's Teams" : "Team Members"}`
+                            : (dashboardData.team?.name || dashboardData.teamName)
+                                ? `Team: ${dashboardData.team?.name || dashboardData.teamName}`
+                                : `Overview of your ${isRegionalView ? "Region's Teams" : "Team Members"}`
                         }
                     </p>
                 </div>
@@ -767,7 +761,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
                                             <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                            {isUserRegionalLeader && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                            {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -805,7 +799,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                                 </td>
-                                                {isUserRegionalLeader && (
+                                                {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && (
                                                     <td className="px-6 py-4">
                                                         <button 
                                                             onClick={() => openReassignModal(member.email)}
@@ -861,7 +855,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
                                     <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                    {isUserRegionalLeader && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                    {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -895,7 +889,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                         </td>
-                                        {isUserRegionalLeader && (
+                                        {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && (
                                             <td className="px-6 py-4">
                                                 <button 
                                                     onClick={() => openReassignModal(member.email)}

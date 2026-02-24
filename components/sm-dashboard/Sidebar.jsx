@@ -45,10 +45,10 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   const data = response.data;
                   setTeamData(data);
                   
-                  if (data.teams && data.teams.length > 0) {
+                  if (data.role === "regional-leader") {
                       setIsRegionalLeader(true);
                   } 
-                  else if (data.team && data.members) {
+                  else if (data.role === "team-lead") {
                       setIsTeamLeader(true);
                   }
               }
@@ -184,7 +184,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
             <NavItem
               href="/sales-manager/regional-leader"
               icon={FaUsers}
-              label="Regional Leader"
+              label={isTeamLeader ? "Team Leader" : "Regional Leader"}
               active={pathname.includes("/sales-manager/regional-leader")}
             />
 
@@ -245,6 +245,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               icon={FaMoneyBillWave}
               label="Withdrawal Request"
               active={pathname.includes("/sales-manager/withdrawal-request")}
+            />
+
+            <NavItem
+              href="/sales-manager/transactions"
+              icon={FaLayerGroup}
+              label="Transactions"
+              active={pathname.includes("/sales-manager/transactions")}
             />
 
             <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
