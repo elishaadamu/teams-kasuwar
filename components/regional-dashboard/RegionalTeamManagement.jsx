@@ -29,7 +29,7 @@ const RegionalTeamManagement = () => {
       response.data.zones
     );
     } catch (error) {
-      alert(error);
+
     }
   };  
   useEffect(() => {
@@ -73,7 +73,7 @@ const RegionalTeamManagement = () => {
       role: assignForm.role,
       teamId: assignForm.teamId || assignForm.stateId
     }
-    console.log(payload);
+
     try {
       await axios.post(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.ASSIGN_MEMBER), 
        payload

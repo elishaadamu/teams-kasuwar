@@ -20,7 +20,7 @@ const HeaderSlider = () => {
         const response = await axios.get(
           apiUrl(API_CONFIG.ENDPOINTS.BANNERS.GET_ALL)
         );
-        console.log(response.data);
+
         setBanners(response.data.banners);
       } catch (err) {
         console.error("Failed to fetch banners:", err);

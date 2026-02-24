@@ -121,7 +121,7 @@ const DashboardHome = () => {
             withCredentials: true,
           }),
         ]);
-        console.log(walletResponse.data);
+
 
         setWalletBalance(walletResponse.data.data.wallet);
 
@@ -153,7 +153,7 @@ const DashboardHome = () => {
         // Assuming the API returns the most recent first, we take the top 5
         setRecentWithdrawals(withdrawalsList.slice(0, 5));
       } catch (error) {
-        console.log(error);
+
         toast.error("Failed to fetch dashboard data. Please contact support.");
       } finally {
         setLoading(false);

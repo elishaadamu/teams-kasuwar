@@ -83,7 +83,7 @@ const ManageAgentsPage = () => {
       const response = await axios.get(
         apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.GET_BD_DOWNLINES + userData._id)
       );
-      console.log(response.data);
+
       const fetchedAgents =
         response.data?.results?.entities?.agents?.list || [];
       setAgents(fetchedAgents);
@@ -184,7 +184,7 @@ const ManageAgentsPage = () => {
       role: "bd",
       managerId: userData._id,
     };
-    console.log(payload);
+
     try {
       await axios.post(
         apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.CREATE_AGENT),

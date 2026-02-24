@@ -122,7 +122,7 @@ const DashboardHome = () => {
           }),
         ]);
 
-        console.log(downlinesResponse);
+
         setWalletBalance(walletResponse.data.data.wallet);
 
         if (profileResponse.data?.data?.manager) {

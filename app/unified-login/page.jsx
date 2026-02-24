@@ -61,11 +61,11 @@ const page = () => {
         router.push("/sales-manager");
       } else if (userRole === "agent") {
         router.push("/agent-dashboard");
-      } else if (userRole === "admin") {
+      } else if (userRole === "bdm") {
         router.push("/dashboard");
       } else if (userRole === "bd") {
         router.push("/bd-dashboard");
-      } else if (userRole === "bdm") {
+      } else if (userRole === "none") {
         router.push("/regional-dashboard");
       } else {
         router.push("/");

@@ -26,7 +26,7 @@ const AgentCommissionPage = () => {
           apiUrl(API_CONFIG.ENDPOINTS.USER_SIDE.AGENT_COMMISSION + userData.id),
           { withCredentials: true },
         );
-
+        console.log(response.data);
         setCommissions(response.data.commissions || []);
         setError(null);
       } catch (err) {

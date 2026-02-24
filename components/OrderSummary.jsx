@@ -127,7 +127,7 @@ const OrderSummary = () => {
       totalAmount: totalAmount,
       couponCode: couponDiscount > 0 ? couponCode : null,
     };
-    console.log(payload);
+
     if (!payload.vendorId) {
       Swal.fire({
         icon: "error",

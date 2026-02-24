@@ -81,7 +81,7 @@ const DashboardHome = () => {
               { withCredentials: true },
             ),
           ]);
-
+          console.log(walletResponse.data);
         setWalletBalance(walletResponse.data.data);
         const referredUsers = downlinesResponse.data?.referredUsers || [];
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, teams, showTeamSelect }) => {
@@ -174,6 +174,66 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
     );
 };
 
+const CreateTeamModal = ({ isOpen, onClose, onCreate, loading, form, setForm, fetchingStates, states }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Create New Team</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <FaTimes />
+                    </button>
+                </div>
+                <form onSubmit={onCreate} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                        <select
+                            name="state"
+                            value={form.state}
+                            required
+                            onChange={(e) => setForm({ ...form, state: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            disabled={fetchingStates}
+                        >
+                            <option value="">{fetchingStates ? "Loading states..." : "Select State"}</option>
+                            {states.map((team) => (
+                                <option key={team._id || team.id} value={team.state || team.name}>
+                                    {team.state || team.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={form.name}
+                            required
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            placeholder="e.g. Kano Market Team-A"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {loading ? <FaSpinner className="animate-spin" /> : <FaPlusCircle />}
+                        {loading ? "Creating..." : "Create Team"}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
 const MyTeamDashboardView = ({ teamId }) => {
     const { userData } = useAppContext();
     const [loading, setLoading] = useState(true);
@@ -198,6 +258,13 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [reassignLoading, setReassignLoading] = useState(false);
     const [reassignForm, setReassignForm] = useState({ email: "", teamId: "" });
 
+    // Create Team Modal State
+    const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+    const [createTeamLoading, setCreateTeamLoading] = useState(false);
+    const [createTeamForm, setCreateTeamForm] = useState({ name: "", state: "", zoneId: "" });
+    const [fetchingStates, setFetchingStates] = useState(false);
+    const [selectedZoneStates, setSelectedZoneStates] = useState([]);
+
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -209,8 +276,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_TEAM_MEMBERS + teamId), { withCredentials: true })
                 ]);
 
-                console.log("Teams Response:", teamsRes.data);
-                console.log("Members Response:", membersRes.data);
+
 
                 if (teamsRes.data.success) {
                     setDashboardData(teamsRes.data);
@@ -219,7 +285,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             } else {
                 // No team selected: use default dashboard endpoint
                 const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-                console.log("Dashboard Response:", response.data);
+
                 if (response.data.success) {
                     setDashboardData(response.data);
                 }
@@ -249,7 +315,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             if (endpoint) {
                 try {
                     const response = await axios.get(apiUrl(endpoint), { withCredentials: true });
-                    console.log("Main Wallet Response:", response.data);
+
                     if (response.data.success) {
                         setWalletData(response.data.wallet || response.data.data || { balance: 0, currency: "NGN" });
                     } else {
@@ -266,7 +332,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 try {
                     const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData.zoneId;
                     const teamsWalletRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL_TEAMS + zoneId + "/teams"), { withCredentials: true });
-                    console.log("All Teams Wallets Response:", teamsWalletRes.data);
+
                     if (teamsWalletRes.data.success) {
                         const walletMap = {};
                         (teamsWalletRes.data.teamWallets || teamsWalletRes.data.data || []).forEach(w => {
@@ -306,7 +372,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 role: assignForm.role,
                 teamId: assignForm.teamId || teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id)
             };
-            console.log("Assign Member Payload:", payload);
+
             if (!payload.teamId) {
                 toast.error("Team ID is missing. Please select a team.");
                 setAssignLoading(false);
@@ -368,6 +434,57 @@ const MyTeamDashboardView = ({ teamId }) => {
             setReassignLoading(false);
         }
     };
+
+    const fetchTeamStates = async (zoneId) => {
+        if (!zoneId) return;
+        setFetchingStates(true);
+        try {
+            const response = await axios.get(apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${zoneId}/teams`), { withCredentials: true });
+            if (response.data) {
+                setSelectedZoneStates(response.data.teams || []);
+            }
+        } catch (error) {
+            toast.error("Failed to fetch states for selected zone");
+        } finally {
+            setFetchingStates(false);
+        }
+    };
+
+    const handleCreateTeam = async (e) => {
+        e.preventDefault();
+        setCreateTeamLoading(true);
+        try {
+            const url = apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.CREATE_TEAM}${createTeamForm.zoneId}/teams`);
+            await axios.post(url, {
+                name: createTeamForm.name,
+                state: createTeamForm.state
+            }, { withCredentials: true });
+
+            toast.success("Team created successfully!");
+            setShowCreateTeamModal(false);
+            setCreateTeamForm({ name: "", state: "", zoneId: "" });
+            fetchData(); // Refresh data
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to create team");
+        } finally {
+            setCreateTeamLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (showCreateTeamModal) {
+            const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+            const zoneName = dashboardData?.zone?.name || "your assigned zone";
+            
+            if (zoneId) {
+                setCreateTeamForm(prev => ({ ...prev, zoneId }));
+                fetchTeamStates(zoneId);
+            } else {
+                toast.warn("Could not identify your zone. Please contact support.");
+            }
+        }
+    }, [showCreateTeamModal, dashboardData, userData]);
+
 
     const openSetLeadModal = (teamId) => {
         setSetLeadForm({ email: "", teamId });
@@ -437,23 +554,33 @@ const MyTeamDashboardView = ({ teamId }) => {
                     </p>
                 </div>
                 
-                {/* Show assign button if we have teams (Regional) or a specific team (Team Lead) */}
-                {(isRegionalView || isTeamView) && (
-                    <button 
-                        onClick={() => {
-                            if (!isRegionalView) {
-                                const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
-                                if (currentTeamId) {
-                                    setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                {/* Actions: Create Team (Regional) and Assign Member */}
+                <div className="flex flex-wrap items-center gap-3">
+                    {isRegionalView && (
+                        <button 
+                            onClick={() => setShowCreateTeamModal(true)}
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 w-fit"
+                        >
+                            <FaPlusCircle className="text-sm" /> Create Team
+                        </button>
+                    )}
+                    {(isRegionalView || isTeamView) && (
+                        <button 
+                            onClick={() => {
+                                if (!isRegionalView) {
+                                    const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
+                                    if (currentTeamId) {
+                                        setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                                    }
                                 }
-                            }
-                            setShowAssignModal(true);
-                        }}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
-                    >
-                        <FaUserPlus className="text-sm" /> Assign Member
-                    </button>
-                )}
+                                setShowAssignModal(true);
+                            }}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
+                        >
+                            <FaUserPlus className="text-sm" /> Assign Member
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Wallet Overview */}
@@ -807,6 +934,18 @@ const MyTeamDashboardView = ({ teamId }) => {
                 teams={availableTeams}
                 showTeamSelect={isRegionalView}
             />
+
+            <CreateTeamModal 
+                isOpen={showCreateTeamModal}
+                onClose={() => setShowCreateTeamModal(false)}
+                onCreate={handleCreateTeam}
+                loading={createTeamLoading}
+                form={createTeamForm}
+                setForm={setCreateTeamForm}
+                fetchingStates={fetchingStates}
+                states={selectedZoneStates}
+            />
+
 
             <SetTeamLeadModal
                 isOpen={showSetLeadModal}
