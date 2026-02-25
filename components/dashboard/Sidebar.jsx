@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
-import { FaUsers, FaWallet, FaLayerGroup, FaUser, FaUserTie } from "react-icons/fa";
+import { FaUsers, FaWallet, FaLayerGroup, FaUser, FaUserTie, FaTruck, FaMoneyBillWave, FaLock } from "react-icons/fa";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
@@ -192,6 +192,26 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   <span>Transactions</span>
                 </Link>
 
+                <Link
+                  href="/dashboard/delivery-request"
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+                    pathname === "/dashboard/delivery-request" ? "bg-gray-700" : ""
+                  }`}
+                >
+                  <FaTruck className="w-5 h-5" />
+                  <span>Delivery Request</span>
+                </Link>
+
+                <Link
+                  href="/dashboard/delivery-payment"
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+                    pathname === "/dashboard/delivery-payment" ? "bg-gray-700" : ""
+                  }`}
+                >
+                  <FaMoneyBillWave className="w-5 h-5" />
+                  <span>Delivery Payment</span>
+                </Link>
+
                 {/* Settings */}
                 <Link
                   href="/dashboard/personal-details"
@@ -215,6 +235,16 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                     />
                   </svg>
                   <span>Personal Details</span>
+                </Link>
+
+                <Link
+                  href="/dashboard/pin-management"
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
+                    pathname === "/dashboard/pin-management" ? "bg-gray-700" : ""
+                  }`}
+                >
+                  <FaLock className="w-5 h-5" />
+                  <span>PIN Management</span>
                 </Link>
               </>
             )}

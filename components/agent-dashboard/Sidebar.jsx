@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
-import { FaUsers, FaWallet, FaPercentage, FaLayerGroup, FaUser, FaUserTie } from "react-icons/fa";
+import { FaUsers, FaWallet, FaPercentage, FaLayerGroup, FaUser, FaUserTie, FaTruck, FaMoneyBillWave, FaLock } from "react-icons/fa";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
@@ -192,6 +192,20 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   label="Agent Commission"
                   active={pathname === "/agent-dashboard/agent-commission"}
                 />
+                <NavItem
+                  href="/agent-dashboard/delivery-request"
+                  icon={FaTruck}
+                  label="Delivery Request"
+                  active={pathname === "/agent-dashboard/delivery-request"}
+                />
+
+                <NavItem
+                  href="/agent-dashboard/delivery-payment"
+                  icon={FaMoneyBillWave}
+                  label="Delivery Payment"
+                  active={pathname === "/agent-dashboard/delivery-payment"}
+                />
+
                 {/* Settings */}
                 <NavItem
                   href="/agent-dashboard/personal-details"
@@ -212,6 +226,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   )}
                   label="Personal Details"
                   active={pathname === "/agent-dashboard/personal-details"}
+                />
+
+                <NavItem
+                  href="/agent-dashboard/pin-management"
+                  icon={FaLock}
+                  label="PIN Management"
+                  active={pathname === "/agent-dashboard/pin-management"}
                 />
               </>
             )}

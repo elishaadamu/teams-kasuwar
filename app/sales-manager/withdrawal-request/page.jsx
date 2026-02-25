@@ -30,9 +30,11 @@ const WithdrawalRequestPage = () => {
         ),
         { withCredentials: true },
       );
-
+      console.log(response.data.data.balance);
       setWalletBalance(response.data.data.balance || 0);
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   }, [userData]);
 
   const fetchWithdrawals = useCallback(async () => {

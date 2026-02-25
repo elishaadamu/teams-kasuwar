@@ -18,6 +18,7 @@ import {
   FaLayerGroup,
   FaUser,
   FaTruck,
+  FaLock,
 } from "react-icons/fa";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import Modal from "@/components/Modal";
@@ -278,6 +279,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               icon={FaUserCog}
               label="Settings"
               active={pathname.includes("/sales-manager/personal-details")}
+            />
+
+            <NavItem
+              href="/sales-manager/pin-management"
+              icon={FaLock}
+              label="PIN Management"
+              active={pathname.includes("/sales-manager/pin-management")}
             />
           </nav>
         </div>

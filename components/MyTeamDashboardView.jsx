@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight } from "react-icons/fa";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
 
 const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, teams, showTeamSelect }) => {
@@ -236,6 +237,8 @@ const CreateTeamModal = ({ isOpen, onClose, onCreate, loading, form, setForm, fe
 
 const MyTeamDashboardView = ({ teamId }) => {
     const { userData } = useAppContext();
+    const router = useRouter();
+    const pathname = usePathname();
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState(null);
     const [teamMembers, setTeamMembers] = useState([]);
@@ -275,6 +278,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true }),
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_TEAM_MEMBERS + teamId), { withCredentials: true })
                 ]);
+                
                 if (teamsRes.data.success) {
                     setDashboardData(teamsRes.data);
                 }
@@ -282,7 +286,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             } else {
                 // No team selected: use default dashboard endpoint
                 const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-                console.log(response.data)
+               
                 if (response.data.success) {
                     setDashboardData(response.data);
                     setTeamMembers(response.data.members || []);
@@ -329,15 +333,18 @@ const MyTeamDashboardView = ({ teamId }) => {
                 try {
                     const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData.zoneId;
                     const teamsWalletRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL_TEAMS + zoneId + "/teams"), { withCredentials: true });
-
+                    
                     if (teamsWalletRes.data.success) {
                         const walletMap = {};
-                        (teamsWalletRes.data.teamWallets || teamsWalletRes.data.data || []).forEach(w => {
-                            walletMap[w.teamId] = w;
+                        const wallets = teamsWalletRes.data.wallets || teamsWalletRes.data.teamWallets || teamsWalletRes.data.data || [];
+                        wallets.forEach(w => {
+                            const tId = w.teamId?._id || w.teamId;
+                            if (tId) walletMap[tId] = w;
                         });
                         setTeamWallets(walletMap);
                     }
                 } catch (err) {
+                  
                 }
             }
         } catch (error) {
@@ -478,6 +485,18 @@ const MyTeamDashboardView = ({ teamId }) => {
     }, [showCreateTeamModal, dashboardData, userData]);
 
 
+    const handleViewTeam = (tId) => {
+        let base = "";
+        if (pathname.includes("/bd-dashboard")) base = "/bd-dashboard";
+        else if (pathname.includes("/agent-dashboard")) base = "/agent-dashboard";
+        else if (pathname.includes("/sales-manager")) base = "/sales-manager";
+        else if (pathname.includes("/dashboard")) base = "/dashboard";
+        
+        if (base) {
+            router.push(`${base}/team?id=${tId}`);
+        }
+    };
+
     const openSetLeadModal = (teamId) => {
         setSetLeadForm({ email: "", teamId });
         setShowSetLeadModal(true);
@@ -578,7 +597,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             </div>
 
             {/* Wallet Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isRegionalView ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6`}>
                 <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-100 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <FaWallet className="text-8xl" />
@@ -591,7 +610,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                         {walletLoading ? (
                              <FaSpinner className="animate-spin text-2xl" />
                         ) : (
-                            <h2 className="text-3xl font-bold">₦{walletData?.balance?.toLocaleString() || "0"}</h2>
+                            <h2 className="text-2xl font-bold">₦{walletData?.balance?.toLocaleString() || "0"}</h2>
                         )}
                         <p className="text-xs mt-2 opacity-60">Currency: {walletData?.currency || "NGN"}</p>
                     </div>
@@ -607,13 +626,34 @@ const MyTeamDashboardView = ({ teamId }) => {
                     </div>
                 </div>
 
+                {isRegionalView && (
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                            <FaLayerGroup className="text-xl" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Region Teams</p>
+                            <h3 className="text-2xl font-bold text-gray-800">
+                                {dashboardData?.totalTeams || dashboardData?.teams?.length || 0}
+                            </h3>
+                        </div>
+                    </div>
+                )}
+
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
                         <FaUsers className="text-xl" />
                     </div>
                     <div>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Region Members</p>
-                        <h3 className="text-2xl font-bold text-gray-800">{dashboardData?.stats?.totalMembers || dashboardData?.totalMembers || teamMembers?.length || 0}</h3>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                            {isRegionalView ? "Region Members" : "Team Members"}
+                        </p>
+                        <h3 className="text-2xl font-bold text-gray-800">
+                            {isRegionalView 
+                                ? (dashboardData?.totalMembers || (dashboardData?.teams?.reduce((acc, t) => acc + (t.totalMembers || 0), 0)) || 0)
+                                : (teamMembers?.length || 0)
+                            }
+                        </h3>
                     </div>
                 </div>
             </div>
@@ -623,19 +663,32 @@ const MyTeamDashboardView = ({ teamId }) => {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {dashboardData.teams?.map((team, index) => (
-                             <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative">
-                                 <div className="flex items-center gap-4 mb-4">
-                                     <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
-                                         <FaLayerGroup />
+                             <div 
+                                 key={index} 
+                                 className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative group cursor-pointer"
+                                 onClick={(e) => {
+                                     if (!e.target.closest('button')) {
+                                         handleViewTeam(team._id || team.id);
+                                     }
+                                 }}
+                             >
+                                 <div className="flex items-center justify-between mb-4">
+                                     <div className="flex items-center gap-4">
+                                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                             <FaLayerGroup />
+                                         </div>
+                                         <div>
+                                             <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{team.name || "Unnamed Team"}</h3>
+                                              <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
+                                         </div>
                                      </div>
-                                     <div>
-                                         <h3 className="font-bold text-gray-800">{team.name || "Unnamed Team"}</h3>
-                                          <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
+                                     <div className="p-2 text-gray-300 group-hover:text-blue-500 transition-colors">
+                                         <FaChevronRight className="text-sm" />
                                      </div>
                                  </div>
                                  
                                  <div className="space-y-3">
-                                     <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl group">
+                                     <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl group/lead">
                                         <div className="flex items-center gap-3">
                                              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
                                                  <FaUserTie className="text-sm" />
@@ -648,7 +701,10 @@ const MyTeamDashboardView = ({ teamId }) => {
                                              </div>
                                         </div>
                                          <button 
-                                            onClick={() => openSetLeadModal(team._id || team.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openSetLeadModal(team._id || team.id);
+                                            }}
                                             className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
                                             title="Set Team Leader"
                                          >
@@ -666,12 +722,21 @@ const MyTeamDashboardView = ({ teamId }) => {
                                              <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
                                          </div>
                                       </div>
-                                      <div className="text-center p-2 bg-green-50 rounded-lg">
-                                          <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
-                                          <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                      
+                                      <div className="flex items-center justify-between gap-2 mt-2">
+                                          <div className="flex-1 text-center p-2 bg-green-50 rounded-lg">
+                                              <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
+                                              <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                          </div>
                                       </div>
-                                  </div>
-                              </div>
+
+                                      <div className="pt-3 mt-1 border-t border-gray-50 flex justify-center">
+                                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              View Team Details <FaArrowRight />
+                                          </span>
+                                      </div>
+                                   </div>
+                               </div>
                           ))}
                     </div>
                     {(!dashboardData.teams || dashboardData.teams.length === 0) && dashboardData.zone && (
