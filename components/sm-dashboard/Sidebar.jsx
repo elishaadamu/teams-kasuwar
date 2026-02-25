@@ -17,6 +17,7 @@ import {
   FaMoneyBillWave,
   FaLayerGroup,
   FaUser,
+  FaTruck,
 } from "react-icons/fa";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import Modal from "@/components/Modal";
@@ -225,6 +226,20 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               icon={FaUsers}
               label="Manage Customers"
               active={pathname.includes("/sales-manager/customers")}
+            />
+
+            <NavItem
+              href="/sales-manager/delivery-request"
+              icon={FaTruck}
+              label="Delivery Request"
+              active={pathname.includes("/sales-manager/delivery-request")}
+            />
+
+            <NavItem
+              href="/sales-manager/delivery-payment"
+              icon={FaMoneyBillWave}
+              label="Delivery Payment"
+              active={pathname.includes("/sales-manager/delivery-payment")}
             />
 
             {/* Role specific links - defaulting to show if SM or fallback */}
