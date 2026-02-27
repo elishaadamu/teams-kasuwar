@@ -288,6 +288,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 let response;
                 try {
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+                    console.log(response.data);
                 } catch (error) {
                     // Fallback to my-team endpoint for regular team members if dashboard is restricted
                     if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
@@ -586,7 +587,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                             <FaPlusCircle className="text-sm" /> Create Team
                         </button>
                     )}
-                    {(isRegionalView || isTeamView) && (
+                    {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (
                         <button 
                             onClick={() => {
                                 if (!isRegionalView) {
@@ -835,7 +836,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
                                             <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                            {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                            {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -873,7 +874,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                                 </td>
-                                                {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && (
+                                                {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                                     <td className="px-6 py-4">
                                                         <button 
                                                             onClick={() => openReassignModal(member.email)}
@@ -929,7 +930,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
                                     <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                    {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                    {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -963,7 +964,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                         </td>
-                                        {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && (
+                                        {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                             <td className="px-6 py-4">
                                                 <button 
                                                     onClick={() => openReassignModal(member.email)}

@@ -18,13 +18,19 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const [teamData, setTeamData] = useState(null);
   const [isRegionalLeader, setIsRegionalLeader] = useState(false);
   const [isTeamLeader, setIsTeamLeader] = useState(false);
+  const [isTeamMember, setIsTeamMember] = useState(false);
 
   useEffect(() => {
       const fetchTeamData = async () => {
           if (!userData) return;
           try {
-              const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-              if (response.data.success) {
+              let response;
+              try {
+                  response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+              } catch (error) {
+                  response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+              }
+              if (response?.data?.success) {
                   const data = response.data;
                   setTeamData(data);
                   
@@ -33,6 +39,9 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   } 
                   else if (data.role === "team-lead") {
                       setIsTeamLeader(true);
+                  }
+                  else if (data.role === "member") {
+                      setIsTeamMember(true);
                   }
               }
           } catch (error) {
@@ -128,15 +137,15 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                 <NavItem 
                   href="/agent-dashboard/regional-leader"
                   icon={FaUsers}
-                  label={isTeamLeader ? "Team Leader" : "Regional Leader"}
+                  label={isTeamLeader ? "Team Leader" : isTeamMember ? "My Team" : "Regional Leader"}
                   active={pathname === "/agent-dashboard/regional-leader"}
                 />
 
                 {/* Dynamic Team Section */}
-                {(isRegionalLeader || isTeamLeader) && (
+                {(isRegionalLeader || isTeamLeader || isTeamMember) && (
                     <div className="mt-2 mb-2 ml-4 border-l border-gray-700 pl-2">
                         <p className="px-2 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            {isRegionalLeader ? "Region Teams" : "Team Members"}
+                            {isRegionalLeader ? "Region Teams" : isTeamLeader ? "Team Members" : "My Team"}
                         </p>
                         <div className="space-y-1">
                             {isRegionalLeader && teamData?.teams?.map((team) => (
@@ -152,7 +161,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                                 </Link>
                             ))}
 
-                            {isTeamLeader && teamData?.members?.map((member) => (
+                            {(isTeamLeader || isTeamMember) && teamData?.members?.map((member) => (
                                 <div key={member.email} className="flex items-center space-x-3 px-3 py-1.5 text-gray-400 hover:text-white transition-colors">
                                     <FaUser className="w-3 h-3" />
                                     <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
