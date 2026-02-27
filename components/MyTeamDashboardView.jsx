@@ -285,13 +285,22 @@ const MyTeamDashboardView = ({ teamId }) => {
                 setTeamMembers(membersRes.data?.members || []);
             } else {
                 // No team selected: use default dashboard endpoint
-                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+                let response;
+                try {
+                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+                } catch (error) {
+                    // Fallback to my-team endpoint for regular team members if dashboard is restricted
+                    if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
+                         response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                    } else {
+                         response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                    }
+                }
                
-                if (response.data.success) {
+                if (response?.data?.success) {
                     setDashboardData(response.data);
                     setTeamMembers(response.data.members || []);
                 }
-              
             }
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to load team data");
