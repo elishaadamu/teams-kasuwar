@@ -117,8 +117,8 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
             <div className="bg-white rounded-3xl w-full max-w-4xl my-8 shadow-2xl animate-in fade-in zoom-in duration-300 overflow-hidden">
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-800">Register New {form.role === 'sm' ? 'Sales Manager' : 'BDM'}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Fill in all required information to create a new team member account.</p>
+                        <h3 className="text-2xl font-bold text-gray-800">Register New {form.role === 'sm' ? 'Sales Manager' : 'Business Development Manager'}</h3>
+                        <p className="text-sm text-gray-500 mt-1">Fill in all required information to create a new {form.role === 'sm' ? 'SM' : 'BDM'} account.</p>
                     </div>
                     <button onClick={onClose} className="p-2 bg-white rounded-full shadow-sm hover:bg-red-50 hover:text-red-500 transition-all text-gray-400">
                         <FaTimes className="text-xl" />
@@ -331,7 +331,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             className="flex-[2] px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? <FaSpinner className="animate-spin" /> : <FaUserCheck />}
-                            {loading ? "Processing..." : `Register ${form.role.toUpperCase()} Member`}
+                            {loading ? "Processing..." : `Register ${form.role === 'sm' ? 'Sales Manager' : 'Business Development Manager'}`}
                         </button>
                     </div>
                 </form>
@@ -559,14 +559,16 @@ const MyTeamDashboardView = ({ teamId }) => {
                 // No team selected: use default dashboard endpoint
                 let response;
                 try {
-                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-                    console.log(response.data);
+                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                    console.log("dashboard",response.data);
                 } catch (error) {
                     // Fallback to my-team endpoint for regular team members if dashboard is restricted
                     if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
                          response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                         console.log("my-team",response.data);
                     } else {
                          response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                         console.log("my-team",response.data);
                     }
                 }
                
@@ -766,9 +768,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             };
 
             const payload = { ...registerForm };
-            
-            // Remove role from payload if not needed by backend, but usually it's used to select endpoint
-            // Let's keep it if the backend needs it, or remove it before sending
+            delete payload.role; // Remove role as it's not in the target payload schema
             
             if (payload.passportPhoto) {
                 payload.passportPhoto = await convertToBase64(payload.passportPhoto);
