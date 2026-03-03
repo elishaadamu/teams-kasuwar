@@ -158,6 +158,8 @@ export const API_CONFIG = {
       GET_MY_TEAM_DASHBOARD: "/admin/regional/management/my-team-dashboard",
       GET_TEAM_MEMBERS: "/team-members/team/", // append teamId
       GET_MY_TEAM: "/team-members/my-team",
+      REGISTER_SM: "/team-members/register-sm",
+      REGISTER_BDM: "/team-members/register-bdm",
     },
     ZONE_WALLET: {
       GET_ALL_REGIONAL: "/zone-wallet/regional/all",

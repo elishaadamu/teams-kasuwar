@@ -3,9 +3,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt } from "react-icons/fa";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
+import statesData from "@/lib/states.json";
+import lgasData from "@/lib/lgas.json";
 
 const MetricCard = ({ icon, title, value, bg }) => (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -23,8 +25,8 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 my-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <h3 className="text-xl font-bold text-gray-800">Assign New Member</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -93,12 +95,257 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
     );
 };
 
+const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setForm }) => {
+    if (!isOpen) return null;
+
+    const handleChange = (e) => {
+        const { name, value, files } = e.target;
+        if (files) {
+            setForm({ ...form, [name]: files[0] });
+        } else if (name === 'state') {
+            // Reset LGA when state changes
+            setForm({ ...form, state: value, localGovt: "" });
+        } else {
+            setForm({ ...form, [name]: value });
+        }
+    };
+
+    const availableLgas = form.state ? (lgasData[form.state] || []) : [];
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
+            <div className="bg-white rounded-3xl w-full max-w-4xl my-8 shadow-2xl animate-in fade-in zoom-in duration-300 overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
+                    <div>
+                        <h3 className="text-2xl font-bold text-gray-800">Register New {form.role === 'sm' ? 'Sales Manager' : 'BDM'}</h3>
+                        <p className="text-sm text-gray-500 mt-1">Fill in all required information to create a new team member account.</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-white rounded-full shadow-sm hover:bg-red-50 hover:text-red-500 transition-all text-gray-400">
+                        <FaTimes className="text-xl" />
+                    </button>
+                </div>
+                
+                <form onSubmit={onRegister} className="p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Personal Information Section */}
+                        <div className="lg:col-span-3">
+                            <h4 className="flex items-center gap-2 text-indigo-600 font-bold uppercase tracking-wider text-xs mb-4">
+                                <FaUser className="text-sm" /> Personal Information
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name</label>
+                                    <div className="relative">
+                                        <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" />
+                                        <input name="firstName" required value={form.firstName} onChange={handleChange} placeholder="John" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name</label>
+                                    <div className="relative">
+                                        <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="lastName" required value={form.lastName} onChange={handleChange} placeholder="Doe" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
+                                    <div className="relative">
+                                        <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="email" type="email" required value={form.email} onChange={handleChange} placeholder="john@example.com" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Phone Number</label>
+                                    <div className="relative">
+                                        <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="phone" required value={form.phone} onChange={handleChange} placeholder="08012345678" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
+                                    <div className="relative">
+                                        <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="password" type="password" required value={form.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Date of Birth</label>
+                                    <div className="relative">
+                                        <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="dateOfBirth" type="date" required value={form.dateOfBirth} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Gender</label>
+                                    <div className="relative">
+                                        <FaVenusMars className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <select name="gender" required value={form.gender} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Marital Status</label>
+                                    <div className="relative">
+                                        <FaHeart className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <select name="maritalStatus" required value={form.maritalStatus} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
+                                            <option value="">Select Status</option>
+                                            <option value="Single">Single</option>
+                                            <option value="Married">Married</option>
+                                            <option value="Divorced">Divorced</option>
+                                            <option value="Widowed">Widowed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Address Section */}
+                        <div className="lg:col-span-3 pt-4 border-t border-gray-100">
+                            <h4 className="flex items-center gap-2 text-orange-600 font-bold uppercase tracking-wider text-xs mb-4">
+                                <FaMapMarkerAlt className="text-sm" /> Location Details
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2 space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Address</label>
+                                    <div className="relative">
+                                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="address" required value={form.address} onChange={handleChange} placeholder="123 Shopping Mall Way" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">State</label>
+                                    <div className="relative">
+                                        <FaGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <select 
+                                            name="state" 
+                                            required 
+                                            value={form.state} 
+                                            onChange={handleChange} 
+                                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm appearance-none"
+                                        >
+                                            <option value="">Select State</option>
+                                            {statesData.state.map(state => (
+                                                <option key={state} value={state}>{state}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">LGA</label>
+                                    <div className="relative">
+                                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <select 
+                                            name="localGovt" 
+                                            required 
+                                            value={form.localGovt} 
+                                            onChange={handleChange} 
+                                            disabled={!form.state}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm appearance-none disabled:opacity-50"
+                                        >
+                                            <option value="">{form.state ? "Select LGA" : "Choose State first"}</option>
+                                            {availableLgas.map(lga => (
+                                                <option key={lga} value={lga}>{lga}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bank Details Section */}
+                        <div className="lg:col-span-3 pt-4 border-t border-gray-100">
+                            <h4 className="flex items-center gap-2 text-green-600 font-bold uppercase tracking-wider text-xs mb-4">
+                                <FaUniversity className="text-sm" /> Banking Information
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bank Name</label>
+                                    <div className="relative">
+                                        <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="bankName" required value={form.bankName} onChange={handleChange} placeholder="Access Bank" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Number</label>
+                                    <div className="relative">
+                                        <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="accountNumber" required value={form.accountNumber} onChange={handleChange} placeholder="0123456789" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Name</label>
+                                    <div className="relative">
+                                        <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="accountName" required value={form.accountName} onChange={handleChange} placeholder="John Doe" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Valid Identification ID (NIN, PVC etc)</label>
+                                    <div className="relative">
+                                        <FaIdBadge className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input name="validId" required value={form.validId} onChange={handleChange} placeholder="e.g. 1234567890" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-3 pt-4 border-t border-gray-100">
+                            <h4 className="flex items-center gap-2 text-purple-600 font-bold uppercase tracking-wider text-xs mb-4">
+                                <FaCamera className="text-sm" /> Document Uploads
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Passport Photograph</label>
+                                    <div className="relative border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-purple-400 transition-colors bg-gray-50/50 group">
+                                        <input name="passportPhoto" type="file" required onChange={handleChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                                <FaCamera />
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <p className="text-sm font-semibold text-gray-700 truncate">{form.passportPhoto ? form.passportPhoto.name : "Choose Passport Photo"}</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Max size 1MB (JPG, PNG)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 flex gap-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-6 py-3.5 border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex-[2] px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {loading ? <FaSpinner className="animate-spin" /> : <FaUserCheck />}
+                            {loading ? "Processing..." : `Register ${form.role.toUpperCase()} Member`}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const ReassignMemberModal = ({ isOpen, onClose, onReassign, loading, form, setForm, teams }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 my-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <h3 className="text-xl font-bold text-gray-800">Reassign Member</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -151,8 +398,8 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 my-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <h3 className="text-xl font-bold text-gray-800">Set Team Leader</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -191,8 +438,8 @@ const CreateTeamModal = ({ isOpen, onClose, onCreate, loading, form, setForm, fe
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-md p-6 my-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <h3 className="text-xl font-bold text-gray-800">Create New Team</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -279,6 +526,19 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [createTeamForm, setCreateTeamForm] = useState({ name: "", state: "", zoneId: "" });
     const [fetchingStates, setFetchingStates] = useState(false);
     const [selectedZoneStates, setSelectedZoneStates] = useState([]);
+
+    // Registration Modal State
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [registerLoading, setRegisterLoading] = useState(false);
+    const initialRegisterForm = {
+        firstName: "", lastName: "", email: "", phone: "", password: "",
+        address: "", localGovt: "", state: "",
+        accountName: "", accountNumber: "", bankName: "",
+        validId: "", passportPhoto: null,
+        gender: "", maritalStatus: "", dateOfBirth: "",
+        role: "sm" // default
+    };
+    const [registerForm, setRegisterForm] = useState(initialRegisterForm);
 
     const fetchData = async () => {
         try {
@@ -492,6 +752,49 @@ const MyTeamDashboardView = ({ teamId }) => {
         }
     };
 
+    const handleRegisterMember = async (e) => {
+        e.preventDefault();
+        setRegisterLoading(true);
+        try {
+            const convertToBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            };
+
+            const payload = { ...registerForm };
+            
+            // Remove role from payload if not needed by backend, but usually it's used to select endpoint
+            // Let's keep it if the backend needs it, or remove it before sending
+            
+            if (payload.passportPhoto) {
+                payload.passportPhoto = await convertToBase64(payload.passportPhoto);
+            }
+
+            const endpoint = registerForm.role === 'sm' 
+                ? API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_SM 
+                : API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_BDM;
+                
+            await axios.post(apiUrl(endpoint), payload, { 
+                withCredentials: true,
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            toast.success(`${registerForm.role.toUpperCase()} Registered successfully!`);
+            setShowRegisterModal(false);
+            setRegisterForm(initialRegisterForm);
+            fetchData(); // Refresh list
+        } catch (error) {
+            console.error("Registration Error:", error);
+            toast.error(error?.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setRegisterLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (showCreateTeamModal) {
             const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
@@ -600,20 +903,40 @@ const MyTeamDashboardView = ({ teamId }) => {
                         </button>
                     )}
                     {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (
-                        <button 
-                            onClick={() => {
-                                if (!isRegionalView) {
-                                    const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
-                                    if (currentTeamId) {
-                                        setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                        <div className="flex flex-wrap gap-3">
+                            <button 
+                                onClick={() => {
+                                    setRegisterForm({ ...initialRegisterForm, role: "sm" });
+                                    setShowRegisterModal(true);
+                                }}
+                                className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-100"
+                            >
+                                <FaPlusCircle /> Register SM
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setRegisterForm({ ...initialRegisterForm, role: "bdm" });
+                                    setShowRegisterModal(true);
+                                }}
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                            >
+                                <FaPlusCircle /> Register BDM
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (!isRegionalView) {
+                                        const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
+                                        if (currentTeamId) {
+                                            setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                                        }
                                     }
-                                }
-                                setShowAssignModal(true);
-                            }}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
-                        >
-                            <FaUserPlus className="text-sm" /> Assign Member
-                        </button>
+                                    setShowAssignModal(true);
+                                }}
+                                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
+                            >
+                                <FaUserPlus className="text-sm" /> Assign Member
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -1168,6 +1491,15 @@ const MyTeamDashboardView = ({ teamId }) => {
                 form={reassignForm}
                 setForm={setReassignForm}
                 teams={availableTeams}
+            />
+
+            <RegisterMemberModal
+                isOpen={showRegisterModal}
+                onClose={() => setShowRegisterModal(false)}
+                onRegister={handleRegisterMember}
+                loading={registerLoading}
+                form={registerForm}
+                setForm={setRegisterForm}
             />
         </div>
     );
