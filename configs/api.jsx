@@ -179,6 +179,7 @@ export const API_CONFIG = {
       GET_STAFF: "/hr/get-staff",
       ISSUE_WARNING: "/hr/warning",
       GET_ALL_WARNINGS: "/hr/all-warnings",
+      REGISTER_STAFF: "/hr/register-staff",
     },
   },
 };
