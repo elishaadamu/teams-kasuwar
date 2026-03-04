@@ -1,0 +1,220 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { FaUserShield, FaUserPlus, FaMapMarkedAlt, FaLayerGroup, FaEnvelope, FaPhone, FaLock, FaUserTie } from "react-icons/fa";
+import axios from "axios";
+import { apiUrl, API_CONFIG } from "@/configs/api";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+export default function Onboarding() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "sm", // Default to SM
+    zoneId: "",
+    teamId: "",
+    password: ""
+  });
+  
+  const [zones, setZones] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchZones();
+  }, []);
+
+  const fetchZones = async () => {
+    try {
+      const resp = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONES), { withCredentials: true });
+      if (resp.data.success) setZones(resp.data.zones);
+    } catch (e) {
+      console.error("Error fetching zones", e);
+    }
+  };
+
+  const fetchTeams = async (zoneId) => {
+    try {
+      const resp = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS + zoneId + "/teams"), { withCredentials: true });
+      if (resp.data.success) setTeams(resp.data.teams);
+    } catch (e) {
+      console.error("Error fetching teams", e);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === "zoneId") {
+      fetchTeams(value);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Auto-fill password if empty (use phone)
+    const payload = {
+      ...formData,
+      password: formData.password || formData.phone
+    };
+
+    try {
+      const endpoint = formData.role === "sm" 
+        ? API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_SM 
+        : API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_BDM;
+      
+      const resp = await axios.post(apiUrl(endpoint), payload, { withCredentials: true });
+      
+      if (resp.data.success) {
+        toast.success(`${formData.role.toUpperCase()} Created Successfully!`);
+        setFormData({
+          firstName: "", lastName: "", email: "", phone: "", role: "sm", zoneId: "", teamId: "", password: ""
+        });
+      } else {
+        toast.error(resp.data.message || "Failed to create staff");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-10 animate-fade-in">
+      <ToastContainer theme="dark" position="top-right" />
+      
+      {/* Page Header */}
+      <div className="space-y-3">
+        <h1 className="text-4xl font-black text-white px-2 border-l-8 border-blue-600">
+          Staff <span className="text-blue-500">Onboarding</span>
+        </h1>
+        <p className="text-slate-400 text-lg font-medium leading-relaxed">
+          Create new high-tier staff profiles and assign them to specific regions or teams within the ecosystem.
+        </p>
+      </div>
+
+      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[100px] pointer-events-none rounded-full" />
+        
+        <form onSubmit={handleSubmit} className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Role Selection */}
+          <div className="md:col-span-2 space-y-4">
+            <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Select Deployment Tier</label>
+            <div className="flex flex-wrap gap-4">
+              {["sm", "bdm"].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setFormData(p => ({ ...p, role: r }))}
+                  className={`flex-1 py-4 px-6 rounded-3xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold text-sm tracking-wide shadow-xl ${
+                    formData.role === r 
+                      ? "bg-blue-600 border-blue-400 text-white scale-[1.02] ring-4 ring-blue-600/20" 
+                      : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200"
+                  }`}
+                >
+                  {r === "sm" ? <FaUserTie className="w-5 h-5" /> : <FaUserShield className="w-5 h-5" />}
+                  {r === "sm" ? "Sales Manager (SM)" : "Business Dev. Manager (BDM)"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <TextInput label="First Name" name="firstName" icon={FaUserPlus} value={formData.firstName} onChange={handleInputChange} placeholder="E.g. John" />
+          <TextInput label="Last Name" name="lastName" icon={FaUserPlus} value={formData.lastName} onChange={handleInputChange} placeholder="E.g. Doe" />
+          <TextInput label="Email Address" type="email" name="email" icon={FaEnvelope} value={formData.email} onChange={handleInputChange} placeholder="john@example.com" />
+          <TextInput label="Phone Number" name="phone" icon={FaPhone} value={formData.phone} onChange={handleInputChange} placeholder="080 1234 5678" />
+
+          {/* Region Selection */}
+          <div className="space-y-4">
+            <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+              <FaMapMarkedAlt className="text-blue-500" /> Target Region
+            </label>
+            <select 
+              name="zoneId" 
+              value={formData.zoneId} 
+              onChange={handleInputChange}
+              className="w-full h-14 bg-slate-950/80 border-2 border-slate-800 rounded-2xl px-6 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none transition-all shadow-inner font-medium"
+            >
+              <option value="">Select Region</option>
+              {zones.map(z => <option key={z._id} value={z._id}>{z.name}</option>)}
+            </select>
+          </div>
+
+          {/* Team Selection */}
+          <div className="space-y-4">
+            <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+              <FaLayerGroup className="text-blue-500" /> Target Team
+            </label>
+            <select 
+              name="teamId" 
+              value={formData.teamId} 
+              onChange={handleInputChange}
+              disabled={!formData.zoneId}
+              className="w-full h-14 bg-slate-950/80 border-2 border-slate-800 rounded-2xl px-6 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none transition-all shadow-inner font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Select Team</option>
+              {teams.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+            </select>
+          </div>
+
+          <div className="md:col-span-2 space-y-4">
+             <TextInput 
+              label="Temporary Password" 
+              type="password" 
+              name="password" 
+              icon={FaLock} 
+              value={formData.password} 
+              onChange={handleInputChange} 
+              placeholder="Leave blank to use phone number" 
+            />
+          </div>
+
+          <div className="md:col-span-2 mt-4">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-5 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg tracking-widest uppercase transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-blue-600/30 active:scale-[0.98] disabled:opacity-70 disabled:grayscale"
+            >
+              {isLoading ? "Deploying User..." : "Initiate Deployment"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+const TextInput = ({ label, name, value, onChange, placeholder, icon: Icon, type = "text" }) => (
+  <div className="space-y-4 group">
+    <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] group-focus-within:text-blue-500 transition-colors flex items-center gap-2">
+      <Icon className="text-blue-500/50 group-focus-within:text-blue-500" /> {label}
+    </label>
+    <div className="relative">
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={type !== "password"}
+        className="w-full h-14 bg-slate-950/80 border-2 border-slate-800 rounded-2xl px-6 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none transition-all shadow-inner font-medium"
+      />
+    </div>
+  </div>
+);

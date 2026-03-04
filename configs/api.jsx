@@ -167,15 +167,19 @@ export const API_CONFIG = {
       GET_REGIONAL_TEAMS: "/zone-wallet/regional/", // append zoneId/teams
       GET_TEAM: "/zone-wallet/team/", // append teamId
     },
-  },
-  SHIPPING_FEE: {
-    CREATE: "/shipping-fee/create",
-    GET_ALL: "/shipping-fee/all",
-  },
-
-  REPORTS: {
-    PERFORMANCE_REPORT: "/report/bdm/my-performance",
-    PERFORMANCE_REPORT_BD: "/report/bd/my-performance",
+    SHIPPING_FEE: {
+      CREATE: "/shipping-fee/create",
+      GET_ALL: "/shipping-fee/all",
+    },
+    REPORTS: {
+      PERFORMANCE_REPORT: "/report/bdm/my-performance",
+      PERFORMANCE_REPORT_BD: "/report/bd/my-performance",
+    },
+    HR: {
+      GET_STAFF: "/hr/get-staff",
+      ISSUE_WARNING: "/hr/warning",
+      GET_ALL_WARNINGS: "/hr/all-warnings",
+    },
   },
 };
 

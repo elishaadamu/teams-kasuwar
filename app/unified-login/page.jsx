@@ -65,8 +65,8 @@ const page = () => {
         router.push("/dashboard");
       } else if (userRole === "bd") {
         router.push("/bd-dashboard");
-      } else if (userRole === "none") {
-        router.push("/regional-dashboard");
+      } else if (userRole === "hr") {
+        router.push("/hr-dashboard");
       } else {
         router.push("/");
         alert("You are not authorized to sign in");
