@@ -42,6 +42,74 @@ export default function IDCardPrint() {
     window.print();
   };
 
+  // Convert data URL (base64) to Blob
+  const dataURLtoBlob = (dataurl) => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  // Fetch an image URL and return a Blob
+  const fetchImageAsBlob = async (url) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch image');
+    return await res.blob();
+  };
+
+  const handleGenerate = async () => {
+    if (!selectedUser) return toast.error('Please select a user first');
+
+    try {
+      const form = new FormData();
+      form.append('userId', selectedUser.id);
+
+      // passportPhoto: fetch original from URL and append as file
+      if (selectedUser.passport) {
+        try {
+          const passportBlob = await fetchImageAsBlob(selectedUser.passport);
+          const passportFile = new File([passportBlob], `passport_${selectedUser.id}.jpg`, { type: passportBlob.type });
+          form.append('passportPhoto', passportFile);
+        } catch (err) {
+          console.warn('Could not fetch passport image, sending URL instead', err);
+          form.append('passportPhoto', selectedUser.passport);
+        }
+      }
+
+      // signaturePhoto: convert data URL to blob and append as file
+      if (signature) {
+        try {
+          const sigBlob = dataURLtoBlob(signature);
+          const sigFile = new File([sigBlob], `signature_${selectedUser.id}.png`, { type: sigBlob.type });
+          form.append('signaturePhoto', sigFile);
+        } catch (err) {
+          console.warn('Signature conversion failed, sending data URL', err);
+          form.append('signaturePhoto', signature);
+        }
+      }
+
+      const endpoint = apiUrl('/api/hr/generate-id-card');
+      const response = await axios.post(endpoint, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+      });
+
+      if (response.data && response.data.success) {
+        toast.success(response.data.message || 'ID generation request sent');
+      } else {
+        toast.info(response.data.message || 'Server responded');
+      }
+    } catch (error) {
+      console.error('Error generating ID:', error);
+      toast.error('Failed to send generate request');
+    }
+  };
+
   const onSelectFile = (event) => {
     const file = event.target.files[0];
     if (file && file.type === "image/png") {
@@ -135,6 +203,13 @@ export default function IDCardPrint() {
             >
               <FaPrint size={24} />
               Transmit to Printer
+            </button>
+            <button
+              onClick={handleGenerate}
+              className="w-full h-14 rounded-3xl bg-slate-800 text-white font-black text-sm uppercase tracking-widest shadow-inner hover:scale-[1.01] hover:bg-slate-900 transition-all active:scale-95 flex items-center justify-center gap-3 mt-4"
+            >
+              <FaArrowRight />
+              Generate & Upload
             </button>
           </div>
         </div>

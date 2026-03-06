@@ -94,6 +94,7 @@ export default function Onboarding() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred");
+      console.log(error)
     } finally {
       setIsLoading(false);
     }
@@ -158,8 +159,8 @@ export default function Onboarding() {
             </label>
             <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full h-14 bg-slate-950/80 border-2 border-slate-800 rounded-2xl px-6 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none transition-all shadow-inner font-medium">
               <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
             </select>
           </div>
 
@@ -169,10 +170,10 @@ export default function Onboarding() {
             </label>
             <select name="maritalStatus" value={formData.maritalStatus} onChange={handleInputChange} className="w-full h-14 bg-slate-950/80 border-2 border-slate-800 rounded-2xl px-6 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none transition-all shadow-inner font-medium">
               <option value="">Select Status</option>
-              <option value="Single">Single</option>
-              <option value="Married">Married</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Widowed">Widowed</option>
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+              <option value="divorced">Divorced</option>
+              <option value="widowed">Widowed</option>
             </select>
           </div>
 
