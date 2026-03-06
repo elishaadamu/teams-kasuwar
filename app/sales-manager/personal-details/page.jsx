@@ -292,9 +292,6 @@ const PersonalDetails = () => {
                 <h3 className="text-xl font-black text-white capitalize">{profile.role || "Sales Manager"}</h3>
               </div>
             </div>
-            <div className="px-5 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-sm font-black uppercase tracking-widest">
-              Verified Partner
-            </div>
           </section>
         </div>
 

@@ -369,9 +369,7 @@ const PersonalDetails = () => {
                 <h3 className="text-xl font-black text-slate-900 capitalize">{profile.role || "Executive Admin"}</h3>
               </div>
             </div>
-            <div className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
-              Super Admin Access
-            </div>
+            
           </section>
         </div>
 

@@ -338,9 +338,6 @@ const PersonalDetails = () => {
                 <h3 className="text-xl font-black text-white capitalize">{profile.role || "Agent"} Account</h3>
               </div>
             </div>
-            <div className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-black uppercase tracking-widest">
-              Verified Agent
-            </div>
           </section>
         </div>
 
