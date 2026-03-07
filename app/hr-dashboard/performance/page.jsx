@@ -156,7 +156,7 @@ export default function StaffPerformance() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-5xl font-black text-white tracking-tighter">
-            Staff <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent underline decoration-emerald-500/20 underline-offset-8">Metrics</span>
+            <span className="text-gray-950 dark:text-white">Staff</span> <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent underline decoration-emerald-500/20 underline-offset-8">Metric</span>
           </h1>
           <p className="text-slate-400 font-medium text-lg">
             Individual performance tracking based on real-time KPI data.
