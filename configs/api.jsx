@@ -176,10 +176,17 @@ export const API_CONFIG = {
       PERFORMANCE_REPORT_BD: "/report/bd/my-performance",
     },
     HR: {
-      GET_STAFF: "/hr/get-staff",
+      GET_STAFF: "/hr/get-staff-list",
       ISSUE_WARNING: "/hr/warning",
       GET_ALL_WARNINGS: "/hr/all-warnings",
       REGISTER_STAFF: "/hr/register-staff",
+      GENERATE_ID_CARD: "/hr/generate-id-card",
+      PERFORMANCE: {
+        BD: "/hr/performance/bd",
+        BDM: "/hr/performance/bdm",
+        SM: "/hr/performance/sm",
+        TL: "/hr/performance/tl",
+      }
     },
   },
 };

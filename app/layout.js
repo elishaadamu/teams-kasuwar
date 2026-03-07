@@ -5,11 +5,14 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
 import { ToastContainer } from "react-toastify";
-import Navbar from "@/components/Navbar"; // Import Navbar
-import Footer from "@/components/Footer"; // Import Footer
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { usePathname } from "next/navigation";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
+
+axios.defaults.withCredentials = true;
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -46,14 +49,16 @@ export default function RootLayout({ children }) {
   }, []);
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} antialiased text-gray-700`}>
-        <ToastContainer />
-        <AppContextProvider>
-          {!isSpecialRoute && <Navbar />}
-          {children}
-          {!isSpecialRoute && <Footer />}
-        </AppContextProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ToastContainer />
+          <AppContextProvider>
+            {!isSpecialRoute && <Navbar />}
+            {children}
+            {!isSpecialRoute && <Footer />}
+          </AppContextProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
