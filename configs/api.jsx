@@ -181,6 +181,9 @@ export const API_CONFIG = {
       GET_ALL_WARNINGS: "/hr/all-warnings",
       REGISTER_STAFF: "/hr/register-staff",
       GENERATE_ID_CARD: "/hr/generate-id-card",
+      PAYSLIP: "/hr/payslip",
+      GET_PAYSLIPS: (staffId) => `/hr/payslip/${staffId}`,
+      ALL_PAYSLIPS: "/hr/payslips",
       PERFORMANCE: {
         BD: "/hr/performance/bd",
         BDM: "/hr/performance/bdm",
