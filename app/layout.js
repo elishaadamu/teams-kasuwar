@@ -52,7 +52,20 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} antialiased text-gray-700`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ToastContainer />
+          <ToastContainer 
+            position="bottom-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="auto"
+            stacked
+            limit={5}
+          />
           <AppContextProvider>
             {!isSpecialRoute && <Navbar />}
             {children}
