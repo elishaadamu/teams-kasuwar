@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   FaUserShield, FaUserPlus, FaEnvelope, FaPhone, FaLock, FaUserTie, 
   FaVenusMars, FaRing, FaCalendarAlt, FaHome, FaCity, FaMapMarkerAlt, FaCreditCard, FaUniversity, 
-  FaFileInvoice, FaIdCard, FaPassport, FaBriefcase, FaTimes, FaSearch, FaUserCircle, FaEllipsisV
+  FaFileInvoice, FaIdCard, FaPassport, FaBriefcase, FaTimes, FaSearch, FaUserCircle, FaEllipsisV,
+  FaLayerGroup, FaChevronLeft, FaChevronRight, FaArrowUp
 } from "react-icons/fa";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
@@ -35,17 +36,75 @@ export default function Onboarding() {
     accountNumber: "",
     bankName: "",
     validId: "",
-    passportPhoto: null
+    passportPhoto: null,
+    teamId: "",
+    isTeamLead: false,
+    isRegionalLeader: false,
+    regionalId: ""
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [isFetching, setIsFetching] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [regions, setRegions] = useState([]);
+  const [teams, setTeams] = useState([]);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Refs for scrolling
+  const topRef = useRef(null);
+  const tableRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const scrollToRef = (ref) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     fetchStaffList();
+    fetchRegions();
   }, []);
+
+  const fetchRegions = async () => {
+    try {
+      const resp = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONES), API_CONFIG);
+      setRegions(resp.data.zones || []);
+    } catch (err) {
+      console.error("Error fetching regions:", err);
+    }
+  };
+
+  const fetchTeams = async (zoneId) => {
+    try {
+      const resp = await axios.get(apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${zoneId}/teams`), API_CONFIG);
+      setTeams(resp.data.teams || []);
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (formData.regionalId) {
+      fetchTeams(formData.regionalId);
+    } else {
+      setTeams([]);
+    }
+  }, [formData.regionalId]);
 
   const fetchStaffList = async () => {
     setIsFetching(true);
@@ -91,6 +150,8 @@ export default function Onboarding() {
     Object.keys(formData).forEach(key => {
       if (key === 'password' && !formData.password) {
         payload.password = formData.phone;
+      } else if (['isTeamLead', 'isRegionalLeader'].includes(key)) {
+        if (formData[key]) payload[key] = true;
       } else if (formData[key] !== null && formData[key] !== "") {
         payload[key] = formData[key];
       }
@@ -104,7 +165,8 @@ export default function Onboarding() {
         setFormData({
           firstName: "", lastName: "", email: "", phone: "", role: "sm", password: "",
           gender: "", maritalStatus: "", dateOfBirth: "", address: "", localGovt: "", state: "",
-          accountName: "", accountNumber: "", bankName: "", validId: "", passportPhoto: null
+          accountName: "", accountNumber: "", bankName: "", validId: "", passportPhoto: null,
+          teamId: "", isTeamLead: false, isRegionalLeader: false, regionalId: ""
         });
         document.querySelectorAll('input[type="file"]').forEach(input => input.value = "");
         fetchStaffList(); // Refresh the table
@@ -129,8 +191,22 @@ export default function Onboarding() {
     );
   });
 
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
-    <div className="max-w-6xl mx-auto space-y-16 animate-fade-in pb-20 transition-colors duration-300">
+    <>
+      <div ref={topRef} className="max-w-6xl mx-auto space-y-16 animate-fade-in pb-20 transition-colors duration-300 relative">
       <ToastContainer theme="dark" position="top-right" />
       
       {/* Section 1: Page Header & Onboarding Form */}
@@ -153,21 +229,88 @@ export default function Onboarding() {
               <h3 className="text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Deployment Setup</h3>
               <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Select Deployment Tier <span className="text-red-500">*</span></label>
               <div className="flex flex-wrap gap-4">
-                {["bd", "bdm", "sm"].map((r) => (
+                {["bd", "bdm", "sm", "tl"].map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setFormData(p => ({ ...p, role: r }))}
-                    className={`flex-1 py-4 px-6 rounded-3xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold text-sm tracking-wide shadow-md ${
+                    className={`flex-1 min-w-[200px] py-4 px-6 rounded-3xl border-2 transition-all duration-300 flex items-center justify-center gap-3 font-bold text-sm tracking-wide shadow-md ${
                       formData.role === r 
                         ? "bg-blue-600 border-blue-400 text-white scale-[1.02] ring-4 ring-blue-600/20 shadow-blue-600/20" 
                         : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-600/50 hover:text-blue-600 dark:hover:text-slate-200"
                     }`}
                   >
-                    {r === "sm" ? <FaUserTie className="w-5 h-5" /> : r === "bdm" ? <FaUserShield className="w-5 h-5" /> : <FaBriefcase className="w-5 h-5" />}
-                    {r === "sm" ? "Sales Manager (SM)" : r === "bdm" ? "Business Dev. Manager (BDM)" : "Business Developer (BD)"}
+                    {r === "sm" ? <FaUserTie className="w-5 h-5" /> : r === "bdm" ? <FaUserShield className="w-5 h-5" /> : r === "tl" ? <FaUserPlus className="w-5 h-5" /> : <FaBriefcase className="w-5 h-5" />}
+                    {ROLE_LABELS[r]} ({r.toUpperCase()})
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 dark:bg-slate-950/20 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
+              <div className="space-y-4">
+                <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+                  <FaMapMarkerAlt className="text-blue-500" /> Assign Region
+                </label>
+                <select 
+                  name="regionalId" 
+                  value={formData.regionalId} 
+                  onChange={handleInputChange} 
+                  className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium"
+                >
+                  <option value="">Select Region (Optional)</option>
+                  {regions.map(region => (
+                    <option key={region._id} value={region._id}>{region.name}</option>
+                  ))}
+                </select>
+                
+                {formData.regionalId && (
+                  <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                    <input 
+                      type="checkbox" 
+                      id="isRegionalLeader"
+                      checked={formData.isRegionalLeader}
+                      onChange={(e) => setFormData(p => ({ ...p, isRegionalLeader: e.target.checked }))}
+                      className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="isRegionalLeader" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                      Make Regional Manager / Leader
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+                  <FaLayerGroup className="text-indigo-500" /> Assign Team
+                </label>
+                <select 
+                  name="teamId" 
+                  value={formData.teamId} 
+                  onChange={handleInputChange} 
+                  disabled={!formData.regionalId}
+                  className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">{formData.regionalId ? "Select Team (Optional)" : "Select a Region first"}</option>
+                  {teams.map(team => (
+                    <option key={team._id} value={team._id}>{team.name}</option>
+                  ))}
+                </select>
+
+                {formData.teamId && (
+                  <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+                    <input 
+                      type="checkbox" 
+                      id="isTeamLead"
+                      checked={formData.isTeamLead}
+                      onChange={(e) => setFormData(p => ({ ...p, isTeamLead: e.target.checked }))}
+                      className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="isTeamLead" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                      Make Team Leader
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -258,7 +401,7 @@ export default function Onboarding() {
 
       {/* Section 2: Staff List Table */}
       <div className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div ref={tableRef} className="flex flex-col md:flex-row md:items-center justify-between gap-6 scroll-mt-24">
           <div className="space-y-1">
             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Staff <span className="text-indigo-500">Directory</span></h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Manage and view all registered staff members.</p>
@@ -293,8 +436,8 @@ export default function Onboarding() {
                       <td colSpan="4" className="px-6 py-8"><div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" /></td>
                     </tr>
                   ))
-                ) : filteredStaff.length > 0 ? (
-                  filteredStaff.map((staff) => (
+                ) : currentItems.length > 0 ? (
+                  currentItems.map((staff) => (
                     <tr key={staff._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
@@ -352,7 +495,73 @@ export default function Onboarding() {
             </table>
           </div>
         </div>
+
+        {/* Pagination UI */}
+        {filteredStaff.length > itemsPerPage && (
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-4">
+            <p className="text-sm font-bold text-slate-500">
+              Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to{" "}
+              <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredStaff.length)}</span> of{" "}
+              <span className="text-slate-900 dark:text-white">{filteredStaff.length}</span> staff members
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => paginate(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-3 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-indigo-500 hover:text-indigo-500 disabled:opacity-30 disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-all bg-white dark:bg-slate-950"
+              >
+                <FaChevronLeft className="text-sm" />
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => paginate(i + 1)}
+                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                      currentPage === i + 1
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 scale-110"
+                        : "bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 text-slate-400 hover:border-indigo-500/50 hover:text-indigo-500"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-3 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-indigo-500 hover:text-indigo-500 disabled:opacity-30 disabled:hover:border-slate-200 disabled:hover:text-slate-500 transition-all bg-white dark:bg-slate-950"
+              >
+                <FaChevronRight className="text-sm" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-center mt-4">
+          <button 
+            onClick={() => scrollToRef(tableRef)}
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-500 transition-colors flex items-center gap-2 py-2 px-4 rounded-full bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800"
+          >
+            <FaArrowUp className="text-[8px]" /> Back to Top of Table
+          </button>
+        </div>
       </div>
+    </div>
+
+      {/* Floating Back to Top Button - Outside the filtered container to ensure fixed positioning works with transforms */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-8 right-8 z-[100] w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-600/40 flex items-center justify-center hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-300 group ${
+          showBackToTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+        title="Back to Top"
+      >
+        <FaArrowUp className="text-xl group-hover:-translate-y-1 transition-transform" />
+      </button>
 
       <style jsx>{`
         @keyframes fade-in {
@@ -370,7 +579,7 @@ export default function Onboarding() {
           background: rgba(100, 116, 139, 0.2); 
         }
       `}</style>
-    </div>
+    </>
   );
 }
 
