@@ -401,14 +401,14 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-md p-6 my-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                    <h3 className="text-xl font-bold text-gray-800">Set Team Leader</h3>
+                    <h3 className="text-xl font-bold text-gray-800">Set TL</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <FaTimes />
                     </button>
                 </div>
                 <form onSubmit={onSetLead} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Leader Email Address</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">TL Email Address</label>
                         <input
                             type="email"
                             required
@@ -417,7 +417,7 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder="leader@example.com"
                         />
-                         <p className="text-xs text-gray-500 mt-1">This user will be promoted to Team Leader for the selected team.</p>
+                         <p className="text-xs text-gray-500 mt-1">This user will be promoted to TL for the selected team.</p>
                     </div>
                     
                     <button
@@ -426,7 +426,7 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
                         className="w-full mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {loading ? <FaSpinner className="animate-spin" /> : <FaUserTie />}
-                        {loading ? "Setting Leader..." : "Set Team Leader"}
+                        {loading ? "Setting TL..." : "Set TL"}
                     </button>
                 </form>
             </div>
@@ -555,8 +555,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                     setDashboardData(teamsRes.data);
                 }
                 setTeamMembers(membersRes.data?.members || []);
+            } else if (userData?.role === 'rm' || userData?.role === 'regional-leader') {
+                // Regional Overview: fetch all teams in the region
+                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true });
+                if (response.data.success) {
+                    setDashboardData(response.data);
+                }
             } else {
-                // No team selected: use default dashboard endpoint
+                // No team selected: use default dashboard endpoint for non-RMs
                 let response;
                 try {
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
@@ -686,7 +692,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             };
             
             await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.SET_TEAM_LEAD), payload, { withCredentials: true });
-            toast.success("Team Leader Set successfully!");
+            toast.success("TL Set successfully!");
             setShowSetLeadModal(false);
             setSetLeadForm({ email: "", teamId: "" });
             fetchData(); // Refresh data
@@ -860,20 +866,20 @@ const MyTeamDashboardView = ({ teamId }) => {
     }
 
     const isRegionalView = !teamId && (
-        (dashboardData.teams && Array.isArray(dashboardData.teams)) || 
-        (dashboardData.zone && dashboardData.role === 'regional-leader')
+        (dashboardData?.teams && Array.isArray(dashboardData.teams)) || 
+        (dashboardData?.zone && (dashboardData.role === 'regional-leader' || dashboardData.role === 'rm' || userData?.role === 'rm' || userData?.role === 'regional-leader'))
     );
     // Team view if: API returned members directly, OR we found a selectedTeam from the regional teams array
-    const isTeamView = !!(dashboardData.members && Array.isArray(dashboardData.members)) || !!selectedTeam;
+    const isTeamView = !!(dashboardData?.members && Array.isArray(dashboardData.members)) || !!selectedTeam;
     // If a specific team was selected from the regional data, show it as a single-team detail view
     const isSingleTeamFromRegion = !!selectedTeam;
 
     // Prepare teams for modal
     const availableTeams = isRegionalView 
-        ? (dashboardData.teams || []) 
-        : (dashboardData.teams || (selectedTeam ? [selectedTeam] : (dashboardData.team ? [dashboardData.team] : [])));
+        ? (dashboardData?.teams || []) 
+        : (dashboardData?.teams || (selectedTeam ? [selectedTeam] : (dashboardData?.team ? [dashboardData.team] : [])));
 
-    const isUserRegionalLeader = userData?.role === 'bdm' || userData?.role === 'bd' || userData?.role === 'vendor' || userData?.role === 'sm' || userData?.role === 'agent' || userData?.role === 'user';
+    const isUserRegionalLeader = userData?.role === 'rm' || userData?.role === 'regional-leader' || userData?.role === 'bdm' || userData?.role === 'bd' || userData?.role === 'sm';
 
 
     return (
@@ -881,13 +887,15 @@ const MyTeamDashboardView = ({ teamId }) => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">My Team Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        {userData?.role === 'rm' ? "Regional Manager Dashboard" : "My Team Dashboard"}
+                    </h1>
                     <p className="text-gray-500 text-sm">
                         {isSingleTeamFromRegion 
                             ? `Team: ${selectedTeam.name || "Selected Team"}`
-                            : (dashboardData.team?.name || dashboardData.teamName)
+                            : (dashboardData?.team?.name || dashboardData?.teamName)
                                 ? `Team: ${dashboardData.team?.name || dashboardData.teamName}`
-                                : `Overview of your ${isRegionalView ? "Region's Teams" : "Team Members"}`
+                                : `Overview of your ${isRegionalView ? (userData?.role === 'rm' ? "Region Management" : "Region's Teams") : "Team Members"}`
                         }
                     </p>
                 </div>
@@ -1159,7 +1167,7 @@ const MyTeamDashboardView = ({ teamId }) => {
 
                     {/* Team Lead Card */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Team Leader</h3>
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">TL</h3>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
@@ -1179,9 +1187,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                             <button 
                                 onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id)}
                                 className="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                                title="Set Team Leader"
+                                title="Set TL"
                             >
-                                Change Lead
+                                Change TL
                             </button>
                         </div>
                     </div>
@@ -1202,7 +1210,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
                                             <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                            {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                            {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -1226,7 +1234,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                             : 'bg-gray-100 text-gray-600'
                                                     }`}>
                                                         {(member.isTeamLead || member.role === 'team_lead' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
-                                                            ? 'Team Lead' 
+                                                            ? 'TL' 
                                                             : (member.role?.toUpperCase() || 'MEMBER')}
                                                     </span>
                                                 </td>
@@ -1240,7 +1248,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                                 </td>
-                                                {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
+                                                {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                                     <td className="px-6 py-4">
                                                         <button 
                                                             onClick={() => openReassignModal(member.email)}
@@ -1296,7 +1304,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
                                     <th className="px-6 py-4 font-semibold">Joined Date</th>
-                                    {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                    {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -1317,7 +1325,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                                                 (member.isTeamLead || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
                                             }`}>
-                                                {(member.isTeamLead || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'Team Lead' : (member.role?.toUpperCase() || 'MEMBER')}
+                                                {(member.isTeamLead || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'TL' : (member.role?.toUpperCase() || 'MEMBER')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -1330,7 +1338,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                         </td>
-                                        {isUserRegionalLeader && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
+                                        {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                             <td className="px-6 py-4">
                                                 <button 
                                                     onClick={() => openReassignModal(member.email)}

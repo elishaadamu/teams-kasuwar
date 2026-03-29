@@ -35,7 +35,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   // New state for dynamic team data
   const [teamData, setTeamData] = useState(null);
   const [isRegionalLeader, setIsRegionalLeader] = useState(false);
-  const [isTeamLeader, setIsTeamLeader] = useState(false);
+  const [isTL, setIsTL] = useState(false);
 
   const userRole = userData?.role || null;
   // Hardcoded ID for specific regional leader check as requested
@@ -95,10 +95,10 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   if (String(userData.id) === REGIONAL_LEADER_ID || (data.teams && data.teams.length > 0)) {
                       setIsRegionalLeader(true);
                   } 
-                  // Check if Team Leader
+                  // Check if TL
                   // Condition: has specific team data and members
                   else if (data.team && data.members) {
-                      setIsTeamLeader(true);
+                      setIsTL(true);
                   }
               }
           } catch (error) {
@@ -191,12 +191,12 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
             <NavItem
               href="/regional-dashboard/regional-leader"
               icon={FaUsers}
-              label="Regional Leader"
+              label="Regional Manager"
               active={pathname === "/regional-dashboard/regional-leader"}
             />
 
             {/* Dynamic Team Section */}
-            {(isRegionalLeader || isTeamLeader) && (
+            {(isRegionalLeader || isTL) && (
                  <div className="mt-4 mb-4">
                     <p className="px-4 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                         {isRegionalLeader ? "Region Teams" : "Team Members"}
@@ -208,16 +208,16 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                                  href={`/regional-dashboard/team?id=${team._id || team.id}`} // Assuming route exists or placeholder
                                  icon={FaLayerGroup}
                                  label={team.name}
-                                 active={pathname.includes(`/team`) && new URLSearchParams(window.location.search).get('id') === (team._id || team.id)}
+                                 active={pathname.includes(`/team`) && new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('id') === (team._id || team.id)}
                                  subItem={true}
                              />
                         ))}
 
-                        {isTeamLeader && teamData?.members?.map((member) => (
+                        {isTL && teamData?.members?.map((member) => (
                             <div key={member.email} className="flex items-center space-x-3 px-4 py-2 ml-4 text-gray-400 hover:text-white transition-colors">
                                 <FaUser className="w-3 h-3" />
                                 <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
-                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="Team Lead" />}
+                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="TL" />}
                             </div>
                         ))}
                     </div>

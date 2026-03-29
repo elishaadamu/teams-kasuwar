@@ -54,7 +54,7 @@ const page = () => {
 
       fetchUserData();
       toast.success("Signin successful!");
-
+      console.log(response.data);
       const userRole = response.data?.user?.role;
 
       if (userRole === "sm") {
@@ -67,7 +67,13 @@ const page = () => {
         router.push("/bd-dashboard");
       } else if (userRole === "hr") {
         router.push("/hr-dashboard");
-      } else {
+      } 
+      else if (userRole === "rm" || userRole === "regional-leader") {
+        router.push("/regional-dashboard");
+      } else if (userRole === "TL" || userRole === "tl" || userRole === "team-lead") {
+        router.push("/regional-dashboard");
+      }
+      else {
         router.push("/");
         alert("You are not authorized to sign in");
       }
