@@ -12,6 +12,7 @@ const CreateTeamPage = () => {
     const [loading, setLoading] = useState(false);
     const [fetchingZones, setFetchingZones] = useState(true);
     const [fetchingStates, setFetchingStates] = useState(false);
+    const [zoneName, setZoneName] = useState("");
     const [selectedZoneStates, setSelectedZoneStates] = useState([]);
     const [form, setForm] = useState({
         name: "",
@@ -34,6 +35,28 @@ const CreateTeamPage = () => {
             }
         };
         fetchZones();
+        // Also fetch my region/zone info so we can prefill zone for this user
+        const fetchMyRegion = async () => {
+            try {
+                const res = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true });
+                if (res.data && res.data.success) {
+                    const payload = res.data.data || res.data || {};
+                    // Best-effort extraction of zone id/name from various possible shapes
+                    const zoneId = payload.zone?._id || payload.zoneId || payload.zone || (payload.teams && payload.teams[0] && (payload.teams[0].zoneId || payload.teams[0].zone)) || null;
+                    const zName = payload.zone?.name || payload.zoneName || payload.region?.name || (payload.teams && payload.teams[0] && (payload.teams[0].zoneName || payload.teams[0].zone)) || "";
+                    if (zoneId) {
+                        setForm(f => ({ ...f, zoneId }));
+                        // fetch states for this zone
+                        fetchStates(zoneId);
+                    }
+                    if (zName) setZoneName(zName);
+                }
+            } catch (err) {
+                // non-fatal
+                console.error("Failed to fetch my region teams", err);
+            }
+        };
+        fetchMyRegion();
     }, []);
 
     const fetchStates = async (zoneId) => {
@@ -111,20 +134,11 @@ const CreateTeamPage = () => {
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 ml-1">Select Zone</label>
-                            <select
-                                name="zoneId"
-                                value={form.zoneId}
-                                onChange={handleZoneChange}
-                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                                required
-                                disabled={fetchingZones}
-                            >
-                                <option value="">{fetchingZones ? "Loading zones..." : "Choose a zone"}</option>
-                                {zones.map((zone) => (
-                                    <option key={zone._id} value={zone._id}>{zone.name}</option>
-                                ))}
-                            </select>
+                            <label className="text-sm font-bold text-gray-700 ml-1">Zone</label>
+                            <div className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-700">
+                                {zoneName || (form.zoneId ? "Assigned Zone" : (fetchingZones ? "Loading zone..." : "No zone assigned"))}
+                            </div>
+                            <input type="hidden" name="zoneId" value={form.zoneId} />
                         </div>
 
                         <div className="space-y-2">
@@ -163,7 +177,7 @@ const CreateTeamPage = () => {
                     <div className="pt-6 border-t border-gray-100 flex justify-end">
                         <button
                             type="submit"
-                            disabled={loading || fetchingZones}
+                            disabled={loading || !form.zoneId || fetchingStates}
                             className={`flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50`}
                         >
                             {loading ? (

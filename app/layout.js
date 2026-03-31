@@ -8,7 +8,7 @@ import { ToastContainer } from "react-toastify";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { usePathname } from "next/navigation";
-import { ThemeProvider } from "@/components/ThemeProvider";
+// ThemeProvider removed to disable light/dark mode
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
 
@@ -32,26 +32,25 @@ export default function RootLayout({ children }) {
     pathname.startsWith("/seller") ||
     pathname.startsWith("/vendor-dashboard");
 
-  useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          window.location.href = "/";
-        }
-        return Promise.reject(error);
-      }
-    );
+  // useEffect(() => {
+  //   const interceptor = axios.interceptors.response.use(
+  //     (response) => response,
+  //     (error) => {
+  //       if (error.response && error.response.status === 401) {
+  //         window.location.href = "/";
+  //       }
+  //       return Promise.reject(error);
+  //     }
+  //   );
 
-    return () => {
-      axios.interceptors.response.eject(interceptor);
-    };
-  }, []);
+  //   return () => {
+  //     axios.interceptors.response.eject(interceptor);
+  //   };
+  // }, []);
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} antialiased text-gray-700`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ToastContainer 
             position="bottom-right"
             autoClose={5000}
@@ -62,7 +61,7 @@ export default function RootLayout({ children }) {
             pauseOnFocusLoss
             draggable
             pauseOnHover
-            theme="auto"
+            theme="light"
             stacked
             limit={5}
           />
@@ -71,7 +70,6 @@ export default function RootLayout({ children }) {
             {children}
             {!isSpecialRoute && <Footer />}
           </AppContextProvider>
-        </ThemeProvider>
       </body>
     </html>
   );

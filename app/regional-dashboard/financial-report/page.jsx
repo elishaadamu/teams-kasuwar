@@ -9,54 +9,61 @@ import { toast } from "react-toastify";
 
 export default function FinancialReport() {
     const [zones, setZones] = useState([]);
-    const [selectedZone, setSelectedZone] = useState("");
     const [teams, setTeams] = useState([]);
+    const [selectedTeam, setSelectedTeam] = useState("");
     const [loading, setLoading] = useState(false);
     const [selectedTeamWallet, setSelectedTeamWallet] = useState(null);
     const [modalLoading, setModalLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
-        const fetchZones = async () => {
-            try {
-                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONES), { withCredentials: true });
-                if (response.data.success) {
-                    setZones(response.data.zones);
-                }
-            } catch (error) {
-             
-            }
-        };
-        fetchZones();
-    }, []);
-
-    useEffect(() => {
-        if (!selectedZone) {
-            setTeams([]);
-            return;
-        }
-
-        const fetchTeams = async () => {
+        const fetchMyRegionTeams = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(
-                    apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${selectedZone}/teams`),
-                    { withCredentials: true }
-                );
-                
-                if (response.data.success) {
-                    setTeams(response.data.teams || []);
+                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true });
+                const payload = response.data || {};
+                // normalize teams from possible shapes
+                let fetched = [];
+                if (Array.isArray(payload)) fetched = payload;
+                else if (Array.isArray(payload.teams)) fetched = payload.teams;
+                else if (payload.data) {
+                    if (Array.isArray(payload.data)) fetched = payload.data;
+                    else if (Array.isArray(payload.data.teams)) fetched = payload.data.teams;
                 }
+
+                if (fetched.length > 0) {
+                    setTeams(fetched);
+                    return;
+                }
+
+                // Fallback: try loading zones and teams for first zone
+                const zonesRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONES), { withCredentials: true });
+                const zoneList = zonesRes.data?.zones || [];
+                if (zoneList.length > 0) {
+                    const firstZoneId = zoneList[0]._id;
+                    try {
+                        const teamsRes = await axios.get(apiUrl(`${API_CONFIG.ENDPOINTS.REGIONAL.GET_ZONE_TEAMS}${firstZoneId}/teams`), { withCredentials: true });
+                        const t = teamsRes.data?.teams || teamsRes.data || [];
+                        setTeams(Array.isArray(t) ? t : []);
+                        return;
+                    } catch (err) {
+                        console.error('Fallback: failed to fetch teams for first zone', err);
+                    }
+                }
+
+                // If we reach here nothing loaded
+                toast.error('No teams available for your region');
             } catch (error) {
-               
-                toast.error("Failed to load teams for this zone");
+                console.error('Failed to fetch my region teams', error);
+                // don't spam the user with internal errors; show a single helpful message
+                toast.error('Unable to load your region teams. Try refreshing or check your network.');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTeams();
-    }, [selectedZone]);
+        fetchMyRegionTeams();
+    }, []);
 
     const handleViewWallet = async (teamId) => {
         setModalLoading(true);
@@ -88,15 +95,15 @@ export default function FinancialReport() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Select Zone:</span>
+                    <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Select Team:</span>
                     <select
-                        value={selectedZone}
-                        onChange={(e) => setSelectedZone(e.target.value)}
+                        value={selectedTeam}
+                        onChange={(e) => setSelectedTeam(e.target.value)}
                         className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-gray-50 font-medium min-w-[200px]"
                     >
-                        <option value="">Select a zone...</option>
-                        {zones.map((zone) => (
-                            <option key={zone._id} value={zone._id}>{zone.name}</option>
+                        <option value="">Select a team...</option>
+                        {teams.map((team) => (
+                            <option key={team._id || team.id} value={team._id || team.id}>{team.name || team.state || team._id}</option>
                         ))}
                     </select>
                 </div>
@@ -107,8 +114,8 @@ export default function FinancialReport() {
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
                     <p className="text-gray-500 animate-pulse">Fetching regional teams...</p>
                 </div>
-            ) : selectedZone ? (
-                <RegionalTeamList teams={teams} onViewWallet={handleViewWallet} />
+            ) : selectedTeam ? (
+                <RegionalTeamList teams={teams.filter(t => (t._id || t.id) === selectedTeam)} onViewWallet={handleViewWallet} />
             ) : (
                 <div className="bg-blue-50 border border-blue-100 rounded-2xl p-10 flex flex-col items-center text-center">
                     <div className="bg-blue-100 p-4 rounded-full mb-4">
