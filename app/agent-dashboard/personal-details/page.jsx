@@ -69,33 +69,20 @@ const PersonalDetails = () => {
   });
 
   const fetchProfile = async () => {
-    if (!userData?.id) return;
-
     setLoading(true);
     try {
       const response = await axios.get(
         `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}${userData.id}`,
         { withCredentials: true },
       );
-      
+      console.log(response.data.user)
       const user = response.data.user || response.data.data?.manager || response.data.data || response.data;
       if (user) {
-        setProfile({
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          email: user.email || "",
-          phone: user.phone || "",
-          address: user.address || "",
-          role: user.role || "Agent",
-          accName: user.accName || user.accountName || "",
-          bankName: user.bankName || "",
-          accNumber: user.accNumber || user.accountNumber || "",
-          businessName: user.businessName || "",
-          businessDesc: user.businessDesc || "",
-        });
+        setProfile(user);
       }
     } catch (error) {
       toast.error("Failed to fetch latest profile info");
+      console.log(error)
     } finally {
       setLoading(false);
       setPageLoading(false);
@@ -147,7 +134,7 @@ const PersonalDetails = () => {
       );
 
       if (response.data) {
-        await fetchUserData();
+        await fetchProfile();
         toast.success("Profile updated successfully!");
         setIsEditing(false);
       }

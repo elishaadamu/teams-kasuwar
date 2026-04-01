@@ -79,14 +79,9 @@ const PersonalDetails = () => {
       const user = response.data.user || response.data.data?.manager || response.data.data || response.data;
       if (user) {
         setProfile({
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          email: user.email || "",
-          phone: user.phone || "",
-          address: user.address || "",
-          role: user.role || "Sales Manager",
+          ...user,
+          phone: user.phone || user.phoneNumber || "",
           accName: user.accName || user.accountName || "",
-          bankName: user.bankName || "",
           accNumber: user.accNumber || user.accountNumber || "",
         });
       }
@@ -135,7 +130,7 @@ const PersonalDetails = () => {
       );
 
       if (response.data) {
-        await fetchUserData();
+        await fetchProfile();
         toast.success("Profile updated successfully!");
         setIsEditing(false);
       }
