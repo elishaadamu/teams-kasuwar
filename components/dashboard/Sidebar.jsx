@@ -20,37 +20,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const [isTeamLeader, setIsTeamLeader] = useState(false);
   const [isTeamMember, setIsTeamMember] = useState(false);
 
-  useEffect(() => {
-      const fetchTeamData = async () => {
-          if (!userData) return;
-          try {
-              let response;
-              try {
-                  response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-              } catch (error) {
-                  response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-              }
-              if (response?.data?.success) {
-                  const data = response.data;
-                  setTeamData(data);
-                  
-                  if (data.role === "regional-leader") {
-                      setIsRegionalLeader(true);
-                  } 
-                  else if (data.role === "team-lead") {
-                      setIsTeamLeader(true);
-                  }
-                  else if (data.role === "member") {
-                      setIsTeamMember(true);
-                  }
-              }
-          } catch (error) {
-              console.error("Sidebar Team Fetch Error:", error);
-          }
-      };
-
-      fetchTeamData();
-  }, [userData]);
+ 
 
   return (
     <aside
@@ -125,46 +95,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   <span>Manage BDs</span>
                 </Link>
                
-                <Link
-                  href="/dashboard/regional-leader"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/regional-leader" ? "bg-gray-700" : ""
-                  }`}
-                >
-                  <FaUsers className="w-5 h-5" />
-                  <span>{isTeamLeader ? "Team Leader" : isTeamMember ? "My Team" : "Regional Leader"}</span>
-                </Link>
-
-                {/* Dynamic Team Section */}
-                {(isRegionalLeader || isTeamLeader || isTeamMember) && (
-                    <div className="mt-2 mb-2 ml-4 border-l border-gray-700 pl-2">
-                        <p className="px-2 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            {isRegionalLeader ? "Region Teams" : isTeamLeader ? "Team Members" : "My Team"}
-                        </p>
-                        <div className="space-y-1">
-                            {isRegionalLeader && teamData?.teams?.map((team) => (
-                                <Link
-                                    key={team._id || team.id}
-                                    href={`/dashboard/team?id=${team._id || team.id}`} 
-                                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors ${
-                                        pathname.includes(`/team`) && new URLSearchParams(window.location.search).get('id') === (team._id || team.id) ? "text-white bg-gray-700" : ""
-                                    }`}
-                                >
-                                    <FaLayerGroup className="w-4 h-4" />
-                                    <span>{team.name}</span>
-                                </Link>
-                            ))}
-
-                            {(isTeamLeader || isTeamMember) && teamData?.members?.map((member) => (
-                                <div key={member.email} className="flex items-center space-x-3 px-3 py-1.5 text-gray-400 hover:text-white transition-colors">
-                                    <FaUser className="w-3 h-3" />
-                                    <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
-                                    {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="Team Lead" />}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
                 <Link
                   href="/dashboard/agents"
                   className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
