@@ -13,15 +13,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
   const { userData } = useAppContext();
   const userRole = userData?.role || null;
-
-  // New state for dynamic team data
-  const [teamData, setTeamData] = useState(null);
-  const [isRegionalLeader, setIsRegionalLeader] = useState(false);
-  const [isTeamLeader, setIsTeamLeader] = useState(false);
-  const [isTeamMember, setIsTeamMember] = useState(false);
-
- 
-
+  
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
