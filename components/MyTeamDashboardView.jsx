@@ -842,7 +842,7 @@ const MyTeamDashboardView = ({ teamId }) => {
 
             let endpoint;
             if (registerForm.role === 'tl') {
-                endpoint = API_CONFIG.ENDPOINTS.HR.REGISTER_STAFF;
+                endpoint = API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_TL;
                 payload.isTeamLead = true;
             } else if (registerForm.role === 'sm') {
                 endpoint = API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_SM;

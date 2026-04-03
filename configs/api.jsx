@@ -160,6 +160,7 @@ export const API_CONFIG = {
       GET_MY_TEAM: "/team-members/my-team",
       REGISTER_SM: "/team-members/register-sm",
       REGISTER_BDM: "/team-members/register-bdm",
+      REGISTER_TL: "/team-members/register-tl",
     },
     ZONE_WALLET: {
       GET_ALL_REGIONAL: "/zone-wallet/regional/all",
