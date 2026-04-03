@@ -16,6 +16,7 @@ const ROLE_LABELS = {
   bdm: "Business Dev. Manager",
   bd: "Business Developer",
   tl: "Team Leader",
+  rm: "Regional Manager",
 };
 
 export default function Onboarding() {
@@ -229,7 +230,7 @@ export default function Onboarding() {
               <h3 className="text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Deployment Setup</h3>
               <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Select Deployment Tier <span className="text-red-500">*</span></label>
               <div className="flex flex-wrap gap-4">
-                {["bd", "bdm", "sm", "tl"].map((r) => (
+                {["bd", "bdm", "sm", "tl", "rm"].map((r) => (
                   <button
                     key={r}
                     type="button"
@@ -240,78 +241,84 @@ export default function Onboarding() {
                         : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-600/50 hover:text-blue-600 dark:hover:text-slate-200"
                     }`}
                   >
-                    {r === "sm" ? <FaUserTie className="w-5 h-5" /> : r === "bdm" ? <FaUserShield className="w-5 h-5" /> : r === "tl" ? <FaUserPlus className="w-5 h-5" /> : <FaBriefcase className="w-5 h-5" />}
+                    {r === "sm" ? <FaUserTie className="w-5 h-5" /> : 
+                     r === "bdm" ? <FaUserShield className="w-5 h-5" /> : 
+                     r === "tl" ? <FaUserPlus className="w-5 h-5" /> : 
+                     r === "rm" ? <FaMapMarkerAlt className="w-5 h-5" /> : 
+                     <FaBriefcase className="w-5 h-5" />}
                     {ROLE_LABELS[r]} ({r.toUpperCase()})
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 dark:bg-slate-950/20 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
-              <div className="space-y-4">
-                <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
-                  <FaMapMarkerAlt className="text-blue-500" /> Assign Region
-                </label>
-                <select 
-                  name="regionalId" 
-                  value={formData.regionalId} 
-                  onChange={handleInputChange} 
-                  className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium"
-                >
-                  <option value="">Select Region (Optional)</option>
-                  {regions.map(region => (
-                    <option key={region._id} value={region._id}>{region.name}</option>
-                  ))}
-                </select>
-                
-                {formData.regionalId && (
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                    <input 
-                      type="checkbox" 
-                      id="isRegionalLeader"
-                      checked={formData.isRegionalLeader}
-                      onChange={(e) => setFormData(p => ({ ...p, isRegionalLeader: e.target.checked }))}
-                      className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="isRegionalLeader" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                      Make Regional Manager / Leader
-                    </label>
-                  </div>
-                )}
+            <div className="md:col-span-2 space-y-6 bg-slate-50 dark:bg-slate-950/20 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap gap-8 items-center border-b border-slate-200 dark:border-slate-800 pb-6 mb-2">
+                <div className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-blue-500/50">
+                  <input 
+                    type="checkbox" 
+                    id="isRegionalLeader"
+                    checked={formData.isRegionalLeader}
+                    onChange={(e) => setFormData(p => ({ ...p, isRegionalLeader: e.target.checked }))}
+                    className="w-6 h-6 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="isRegionalLeader" className="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                    Regional Leader
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-indigo-500/50">
+                  <input 
+                    type="checkbox" 
+                    id="isTeamLead"
+                    checked={formData.isTeamLead}
+                    onChange={(e) => setFormData(p => ({ ...p, isTeamLead: e.target.checked }))}
+                    className="w-6 h-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="isTeamLead" className="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                    Team Lead
+                  </label>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
-                  <FaLayerGroup className="text-indigo-500" /> Assign Team
-                </label>
-                <select 
-                  name="teamId" 
-                  value={formData.teamId} 
-                  onChange={handleInputChange} 
-                  disabled={!formData.regionalId}
-                  className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">{formData.regionalId ? "Select Team (Optional)" : "Select a Region first"}</option>
-                  {teams.map(team => (
-                    <option key={team._id} value={team._id}>{team.name}</option>
-                  ))}
-                </select>
-
-                {formData.teamId && (
-                  <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-                    <input 
-                      type="checkbox" 
-                      id="isTeamLead"
-                      checked={formData.isTeamLead}
-                      onChange={(e) => setFormData(p => ({ ...p, isTeamLead: e.target.checked }))}
-                      className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <label htmlFor="isTeamLead" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                      Make Team Leader
+              {(formData.isRegionalLeader || formData.isTeamLead) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <div className="space-y-4">
+                    <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+                      <FaMapMarkerAlt className="text-blue-500" /> Assign Region
                     </label>
+                    <select 
+                      name="regionalId" 
+                      value={formData.regionalId} 
+                      onChange={handleInputChange} 
+                      className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium"
+                    >
+                      <option value="">Select Region (Optional)</option>
+                      {regions.map(region => (
+                        <option key={region._id} value={region._id}>{region.name}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
-              </div>
+
+                  <div className="space-y-4">
+                    <label className="text-xs uppercase font-black text-slate-500 tracking-[0.2em] flex items-center gap-2">
+                      <FaLayerGroup className="text-indigo-500" /> Assign Team/State
+                    </label>
+                    <select 
+                      name="teamId" 
+                      value={formData.teamId} 
+                      onChange={handleInputChange} 
+                      disabled={!formData.regionalId}
+                      className="w-full h-14 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-6 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none transition-all shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">{formData.regionalId ? "Select Team (Optional)" : "Select a Region first"}</option>
+                      {teams.map(team => (
+                        <option key={team._id} value={team._id}>{team.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2 mt-6">

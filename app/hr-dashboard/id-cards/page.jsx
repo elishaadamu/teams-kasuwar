@@ -17,6 +17,7 @@ const ROLE_LABELS = {
   bdm: "Business Dev. Manager",
   bd: "Business Developer",
   tl: "Team Leader",
+  rm: "Regional Manager",
 };
 
 export default function IDCardGenerator() {
@@ -425,6 +426,7 @@ const ROLE_LABELS_MAP = {
   bdm: "Business Dev. Manager",
   bd: "Business Developer",
   tl: "Team Leader",
+  rm: "Regional Manager",
 };
 
 function IDCard({ card }) {

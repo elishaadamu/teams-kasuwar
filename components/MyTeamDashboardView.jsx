@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
 import statesData from "@/lib/states.json";
@@ -95,13 +95,23 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
     );
 };
 
-const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setForm }) => {
+const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setForm, teams }) => {
+    const [showPassword, setShowPassword] = useState(false);
     if (!isOpen) return null;
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
-            setForm({ ...form, [name]: files[0] });
+            const file = files[0];
+            if (file) {
+                // Check for 50KB limit (50 * 1024 bytes)
+                if (file.size > 50 * 1024) {
+                    toast.error("File size exceeds 50KB. Please choose a smaller image.");
+                    e.target.value = ""; // Clear input
+                    return;
+                }
+                setForm({ ...form, [name]: file });
+            }
         } else if (name === 'state') {
             // Reset LGA when state changes
             setForm({ ...form, state: value, localGovt: "" });
@@ -117,8 +127,8 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
             <div className="bg-white rounded-3xl w-full max-w-4xl my-8 shadow-2xl animate-in fade-in zoom-in duration-300 overflow-hidden">
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-800">Register New {form.role === 'sm' ? 'Sales Manager' : 'Business Development Manager'}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Fill in all required information to create a new {form.role === 'sm' ? 'SM' : 'BDM'} account.</p>
+                        <h3 className="text-2xl font-bold text-gray-800">Register New {form.role === 'sm' ? 'Sales Manager' : (form.role === 'tl' ? 'Team Lead' : 'Business Development Manager')}</h3>
+                        <p className="text-sm text-gray-500 mt-1">Fill in all required information to create a new {form.role === 'sm' ? 'SM' : (form.role === 'tl' ? 'TL' : 'BDM')} account.</p>
                     </div>
                     <button onClick={onClose} className="p-2 bg-white rounded-full shadow-sm hover:bg-red-50 hover:text-red-500 transition-all text-gray-400">
                         <FaTimes className="text-xl" />
@@ -127,6 +137,33 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                 
                 <form onSubmit={onRegister} className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {form.role === 'tl' && (
+                            <div className="lg:col-span-3 space-y-4 bg-purple-50/50 p-6 rounded-2xl border border-purple-100 mb-2">
+                                <h4 className="flex items-center gap-2 text-purple-600 font-bold uppercase tracking-wider text-xs">
+                                    <FaLayerGroup className="text-sm" /> Deployment Setup
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Assign to Team <span className="text-red-500 ml-0.5">*</span></label>
+                                        <div className="relative">
+                                            <FaLayerGroup className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                            <select 
+                                                name="teamId" 
+                                                required 
+                                                value={form.teamId} 
+                                                onChange={handleChange} 
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-purple-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm appearance-none"
+                                            >
+                                                <option value="">Select Team</option>
+                                                {teams?.map(team => (
+                                                    <option key={team._id || team.id} value={team._id || team.id}>{team.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {/* Personal Information Section */}
                         <div className="lg:col-span-3">
                             <h4 className="flex items-center gap-2 text-indigo-600 font-bold uppercase tracking-wider text-xs mb-4">
@@ -134,28 +171,28 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">First Name <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" />
                                         <input name="firstName" required value={form.firstName} onChange={handleChange} placeholder="John" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Last Name <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="lastName" required value={form.lastName} onChange={handleChange} placeholder="Doe" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email Address <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="email" type="email" required value={form.email} onChange={handleChange} placeholder="john@example.com" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Phone Number</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Phone Number <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="phone" required value={form.phone} onChange={handleChange} placeholder="08012345678" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
@@ -165,18 +202,32 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
                                     <div className="relative">
                                         <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input name="password" type="password" required value={form.password} onChange={handleChange} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
+                                        <input 
+                                            name="password" 
+                                            type={showPassword ? "text" : "password"} 
+                                            value={form.password} 
+                                            onChange={handleChange} 
+                                            placeholder="•••••••• (Optional)" 
+                                            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" 
+                                        />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
+                                        >
+                                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Date of Birth</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Date of Birth <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="dateOfBirth" type="date" required value={form.dateOfBirth} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Gender</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Gender <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaVenusMars className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select name="gender" required value={form.gender} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
@@ -188,7 +239,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Marital Status</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Marital Status <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaHeart className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select name="maritalStatus" required value={form.maritalStatus} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
@@ -210,14 +261,14 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="md:col-span-2 space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Address</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Full Address <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="address" required value={form.address} onChange={handleChange} placeholder="123 Shopping Mall Way" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">State</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">State <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select 
@@ -235,7 +286,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">LGA</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">LGA <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select 
@@ -263,28 +314,28 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bank Name</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bank Name <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="bankName" required value={form.bankName} onChange={handleChange} placeholder="Access Bank" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Number</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Number <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaUniversity className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="accountNumber" required value={form.accountNumber} onChange={handleChange} placeholder="0123456789" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Name</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Account Name <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="accountName" required value={form.accountName} onChange={handleChange} placeholder="John Doe" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Valid Identification ID (NIN, PVC etc)</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Valid Identification ID (NIN, PVC etc) <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaIdBadge className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input name="validId" required value={form.validId} onChange={handleChange} placeholder="e.g. 1234567890" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all text-sm" />
@@ -299,7 +350,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="md:col-span-2 space-y-2">
-                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Passport Photograph</label>
+                                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Passport Photograph <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative border-2 border-dashed border-gray-200 rounded-2xl p-4 hover:border-purple-400 transition-colors bg-gray-50/50 group">
                                         <input name="passportPhoto" type="file" required onChange={handleChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                         <div className="flex items-center gap-3">
@@ -308,7 +359,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                             </div>
                                             <div className="overflow-hidden">
                                                 <p className="text-sm font-semibold text-gray-700 truncate">{form.passportPhoto ? form.passportPhoto.name : "Choose Passport Photo"}</p>
-                                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Max size 1MB (JPG, PNG)</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Max size 50KB (JPG, PNG)</p>
                                             </div>
                                         </div>
                                     </div>
@@ -331,7 +382,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                             className="flex-[2] px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? <FaSpinner className="animate-spin" /> : <FaUserCheck />}
-                            {loading ? "Processing..." : `Register ${form.role === 'sm' ? 'Sales Manager' : 'Business Development Manager'}`}
+                            {loading ? "Processing..." : `Register ${form.role === 'sm' ? 'Sales Manager' : (form.role === 'tl' ? 'Team Lead' : 'Business Development Manager')}`}
                         </button>
                     </div>
                 </form>
@@ -536,7 +587,10 @@ const MyTeamDashboardView = ({ teamId }) => {
         accountName: "", accountNumber: "", bankName: "",
         validId: "", passportPhoto: null,
         gender: "", maritalStatus: "", dateOfBirth: "",
-        role: "sm" // default
+        role: "sm", // default
+        isTeamLead: false,
+        teamId: "",
+        regionalId: ""
     };
     const [registerForm, setRegisterForm] = useState(initialRegisterForm);
 
@@ -568,6 +622,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
                     console.log("dashboard",response.data);
                 } catch (error) {
+                    console.error("Dashboard fetch error:", error);
                     // Fallback to my-team endpoint for regular team members if dashboard is restricted
                     if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
                          response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
@@ -584,6 +639,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 }
             }
         } catch (error) {
+            console.error("fetchData overall error:", error);
             toast.error(error?.response?.data?.message || "Failed to load team data");
         } finally {
             setLoading(false);
@@ -774,15 +830,27 @@ const MyTeamDashboardView = ({ teamId }) => {
             };
 
             const payload = { ...registerForm };
-            delete payload.role; // Remove role as it's not in the target payload schema
             
+            // Set regional ID from user data if not present
+            if (!payload.regionalId) {
+                payload.regionalId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+            }
+
             if (payload.passportPhoto) {
                 payload.passportPhoto = await convertToBase64(payload.passportPhoto);
             }
 
-            const endpoint = registerForm.role === 'sm' 
-                ? API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_SM 
-                : API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_BDM;
+            let endpoint;
+            if (registerForm.role === 'tl') {
+                endpoint = API_CONFIG.ENDPOINTS.HR.REGISTER_STAFF;
+                payload.isTeamLead = true;
+            } else if (registerForm.role === 'sm') {
+                endpoint = API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_SM;
+                delete payload.role; // RM specific endpoints might not want 'role' in payload
+            } else {
+                endpoint = API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_BDM;
+                delete payload.role;
+            }
                 
             await axios.post(apiUrl(endpoint), payload, { 
                 withCredentials: true,
@@ -900,51 +968,70 @@ const MyTeamDashboardView = ({ teamId }) => {
                     </p>
                 </div>
                 
-                {/* Actions: Create Team (Regional) and Assign Member */}
-                <div className="flex flex-wrap items-center gap-3">
-                    {isRegionalView && (
+                {/* Actions: Create Team, Register Staff, and Assign Member */}
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 lg:justify-end">
+                    {/* Create Team - Only for Regional Leaders */}
+                    {isRegionalView && (userData?.role === 'rm' || userData?.role === 'regional-leader') && (
                         <button 
                             onClick={() => setShowCreateTeamModal(true)}
-                            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 w-fit"
+                            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 whitespace-nowrap"
                         >
                             <FaPlusCircle className="text-sm" /> Create Team
                         </button>
                     )}
-                    {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (
-                        <div className="flex flex-wrap gap-3">
+
+                    {/* Register Staff - Only for Regional Leaders */}
+                    {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (userData?.role === 'rm' || userData?.role === 'regional-leader') && (
+                        <>
                             <button 
                                 onClick={() => {
-                                    setRegisterForm({ ...initialRegisterForm, role: "sm" });
+                                    const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+                                    setRegisterForm({ ...initialRegisterForm, role: "sm", regionalId: zoneId });
                                     setShowRegisterModal(true);
                                 }}
-                                className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-100"
+                                className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-100 whitespace-nowrap"
                             >
                                 <FaPlusCircle /> Register SM
                             </button>
                             <button 
                                 onClick={() => {
-                                    setRegisterForm({ ...initialRegisterForm, role: "bdm" });
+                                    const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+                                    setRegisterForm({ ...initialRegisterForm, role: "bdm", regionalId: zoneId });
                                     setShowRegisterModal(true);
                                 }}
-                                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 whitespace-nowrap"
                             >
                                 <FaPlusCircle /> Register BDM
                             </button>
                             <button 
                                 onClick={() => {
-                                    if (!isRegionalView) {
-                                        const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
-                                        if (currentTeamId) {
-                                            setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
-                                        }
-                                    }
-                                    setShowAssignModal(true);
+                                    const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+                                    setRegisterForm({ ...initialRegisterForm, role: "tl", isTeamLead: true, regionalId: zoneId });
+                                    setShowRegisterModal(true);
                                 }}
-                                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 w-fit"
+                                className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 whitespace-nowrap"
                             >
-                                <FaUserPlus className="text-sm" /> Assign Member
+                                <FaPlusCircle /> Register TL
                             </button>
-                        </div>
+                        </>
+                    )}
+
+                    {/* Assign Member Button */}
+                    {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (
+                        <button 
+                            onClick={() => {
+                                if (!isRegionalView) {
+                                    const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
+                                    if (currentTeamId) {
+                                        setAssignForm(prev => ({ ...prev, teamId: currentTeamId }));
+                                    }
+                                }
+                                setShowAssignModal(true);
+                            }}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 whitespace-nowrap"
+                        >
+                            <FaUserPlus className="text-sm" /> Assign Member
+                        </button>
                     )}
                 </div>
             </div>
@@ -1508,6 +1595,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 loading={registerLoading}
                 form={registerForm}
                 setForm={setRegisterForm}
+                teams={availableTeams}
             />
         </div>
     );

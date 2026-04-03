@@ -72,7 +72,7 @@ const PersonalDetails = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}${userData.id}`,
+        `${apiUrl(API_CONFIG.ENDPOINTS.PROFILE.GET)}/${userData.id}`,
         { withCredentials: true },
       );
       

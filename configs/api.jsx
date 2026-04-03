@@ -41,11 +41,11 @@ export const API_CONFIG = {
       CREATE: "/order/create",
     },
     PROFILE: {
-      UPDATE: "/user/update/",
+      UPDATE: "/user/update",
       GET_BDM: "/bdm/profile",
-      GET: "/user/profile/",
+      GET: "/user/profile",
       UPDATE_USER: "/user/update",
-      DELETE: "/user/delete/",
+      DELETE: "/user/delete",
       SHIPPING: "/profile/shipping",
     },
     POS: {

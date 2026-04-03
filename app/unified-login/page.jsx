@@ -70,7 +70,7 @@ const page = () => {
       } 
       else if (userRole === "rm" || userRole === "regional-leader") {
         router.push("/regional-dashboard");
-      } else if (userRole === "TL" || userRole === "tl" || userRole === "team-lead") {
+      } else if (userRole === "tl" || userRole === "tl" || userRole === "team-lead") {
         router.push("/regional-dashboard");
       }
       else {
