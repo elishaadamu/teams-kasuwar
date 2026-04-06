@@ -497,22 +497,81 @@ const DashboardHome = () => {
                       (orderType === "automatic" && verifiedCustomer)) && (
                       <>
                         {/* Product Select */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Select Product
-                          </label>
-                          <select
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition"
-                            value={selectedProduct}
-                            onChange={(e) => setSelectedProduct(e.target.value)}
-                          >
-                            <option value="">-- Choose Product --</option>
-                            {products.map((p) => (
-                              <option key={p._id || p.id} value={p._id || p.id}>
-                                {p.name} - ₦{(p.price || 0).toLocaleString()}
-                              </option>
-                            ))}
-                          </select>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Select Product
+                            </label>
+                            <select
+                              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition"
+                              value={selectedProduct}
+                              onChange={(e) => setSelectedProduct(e.target.value)}
+                            >
+                              <option value="">-- Choose Product --</option>
+                              {products.map((p) => (
+                                <option key={p._id || p.id} value={p._id || p.id}>
+                                  {p.name} - ₦{(p.price || 0).toLocaleString()}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Selected Product Details Card */}
+                          {selectedProduct && products.find(p => p._id === selectedProduct || p.id === selectedProduct) && (() => {
+                            const p = products.find(prod => prod._id === selectedProduct || prod.id === selectedProduct);
+                            return (
+                              <div className="p-4 bg-white border border-blue-100 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 relative overflow-hidden group hover:shadow-md transition-shadow">
+                                <div className="absolute top-0 right-0 bg-gradient-to-l from-blue-500 to-blue-600 text-white px-3 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
+                                  {p.category || "General"}
+                                </div>
+                                <div className="w-full sm:w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 relative">
+                                  {p.images && p.images.length > 0 ? (
+                                    <img src={p.images[0].url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                      <FaBoxOpen size={30} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 space-y-1 w-full justify-center flex flex-col">
+                                  <h3 className="text-base font-bold text-gray-800 leading-tight pr-14 line-clamp-1" title={p.name}>{p.name}</h3>
+                                  <p className="text-lg font-black text-blue-600">₦{(p.price || 0).toLocaleString()}</p>
+                                  
+                                  <div className="flex flex-wrap gap-2 text-xs mt-2">
+                                    <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-lg font-medium flex items-center gap-1 shadow-sm">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                      Cond: <span className="font-semibold text-gray-800">{p.condition || 'N/A'}</span>
+                                    </span>
+                                    <span className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 rounded-lg font-medium flex items-center gap-1 shadow-sm">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                                      Stock: <span className="font-semibold text-gray-800">{p.stock || 0}</span>
+                                    </span>
+                                    {p.commission > 0 && (
+                                      <span className="px-2 py-1 bg-green-50 border border-green-100 text-green-700 rounded-lg font-medium flex items-center gap-1 shadow-sm">
+                                        <FaMoneyBillWave className="text-green-500" size={10} />
+                                        Commission: <span className="font-bold">₦{(p.commission || 0).toLocaleString()}</span>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {p.vendor && (
+                                    <div className="pt-3 mt-1 flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 ring-2 ring-white shadow-sm">
+                                        {p.vendor.avatar?.url ? (
+                                          <img src={p.vendor.avatar.url} alt={p.vendor.businessName || "Vendor"} className="w-full h-full object-cover" />
+                                        ) : (
+                                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-600 text-[10px] font-bold">
+                                            {p.vendor.firstName?.[0] || 'V'}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-gray-500 font-medium">Sold by: <span className="text-gray-800 font-semibold">{p.vendor.businessName || `${p.vendor.firstName || ''} ${p.vendor.lastName || ''}`}</span></span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* POS Extra Fields (Address & Contact) */}
