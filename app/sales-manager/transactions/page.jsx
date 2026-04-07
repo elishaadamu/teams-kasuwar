@@ -14,6 +14,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
+import Loading from "@/components/Loading";
 
 const TransactionsPage = () => {
   const { userData } = useAppContext();
@@ -208,10 +209,8 @@ const TransactionsPage = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-500 font-medium">Fetching transactions...</p>
-                      </div>
+                      <Loading fullPage={false} />
+                      <p className="text-gray-500 font-medium mt-4">Fetching transactions...</p>
                     </td>
                   </tr>
                 ) : currentItems.length === 0 ? (

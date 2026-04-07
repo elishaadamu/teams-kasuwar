@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import PinInput from "@/components/PinInput";
 import { useAppContext } from "@/context/AppContext";
+import Loading from "@/components/Loading";
 
 const DeliveryPaymentPage = () => {
   const { userData, authLoading, router } = useAppContext();
@@ -236,8 +237,8 @@ const DeliveryPaymentPage = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
         {loading && requests.length === 0 ? (
           <div className="p-20 text-center space-y-4">
-            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-            <p className="text-gray-500 font-medium">Loading your requests...</p>
+            <Loading fullPage={false} />
+            <p className="text-gray-500 font-bold uppercase tracking-widest mt-8">Loading your requests...</p>
           </div>
         ) : fetchError ? (
           <div className="p-20 text-center space-y-4">

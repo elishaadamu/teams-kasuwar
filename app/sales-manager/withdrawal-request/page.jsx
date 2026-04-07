@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 
 import { useAppContext } from "@/context/AppContext";
+import Loading from "@/components/Loading";
 
 const WithdrawalRequestPage = () => {
   const { userData } = useAppContext();
@@ -199,7 +200,10 @@ const WithdrawalRequestPage = () => {
       <section className="mb-8">
         <h2 className="text-xl font-medium mb-3">Withdrawal History</h2>
         {loadingWithdrawals ? (
-          <div className="p-6 text-center">Loading withdrawals...</div>
+          <div className="p-6 text-center">
+            <Loading fullPage={false} />
+            <p className="mt-4 text-gray-500">Loading withdrawals...</p>
+          </div>
         ) : withdrawals.length === 0 ? (
           <div className="p-4 bg-white shadow rounded">
             No withdrawal records found.

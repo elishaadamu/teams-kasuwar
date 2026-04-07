@@ -21,6 +21,7 @@ import {
   FaArrowUp,
   FaArrowDown
 } from "react-icons/fa";
+import Loading from "@/components/Loading";
 import Link from "next/link";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -220,6 +221,10 @@ export default function HRDashboard() {
     }
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="space-y-10 animate-fade-in transition-colors duration-300">
       {/* Header Section */}
@@ -377,11 +382,11 @@ export default function HRDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {isLoading ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan="4" className="px-6 py-8"><div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" /></td>
-                    </tr>
-                  ))
+                  <tr>
+                    <td colSpan="4" className="px-6 py-12">
+                      <Loading fullPage={false} />
+                    </td>
+                  </tr>
                 ) : recentStaff.length > 0 ? (
                   recentStaff.map((staff) => (
                     <tr key={staff._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">

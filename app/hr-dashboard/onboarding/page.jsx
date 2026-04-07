@@ -10,6 +10,7 @@ import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Loading from "@/components/Loading";
 
 const ROLE_LABELS = {
   sm: "Sales Manager",
@@ -204,6 +205,10 @@ export default function Onboarding() {
   const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  if (isFetching && staffList.length === 0) {
+    return <Loading />;
+  }
 
   return (
     <>
@@ -438,11 +443,12 @@ export default function Onboarding() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {isFetching ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan="4" className="px-6 py-8"><div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" /></td>
-                    </tr>
-                  ))
+                  <tr>
+                    <td colSpan="4" className="px-6 py-20 text-center">
+                      <Loading fullPage={false} />
+                      <p className="mt-4 text-slate-500 font-bold uppercase tracking-widest">Scanning Staff Records...</p>
+                    </td>
+                  </tr>
                 ) : currentItems.length > 0 ? (
                   currentItems.map((staff) => (
                     <tr key={staff._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">

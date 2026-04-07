@@ -21,6 +21,7 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import Loading from "@/components/Loading";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -384,9 +385,7 @@ const DashboardHome = () => {
   return (
     <div className="max-w-6xl mx-auto pb-20 md:pb-0 px-4">
       {loading ? (
-        <div className="flex justify-center items-center min-h-64">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
-        </div>
+        <Loading />
       ) : (
         <>
           {/* Welcome Section - Compact */}
@@ -591,7 +590,7 @@ const DashboardHome = () => {
 
               {reportLoading ? (
                 <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                  <Loading fullPage={false} />
                   <p className="mt-2 text-sm text-gray-600">
                     Fetching report...
                   </p>

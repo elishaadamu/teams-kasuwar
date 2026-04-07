@@ -19,6 +19,7 @@ import {
 import { Bar, Line } from 'react-chartjs-2';
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { FaTimes, FaDatabase } from "react-icons/fa";
+import Loading from "@/components/Loading";
 
 ChartJS.register(
   CategoryScale,
@@ -148,6 +149,10 @@ export default function StaffPerformance() {
     );
   });
 
+  if (isLoading && staffData.length === 0) {
+    return <Loading />;
+  }
+
   return (
     <div className="space-y-10 animate-fade-in">
       <ToastContainer theme="dark" />
@@ -200,9 +205,9 @@ export default function StaffPerformance() {
       {/* Performance List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {isLoading ? (
-          <div className="col-span-full py-20 text-center">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest">Loading Personnel Data...</p>
+          <div className="col-span-full py-20 text-center bg-slate-900 border-2 border-slate-800 rounded-[2.5rem]">
+            <Loading fullPage={false} />
+            <p className="text-slate-400 font-bold uppercase tracking-widest mt-8">Loading Personnel Data...</p>
           </div>
         ) : filteredStaff.length > 0 ? (
           filteredStaff.map((staff) => (

@@ -12,6 +12,7 @@ import Link from "next/link";
 import StateStats from "@/components/state-dashboard/StateStats";
 import StateFinancials from "@/components/state-dashboard/StateFinancials";
 import PerformanceLists from "@/components/state-dashboard/PerformanceLists";
+import Loading from "@/components/Loading";
 
 const DashboardContent = () => {
   const searchParams = useSearchParams();
@@ -82,11 +83,7 @@ const DashboardContent = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[60vh]">
-        <FaSpinner className="animate-spin text-4xl text-blue-600" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!stateId) {
@@ -199,7 +196,7 @@ const DashboardContent = () => {
 
 const StateDashboardPage = () => {
   return (
-    <Suspense fallback={<div className="flex justify-center p-10"><FaSpinner className="animate-spin text-2xl" /></div>}>
+    <Suspense fallback={<Loading />}>
       <DashboardContent />
     </Suspense>
   );

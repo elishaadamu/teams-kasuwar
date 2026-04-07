@@ -21,6 +21,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import Loading from "@/components/Loading";
 
 const DashboardHome = () => {
   const { userData, authLoading } = useAppContext();
@@ -167,9 +168,7 @@ const DashboardHome = () => {
   return (
     <div className="max-w-6xl mx-auto pb-20 md:pb-0 px-4">
       {loading ? (
-        <div className="flex justify-center items-center min-h-64">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
-        </div>
+        <Loading />
       ) : (
         <>
           {/* Welcome Section - Compact */}

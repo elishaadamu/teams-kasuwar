@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
@@ -19,8 +20,10 @@ import { toast } from "react-toastify";
 import SmWalletCard from "@/components/sm-dashboard/SmWalletCard";
 import ManageCustomers from "@/components/sm-dashboard/ManageCustomers";
 import TaskChart from "@/components/sm-dashboard/TaskChart";
+import Loading from "@/components/Loading";
 
 const DashboardHome = () => {
+  const router = useRouter();
   const { userData, states, lgas, fetchLgas } = useAppContext();
   const [loading, setLoading] = useState(true);
 
@@ -217,6 +220,7 @@ const DashboardHome = () => {
               withCredentials: true,
             },
           );
+          console.log("Manual POS response:", response.data);
 
           if (response.data) {
             toast.success("Order submitted for approval!");
@@ -231,6 +235,9 @@ const DashboardHome = () => {
               shippingFee: 0,
               tax: 0,
             });
+            setTimeout(() => {
+              router.push("/sales-manager/upload-payment");
+            }, 1000);
           }
         } catch (error) {
           toast.error(
@@ -278,6 +285,7 @@ const DashboardHome = () => {
             payload,
             { withCredentials: true },
           );
+          console.log("Automatic POS response:", response.data);
 
           if (response.data) {
             toast.success("Order processed successfully!");
@@ -309,12 +317,7 @@ const DashboardHome = () => {
     }
   };
 
-  if (loading)
-    return (
-      <div className="flex justify-center p-10">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  if (loading) return <Loading />;
 
   return (
     <div className="space-y-8">

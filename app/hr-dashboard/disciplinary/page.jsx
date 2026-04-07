@@ -19,6 +19,7 @@ import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useTheme } from "next-themes";
+import Loading from "@/components/Loading";
 
 const SearchableSelect = ({ options, onSelect, selectedUser }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -245,6 +246,10 @@ export default function DisciplinaryActions() {
       alert(`${selectedAction} functionality coming soon`);
     }
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4 md:p-8 animate-fade-in text-slate-900 dark:text-white">

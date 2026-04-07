@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Logo from "@/assets/logo/logo.png";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "@/components/sm-dashboard/Sidebar";
 import { useAppContext } from "@/context/AppContext";
@@ -37,7 +37,6 @@ const DashboardLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer />
 
       {isSidebarOpen && (
         <div

@@ -4,6 +4,7 @@ import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
 import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import Loading from "./Loading";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
 import statesData from "@/lib/states.json";
@@ -907,11 +908,7 @@ const MyTeamDashboardView = ({ teamId }) => {
     };
 
     if (loading) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <FaSpinner className="animate-spin text-4xl text-blue-600" />
-            </div>
-        );
+        return <Loading />;
     }
 
     if (!dashboardData) {

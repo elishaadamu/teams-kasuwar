@@ -15,6 +15,7 @@ import withReactContent from "sweetalert2-react-content";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
+import Loading from "@/components/Loading";
 
 const MySwal = withReactContent(Swal);
 
@@ -449,11 +450,11 @@ const ManageCustomersPage = () => {
               <tbody className="divide-y divide-gray-200">
                 {listLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="flex justify-center">
-                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                      <p className="text-gray-500 mt-2">Loading customers...</p>
+                    <td colSpan={4} className="px-6 py-20 text-center">
+                      <Loading fullPage={false} />
+                      <p className="text-gray-500 mt-4 font-bold uppercase tracking-widest">
+                        Retrieving Customer Directory...
+                      </p>
                     </td>
                   </tr>
                 ) : filteredCustomers.length === 0 ? (

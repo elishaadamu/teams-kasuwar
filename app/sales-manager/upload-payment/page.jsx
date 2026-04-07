@@ -5,6 +5,7 @@ import { apiUrl, API_CONFIG } from "@/configs/api";
 import { toast } from "react-toastify";
 import { FaUpload, FaSearch, FaSpinner } from "react-icons/fa";
 import { useAppContext } from "@/context/AppContext";
+import Loading from "@/components/Loading";
 
 const UploadPaymentPage = () => {
   const [orders, setOrders] = useState([]);
@@ -56,6 +57,7 @@ const UploadPaymentPage = () => {
           withCredentials: true,
         },
       );
+      console.log("Fetch orders response:", response.data);
 
       if (response.data) {
         // Assuming response.data is the array of orders, or response.data.orders
@@ -77,12 +79,14 @@ const UploadPaymentPage = () => {
   };
 
   const handleSelectOrder = (order) => {
+    if (order.status === "confirmed") {
+      return toast.info("This order is already confirmed.");
+    }
     setSelectedOrder(order);
     // Pre-fill form if data is available in the order, otherwise keep blank
-    // The payload requirements: customerName, customerPhone, deliveryAddress, state, lga, zipcode
     setPaymentForm({
-      customerName: "",
-      customerPhone: order.phone || "",
+      customerName: order.customerName || "",
+      customerPhone: order.customerPhone || order.phone || "",
       deliveryAddress: order.deliveryAddress || "",
       state: order.state || "",
       lga: order.lga || "",
@@ -154,19 +158,27 @@ const UploadPaymentPage = () => {
         typeof API_CONFIG.ENDPOINTS.POS.UPLOAD_PAYMENT === "function"
           ? API_CONFIG.ENDPOINTS.POS.UPLOAD_PAYMENT(selectedOrder._id)
           : API_CONFIG.ENDPOINTS.POS.UPLOAD_PAYMENT.replace(
-              ":posOrderId",
-              selectedOrder._id,
-            ); // Fallback
+            ":posOrderId",
+            selectedOrder._id,
+          ); // Fallback
 
       const response = await axios.post(apiUrl(url), formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
+      console.log("Upload payment response:", response.data);
 
       if (response.data) {
         toast.success("Payment uploaded successfully!");
+        const updatedOrder = response.data;
+        // Update local orders list with the new data from response
+        setOrders((prev) =>
+          prev.map((order) =>
+            order._id === updatedOrder._id ? updatedOrder : order,
+          ),
+        );
         setSelectedOrder(null); // Close modal/form
-        fetchOrders(); // Refresh list
+        fetchOrders(); // Refresh list to ensure data consistency
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to upload payment");
@@ -200,9 +212,7 @@ const UploadPaymentPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-8">
-            <FaSpinner className="animate-spin text-blue-600 text-2xl" />
-          </div>
+          <Loading fullPage={false} />
         ) : filteredOrders.length === 0 ? (
           <div className="text-center p-8 text-gray-500">No orders found.</div>
         ) : (
@@ -235,24 +245,31 @@ const UploadPaymentPage = () => {
                     </td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          order.status === "submitted"
+                        className={`px-2 py-1 rounded-full text-xs capitalize ${order.status === "confirmed"
                             ? "bg-green-100 text-green-700"
-                            : order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-gray-100 text-gray-700"
-                        }`}
+                            : order.status === "submitted"
+                              ? "bg-blue-100 text-blue-700"
+                              : order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-gray-100 text-gray-700"
+                          }`}
                       >
                         {order.status || "Pending"}
                       </span>
                     </td>
                     <td className="p-3">
-                      <button
-                        onClick={() => handleSelectOrder(order)}
-                        className="text-blue-600 hover:underline hover:text-blue-800 font-medium"
-                      >
-                        Upload Payment
-                      </button>
+                      {order.status === "confirmed" ? (
+                        <span className="text-gray-400 font-medium italic">
+                          Closed
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSelectOrder(order)}
+                          className="text-blue-600 hover:underline hover:text-blue-800 font-medium"
+                        >
+                          Upload Payment
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -405,7 +422,7 @@ const UploadPaymentPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading}
+                  disabled={uploading || selectedOrder?.status === "confirmed"}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-70 flex items-center gap-2"
                 >
                   {uploading && <FaSpinner className="animate-spin" />}
