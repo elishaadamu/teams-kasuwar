@@ -233,9 +233,9 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                         <FaVenusMars className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select name="gender" required value={form.gender} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
                                             <option value="">Select Gender</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
                                         </select>
                                     </div>
                                 </div>
@@ -245,10 +245,10 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                         <FaHeart className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <select name="maritalStatus" required value={form.maritalStatus} onChange={handleChange} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm appearance-none">
                                             <option value="">Select Status</option>
-                                            <option value="Single">Single</option>
-                                            <option value="Married">Married</option>
-                                            <option value="Divorced">Divorced</option>
-                                            <option value="Widowed">Widowed</option>
+                                            <option value="single">Single</option>
+                                            <option value="married">Married</option>
+                                            <option value="divorced">Divorced</option>
+                                            <option value="widowed">Widowed</option>
                                         </select>
                                     </div>
                                 </div>
@@ -621,16 +621,12 @@ const MyTeamDashboardView = ({ teamId }) => {
                 let response;
                 try {
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-                    console.log("dashboard",response.data);
                 } catch (error) {
-                    console.error("Dashboard fetch error:", error);
                     // Fallback to my-team endpoint for regular team members if dashboard is restricted
                     if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
                          response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-                         console.log("my-team",response.data);
                     } else {
                          response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-                         console.log("my-team",response.data);
                     }
                 }
                
@@ -640,7 +636,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                 }
             }
         } catch (error) {
-            console.error("fetchData overall error:", error);
             toast.error(error?.response?.data?.message || "Failed to load team data");
         } finally {
             setLoading(false);
@@ -863,7 +858,6 @@ const MyTeamDashboardView = ({ teamId }) => {
             setRegisterForm(initialRegisterForm);
             fetchData(); // Refresh list
         } catch (error) {
-            console.error("Registration Error:", error);
             toast.error(error?.response?.data?.message || "Registration failed. Please try again.");
         } finally {
             setRegisterLoading(false);

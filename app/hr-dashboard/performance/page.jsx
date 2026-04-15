@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FaChartBar, FaSearch, FaFilter, FaArrowUp, FaArrowDown, FaUserTie, FaUserShield, FaUserEdit } from "react-icons/fa";
+import { FaChartBar, FaSearch, FaFilter, FaArrowUp, FaArrowDown, FaUserTie, FaUserShield, FaUserEdit, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
@@ -53,6 +53,10 @@ export default function StaffPerformance() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  
   const years = ["2024", "2025", "2026", "2027"];
 
   useEffect(() => {
@@ -78,20 +82,20 @@ export default function StaffPerformance() {
           }
         }
 
-        const results = await Promise.all(
+        const responses = await Promise.all(
           endpoints.map(ep => 
             axios.get(`${apiUrl(ep.endpoint)}?year=${selectedYear}`, { withCredentials: true })
           )
         );
 
-        console.log("Performance API Results:", results);
+        const results = responses.map(res => res.data);
 
         const currentMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
         let allData = [];
         
         results.forEach((res) => {
-          if (res.data.success) {
-            const mapped = (res.data.data || []).map(item => {
+          if (res.success) {
+            const mapped = (res.data || []).map(item => {
               const staff = item.staff || {};
               const performance = item.yearlyPerformance || {};
               const monthData = performance[currentMonth] || {};
@@ -111,11 +115,9 @@ export default function StaffPerformance() {
           }
         });
 
-        console.log("Combined Mapped Staff Data:", allData);
         setStaffData(allData);
       } catch (error) {
-        console.error("Error fetching performance data:", error);
-        toast.error("Failed to load staff performance data");
+        toast.error("Failed to load performance data");
       } finally {
         setIsLoading(false);
       }
@@ -148,6 +150,19 @@ export default function StaffPerformance() {
       staffRegion.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStaff = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole, selectedYear]);
 
   if (isLoading && staffData.length === 0) {
     return <Loading />;
@@ -209,8 +224,8 @@ export default function StaffPerformance() {
             <Loading fullPage={false} />
             <p className="text-slate-400 font-bold uppercase tracking-widest mt-8">Loading Personnel Data...</p>
           </div>
-        ) : filteredStaff.length > 0 ? (
-          filteredStaff.map((staff) => (
+        ) : currentStaff.length > 0 ? (
+          currentStaff.map((staff) => (
           <div key={staff.id} className="p-8 rounded-[2.5rem] bg-slate-900 border-2 border-slate-800 hover:border-blue-500/30 transition-all duration-500 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 {getRoleIcon(staff.role)}
@@ -264,6 +279,53 @@ export default function StaffPerformance() {
           </div>
         )}
       </div>
+
+      {/* Pagination UI */}
+      {filteredStaff.length > itemsPerPage && (
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-4 py-8 mt-4 border-t border-slate-800/50">
+          <p className="text-sm font-bold text-slate-500">
+            Showing <span className="text-slate-300 font-black">{indexOfFirstItem + 1}</span> to{" "}
+            <span className="text-slate-300 font-black">{Math.min(indexOfLastItem, filteredStaff.length)}</span> of{" "}
+            <span className="text-slate-300 font-black">{filteredStaff.length}</span> staff members
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => paginate(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="w-12 h-12 rounded-2xl border-2 border-slate-800 text-slate-500 hover:border-blue-500 hover:text-blue-500 disabled:opacity-20 disabled:hover:border-slate-800 disabled:hover:text-slate-500 transition-all bg-slate-900 flex items-center justify-center shadow-xl group"
+              title="Previous Page"
+            >
+              <FaChevronLeft className="text-sm group-active:-translate-x-1 transition-transform" />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => paginate(i + 1)}
+                  className={`w-12 h-12 rounded-2xl font-black text-sm transition-all duration-300 ${
+                    currentPage === i + 1
+                      ? "bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.4)] scale-110 border-2 border-blue-400"
+                      : "bg-slate-900 border-2 border-slate-800 text-slate-500 hover:border-blue-500/50 hover:text-blue-400"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="w-12 h-12 rounded-2xl border-2 border-slate-800 text-slate-500 hover:border-blue-500 hover:text-blue-500 disabled:opacity-20 disabled:hover:border-slate-800 disabled:hover:text-slate-500 transition-all bg-slate-900 flex items-center justify-center shadow-xl group"
+              title="Next Page"
+            >
+              <FaChevronRight className="text-sm group-active:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Detailed Modal using Portal */}
       {isMounted && selectedStaff && createPortal(
