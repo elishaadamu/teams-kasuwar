@@ -67,11 +67,11 @@ const page = () => {
         router.push("/bd-dashboard");
       } else if (userRole === "hr") {
         router.push("/hr-dashboard");
-      } 
+      }
       else if (userRole === "rm" || userRole === "regional-leader") {
         router.push("/regional-dashboard");
       } else if (userRole === "tl" || userRole === "tl" || userRole === "team-lead") {
-        router.push("/regional-dashboard");
+        router.push("/state-dashboard");
       }
       else {
         router.push("/");

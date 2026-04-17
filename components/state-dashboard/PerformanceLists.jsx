@@ -66,6 +66,8 @@ const PerformanceLists = ({ managers }) => {
   const smData = managers?.sm || [];
   const bdmData = managers?.bdm || [];
   const bdData = managers?.bd || [];
+  const agentData = managers?.agent || [];
+  const otherData = managers?.others || [];
 
   const smColumns = [
     { label: "No of Sales", key: "sales" },
@@ -84,6 +86,15 @@ const PerformanceLists = ({ managers }) => {
     { label: "No of Vendors", key: "totalVendors" },
     { label: "No of Customers", key: "totalCustomers" },
     { label: "No of Agents", key: "totalAgents" },
+  ];
+
+  const agentColumns = [
+    { label: "No of Vendors", key: "totalVendors" },
+    { label: "No of Customers", key: "totalCustomers" },
+  ];
+
+  const otherColumns = [
+    { label: "Activity", key: "activityCount" },
   ];
 
   return (
@@ -117,6 +128,24 @@ const PerformanceLists = ({ managers }) => {
           columns={bdColumns}
           type="bd"
         />
+
+        <PerformanceTable 
+          title="Agents Performance" 
+          icon={FaUsers} 
+          data={agentData} 
+          columns={agentColumns}
+          type="agent"
+        />
+
+        {otherData.length > 0 && (
+          <PerformanceTable 
+            title="Other Team Members" 
+            icon={FaUsers} 
+            data={otherData} 
+            columns={otherColumns}
+            type="others"
+          />
+        )}
       </div>
     </div>
   );
