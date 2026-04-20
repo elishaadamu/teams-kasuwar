@@ -610,24 +610,22 @@ const MyTeamDashboardView = ({ teamId }) => {
                     setDashboardData(teamsRes.data);
                 }
                 setTeamMembers(membersRes.data?.members || []);
-            } else if (userData?.role === 'rm' || userData?.role === 'regional-leader') {
+            } else if (userData?.role?.toLowerCase() === 'rm' || userData?.role?.toLowerCase() === 'regional-leader') {
                 // Regional Overview: fetch all teams in the region
                 const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true });
                 if (response.data.success) {
                     setDashboardData(response.data);
                 }
             } else {
-                // No team selected: use default dashboard endpoint for non-RMs
+                // No team selected: use the TL Dashboard endpoint to get full team context
                 let response;
                 try {
-                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
+                    console.log("TL Endpoint (Dashboard):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD));
+                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
                 } catch (error) {
-                    // Fallback to my-team endpoint for regular team members if dashboard is restricted
-                    if (error.response?.status === 403 || error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 400 || error.response?.status === 500) {
-                         response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-                    } else {
-                         response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
-                    }
+                    // Fallback to standard team members endpoint if specific dashboard fails
+                    console.log("TL Endpoint (Fallback):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM));
+                    response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
                 }
                
                 if (response?.data?.success) {
@@ -743,6 +741,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 teamId: setLeadForm.teamId
             };
             
+            console.log("TL Endpoint (Set TL):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.SET_TEAM_LEAD));
             await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.SET_TEAM_LEAD), payload, { withCredentials: true });
             toast.success("TL Set successfully!");
             setShowSetLeadModal(false);
@@ -848,6 +847,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                 delete payload.role;
             }
                 
+            if (registerForm.role === 'tl') {
+                console.log("TL Endpoint (Register TL):", apiUrl(endpoint));
+            }
             await axios.post(apiUrl(endpoint), payload, { 
                 withCredentials: true,
                 headers: { 'Content-Type': 'application/json' }
@@ -971,13 +973,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                         </button>
                     )}
 
-                    {/* Register Staff - Only for Regional Leaders */}
-                    {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && (userData?.role === 'rm' || userData?.role === 'regional-leader') && (
+                    {/* Register Staff - Only for RM, Regional Leaders, and Team Leads */}
+                    {(isRegionalView || isTeamView) && dashboardData?.role?.toLowerCase() !== 'member' && (userData?.role?.toLowerCase() === 'rm' || userData?.role?.toLowerCase() === 'regional-leader' || userData?.role?.toLowerCase() === 'tl') && (
                         <>
                             <button 
                                 onClick={() => {
                                     const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
-                                    setRegisterForm({ ...initialRegisterForm, role: "sm", regionalId: zoneId });
+                                    const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
+                                    setRegisterForm({ ...initialRegisterForm, role: "sm", regionalId: zoneId, teamId: currentTeamId });
                                     setShowRegisterModal(true);
                                 }}
                                 className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-100 whitespace-nowrap"
@@ -987,23 +990,26 @@ const MyTeamDashboardView = ({ teamId }) => {
                             <button 
                                 onClick={() => {
                                     const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
-                                    setRegisterForm({ ...initialRegisterForm, role: "bdm", regionalId: zoneId });
+                                    const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
+                                    setRegisterForm({ ...initialRegisterForm, role: "bdm", regionalId: zoneId, teamId: currentTeamId });
                                     setShowRegisterModal(true);
                                 }}
                                 className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 whitespace-nowrap"
                             >
                                 <FaPlusCircle /> Register BDM
                             </button>
-                            <button 
-                                onClick={() => {
-                                    const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
-                                    setRegisterForm({ ...initialRegisterForm, role: "tl", isTeamLead: true, regionalId: zoneId });
-                                    setShowRegisterModal(true);
-                                }}
-                                className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 whitespace-nowrap"
-                            >
-                                <FaPlusCircle /> Register TL
-                            </button>
+                            {(userData?.role === 'rm' || userData?.role === 'regional-leader') && (
+                                <button 
+                                    onClick={() => {
+                                        const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
+                                        setRegisterForm({ ...initialRegisterForm, role: "tl", isTeamLead: true, regionalId: zoneId });
+                                        setShowRegisterModal(true);
+                                    }}
+                                    className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 whitespace-nowrap"
+                                >
+                                    <FaPlusCircle /> Register TL
+                                </button>
+                            )}
                         </>
                     )}
 
@@ -1287,7 +1293,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <th className="px-6 py-4 font-semibold">Email</th>
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
-                                            <th className="px-6 py-4 font-semibold">Joined Date</th>
                                             {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
@@ -1311,7 +1316,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                             ? 'bg-indigo-100 text-indigo-700' 
                                                             : 'bg-gray-100 text-gray-600'
                                                     }`}>
-                                                        {(member.isTeamLead || member.role === 'team_lead' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
+                                                        {(member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
                                                             ? 'TL' 
                                                             : (member.role?.toUpperCase() || 'MEMBER')}
                                                     </span>
@@ -1323,9 +1328,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                         {(member.isActive !== false) ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500">
-                                                    {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
-                                                </td>
+
                                                 {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                                     <td className="px-6 py-4">
                                                         <button 
@@ -1381,7 +1384,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <th className="px-6 py-4 font-semibold">Email</th>
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
-                                    <th className="px-6 py-4 font-semibold">Joined Date</th>
                                     {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
@@ -1401,9 +1403,9 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                                         <td className="px-6 py-4 text-sm">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                (member.isTeamLead || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+                                                (member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
                                             }`}>
-                                                {(member.isTeamLead || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'TL' : (member.role?.toUpperCase() || 'MEMBER')}
+                                                {(member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'TL' : (member.role?.toUpperCase() || 'MEMBER')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -1412,9 +1414,6 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             }`}>
                                                 {(member.isActive !== false) ? 'Active' : 'Inactive'}
                                             </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "N/A"}
                                         </td>
                                         {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
                                             <td className="px-6 py-4">
@@ -1521,6 +1520,33 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 </ul>
                             ) : (
                                 <div className="p-6 text-center text-sm text-gray-500">No BD performance data available.</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Agent Performance List */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUsers className="text-emerald-600"/> Top Agents</h3>
+                        </div>
+                        <div className="p-0">
+                            {(dashboardData?.performances?.agent || []).length > 0 ? (
+                                <ul className="divide-y divide-gray-100">
+                                    {(dashboardData?.performances?.agent || []).map((user, idx) => (
+                                        <li key={idx} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="font-semibold text-sm text-gray-800">{user.name}</span>
+                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Rank #{idx + 1}</span>
+                                            </div>
+                                            <div className="flex gap-4 text-xs text-gray-500 flex-wrap">
+                                                <span>Vendors: <strong className="text-gray-700">{user.vendors || 0}</strong></span>
+                                                <span>Customers: <strong className="text-gray-700">{user.customers || 0}</strong></span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="p-6 text-center text-sm text-gray-500">No Agent performance data available.</div>
                             )}
                         </div>
                     </div>

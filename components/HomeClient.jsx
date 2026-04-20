@@ -22,7 +22,7 @@ const HomeClient = () => {
           <p className="text-gray-500 mb-6">
             Access your dashboard to manage your activities.
           </p>
-          <Link href="/signin-agent" legacyBehavior>
+          <Link href="/" legacyBehavior>
             <a className="inline-block bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
               Agent Login
             </a>
@@ -37,7 +37,7 @@ const HomeClient = () => {
           <p className="text-gray-500 mb-6">
             Manage your team and track performance.
           </p>
-          <Link href="/signin-bdm" legacyBehavior>
+          <Link href="/" legacyBehavior>
             <a className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors">
               BDM Login
             </a>
@@ -52,7 +52,7 @@ const HomeClient = () => {
           <p className="text-gray-500 mb-6">
             Access your resources and manage your tasks.
           </p>
-          <Link href="/signin-bd" legacyBehavior>
+          <Link href="/" legacyBehavior>
             <a className="inline-block bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition-colors">
               BD Login
             </a>

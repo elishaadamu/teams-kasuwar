@@ -26,7 +26,7 @@ const DashboardLayout = ({ children }) => {
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
-      router.push("/signin-sm");
+      router.push("/");
     }
   }, [authLoading, isLoggedIn, router]);
 

@@ -37,7 +37,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const [isRegionalLeader, setIsRegionalLeader] = useState(false);
   const [isTL, setIsTL] = useState(false);
 
-  const userRole = userData?.role || null;
+  const userRole = userData?.role?.toLowerCase() || null;
   // Hardcoded ID for specific regional leader check as requested
   const REGIONAL_LEADER_ID = "255391858487471";
 
@@ -95,9 +95,8 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                   if (String(userData.id) === REGIONAL_LEADER_ID || (data.teams && data.teams.length > 0)) {
                       setIsRegionalLeader(true);
                   } 
-                  // Check if TL
-                  // Condition: has specific team data and members
-                  else if (data.team && data.members) {
+                  // Check if TL (Case-Insensitive)
+                  else if (data.team && data.members || userRole === 'tl') {
                       setIsTL(true);
                   }
               }

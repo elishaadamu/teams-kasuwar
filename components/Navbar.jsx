@@ -21,19 +21,19 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-x-4 md:gap-x-6">
           <Link
-            href="/signin-bd"
+            href="/"
             className="text-gray-600 hover:text-gray-900 transition text-sm md:text-base"
           >
             Business Developer
           </Link>
           <Link
-            href="/signin-bdm"
+            href="/"
             className="text-gray-600 hover:text-gray-900 transition text-sm md:text-base"
           >
             BD Manager
           </Link>
           <Link
-            href="/signin-agent"
+            href="/"
             className="bg-blue-600 text-white hover:bg-blue-700 transition px-4 py-2 rounded-md text-sm md:text-base"
           >
             Agent Signin
@@ -86,21 +86,21 @@ const Navbar = () => {
           </div>
           <nav className="flex flex-col p-4 space-y-4">
             <Link
-              href="/signin-bd"
+              href="/"
               onClick={() => setIsMenuOpen(false)}
               className="text-gray-700 hover:text-gray-900"
             >
               Business Developer
             </Link>
             <Link
-              href="/signin-bdm"
+              href="/"
               onClick={() => setIsMenuOpen(false)}
               className="text-gray-700 hover:text-gray-900"
             >
               BD Manager
             </Link>
             <Link
-              href="/signin-agent"
+              href="/"
               onClick={() => setIsMenuOpen(false)}
               className="bg-blue-600 text-white hover:bg-blue-700 transition px-4 py-2 rounded-md text-center"
             >

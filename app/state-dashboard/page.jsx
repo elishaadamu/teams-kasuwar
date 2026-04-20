@@ -13,6 +13,7 @@ import StateStats from "@/components/state-dashboard/StateStats";
 import StateFinancials from "@/components/state-dashboard/StateFinancials";
 import PerformanceLists from "@/components/state-dashboard/PerformanceLists";
 import Loading from "@/components/Loading";
+import MyTeamDashboardView from "@/components/MyTeamDashboardView";
 
 const DashboardContent = () => {
   const searchParams = useSearchParams();
@@ -73,6 +74,11 @@ const DashboardContent = () => {
           role: assignForm.role,
           teamId: stateId
         }, { withCredentials: true });
+      
+      if (assignForm.role?.toLowerCase() === 'tl') {
+        console.log("TL Endpoint (Assign Member):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.ASSIGN_MEMBER));
+      }
+      
       toast.success(`${assignForm.role.toUpperCase()} assigned successfully!`);
       setShowAssignModal(false);
     } catch (error) {
@@ -87,15 +93,9 @@ const DashboardContent = () => {
   }
 
   if (!stateId) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500">
-        <h2 className="text-xl font-bold mb-2">No State Selected</h2>
-        <p>Please select a state from the regional overview to view its dashboard.</p>
-        <Link href="/regional-dashboard" className="mt-4 text-blue-600 hover:underline flex items-center gap-2">
-          <FaArrowLeft /> Back to Regional Overview
-        </Link>
-      </div>
-    );
+    // If no state is selected, show the unified Team Dashboard view
+    // This handles the "No State Selected" restriction for TLs and other roles
+    return <MyTeamDashboardView />;
   }
 
   return (
@@ -154,14 +154,14 @@ const DashboardContent = () => {
 
       {/* Performance Lists Section */}
       <section>
-        <PerformanceLists 
-            managers={data?.performanceData || {
-                sm: data?.subregions?.filter(s => s.role === 'sm') || data?.members?.filter(s => s.role === 'sm') || [],
-                bdm: data?.subregions?.filter(s => s.role === 'bdm') || data?.members?.filter(s => s.role === 'bdm' || s.role === 'tl') || [],
-                bd: data?.subregions?.filter(s => s.role === 'bd') || data?.members?.filter(s => s.role === 'bd') || [],
-                agent: data?.subregions?.filter(s => s.role === 'agent') || data?.members?.filter(s => s.role === 'agent') || [],
-                others: data?.members?.filter(s => !['sm', 'bdm', 'tl', 'bd', 'agent'].includes(s.role)) || []
-            }} 
+        <PerformanceLists
+          managers={data?.performanceData || {
+            sm: data?.subregions?.filter(s => s.role === 'sm') || data?.members?.filter(s => s.role === 'sm') || [],
+            bdm: data?.subregions?.filter(s => s.role === 'bdm') || data?.members?.filter(s => s.role === 'bdm' || s.role === 'tl') || [],
+            bd: data?.subregions?.filter(s => s.role === 'bd') || data?.members?.filter(s => s.role === 'bd') || [],
+            agent: data?.subregions?.filter(s => s.role === 'agent') || data?.members?.filter(s => s.role === 'agent') || [],
+            others: data?.members?.filter(s => !['sm', 'bdm', 'tl', 'bd', 'agent'].includes(s.role)) || []
+          }}
         />
       </section>
 

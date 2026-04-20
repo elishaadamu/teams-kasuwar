@@ -18,8 +18,9 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { apiUrl, API_CONFIG } from "@/configs/api";
-import { FaTimes, FaDatabase } from "react-icons/fa";
+import { FaTimes, FaDatabase, FaChartLine, FaSpinner } from "react-icons/fa";
 import Loading from "@/components/Loading";
+import { useAppContext } from "@/context/AppContext";
 
 ChartJS.register(
   CategoryScale,
@@ -53,9 +54,50 @@ export default function StaffPerformance() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
   
+  const { userData } = useAppContext();
+  
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  
+  // Personal Performance Report State
+  const [reportLoading, setReportLoading] = useState(false);
+  const [performanceData, setPerformanceData] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [personalSelectedYear, setPersonalSelectedYear] = useState(new Date().getFullYear());
+
+  const fetchPerformanceReport = async () => {
+    if (!userData?.id) return;
+    
+    let endpoint = "";
+    if (userData.role?.toLowerCase() === 'bdm' || userData.role?.toLowerCase() === 'tl') {
+      endpoint = API_CONFIG.ENDPOINTS.REPORTS.BDM_PERFORMANCE;
+    } else if (userData.role?.toLowerCase() === 'bd') {
+      endpoint = API_CONFIG.ENDPOINTS.REPORTS.BD_PERFORMANCE;
+    }
+    
+    if (!endpoint) {
+      toast.info("Performance report is not available for your role.");
+      return;
+    }
+
+    setReportLoading(true);
+    setPerformanceData(null);
+    try {
+      const response = await axios.get(apiUrl(endpoint), {
+        params: {
+          month: selectedMonth,
+          year: personalSelectedYear
+        },
+        withCredentials: true
+      });
+      setPerformanceData(response.data?.report || response.data?.data || null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to fetch performance report");
+    } finally {
+      setReportLoading(false);
+    }
+  };
   
   const years = ["2024", "2025", "2026", "2027"];
 
@@ -70,10 +112,8 @@ export default function StaffPerformance() {
         const endpoints = [];
         if (filterRole === "all") {
           endpoints.push(
-            { role: "sm", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.SM },
             { role: "bdm", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.BDM },
-            { role: "bd", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.BD },
-            { role: "tl", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.TL }
+            { role: "bd", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.BD }
           );
         } else {
           const roleEndpoint = API_CONFIG.ENDPOINTS.HR.PERFORMANCE[filterRole.toUpperCase()];
@@ -84,9 +124,6 @@ export default function StaffPerformance() {
 
         const responses = await Promise.all(
           endpoints.map(ep => {
-            if (ep.role === "tl") {
-              console.log("TL Endpoint (Performance):", `${apiUrl(ep.endpoint)}?year=${selectedYear}`);
-            }
             return axios.get(`${apiUrl(ep.endpoint)}?year=${selectedYear}`, { withCredentials: true });
           })
         );
@@ -111,7 +148,7 @@ export default function StaffPerformance() {
                 kpi: Math.round(monthData.achievement || 0),
                 trend: 0, 
                 metrics: monthData.metrics || {},
-                yearlyPerformance: performance // Store whole performance for modal
+                yearlyPerformance: performance
               };
             });
             allData = [...allData, ...mapped];
@@ -154,7 +191,6 @@ export default function StaffPerformance() {
     );
   });
 
-  // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentStaff = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
@@ -162,7 +198,6 @@ export default function StaffPerformance() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Reset to first page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterRole, selectedYear]);
@@ -175,7 +210,6 @@ export default function StaffPerformance() {
     <div className="space-y-10 animate-fade-in">
       <ToastContainer theme="dark" />
       
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-5xl font-black text-white tracking-tighter">
@@ -211,16 +245,115 @@ export default function StaffPerformance() {
                 onChange={(e) => setFilterRole(e.target.value)}
                 className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
             >
-                <option value="all">All Roles</option>
-                <option value="SM">SM Only</option>
+                <option value="all">All Management</option>
                 <option value="BDM">BDM Only</option>
                 <option value="BD">BD Only</option>
-                <option value="TL">Team Leaders</option>
             </select>
         </div>
       </div>
 
-      {/* Performance List */}
+      {(userData?.role?.toLowerCase() === 'bdm' || userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'bd') && (
+        <section className="bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-800 shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -mr-32 -mt-32 rounded-full" />
+          
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 mb-10 relative z-10">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                    <FaChartLine className="text-blue-400" />
+                </div>
+                <h2 className="text-2xl font-black text-white tracking-tight italic">My Growth Metrics</h2>
+              </div>
+              <p className="text-slate-500 text-sm font-medium">Analyze your personal performance impact for the selected period.</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="px-6 h-12 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 font-bold focus:outline-none focus:border-blue-500 transition-all text-sm"
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                ))}
+              </select>
+              
+              <select
+                value={personalSelectedYear}
+                onChange={(e) => setPersonalSelectedYear(Number(e.target.value))}
+                className="px-6 h-12 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 font-bold focus:outline-none focus:border-blue-500 transition-all text-sm"
+              >
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              
+              <button
+                onClick={fetchPerformanceReport}
+                disabled={reportLoading}
+                className="px-8 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-blue-900/20"
+              >
+                {reportLoading ? <FaSpinner className="animate-spin text-sm" /> : "Fetch Analysis"}
+              </button>
+            </div>
+          </div>
+
+          {reportLoading ? (
+            <div className="py-20 text-center">
+              <Loading fullPage={false} />
+              <p className="mt-8 text-slate-500 font-black uppercase tracking-[0.2em] animate-pulse">Processing Analysis Data...</p>
+            </div>
+          ) : performanceData ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 animate-fade-in">
+              <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-blue-500/30 transition-all group">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-400 transition-colors">Direct Vendors</p>
+                <div className="flex items-end justify-between">
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeVendors || 0}</h4>
+                    <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
+                        <FaChartLine className="text-blue-500/20" />
+                    </div>
+                </div>
+              </div>
+              <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-emerald-500/30 transition-all group">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-emerald-400 transition-colors">Pulse Customers</p>
+                <div className="flex items-end justify-between">
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeUsers || performanceData?.activeCustomers || 0}</h4>
+                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                        <FaChartLine className="text-emerald-500/20" />
+                    </div>
+                </div>
+              </div>
+              <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-purple-500/30 transition-all group">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-purple-400 transition-colors">Team Reach</p>
+                <div className="flex items-end justify-between">
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.agentsCount || performanceData?.totalAgents || 0}</h4>
+                    <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
+                        <FaChartLine className="text-purple-500/20" />
+                    </div>
+                </div>
+              </div>
+              <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-amber-500/30 transition-all group">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-amber-400 transition-colors">Total Revenue</p>
+                <div className="flex items-end justify-between">
+                    <h4 className="text-4xl font-black text-white tracking-tighter">₦{(performanceData?.commissions || 0).toLocaleString()}</h4>
+                    <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                        <FaChartLine className="text-amber-500/20" />
+                    </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-20 text-center border-4 border-dashed border-slate-800/30 rounded-[2rem] bg-slate-950/20">
+              <div className="bg-slate-900 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-slate-800 rotate-12 group-hover:rotate-0 transition-transform">
+                <FaChartLine className="text-slate-700 text-3xl" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-400 mb-2">Ready for analysis?</h3>
+              <p className="text-slate-600 text-sm font-medium">Select your timeline and click 'Fetch Analysis' to see your metrics.</p>
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {isLoading ? (
           <div className="col-span-full py-20 text-center bg-slate-900 border-2 border-slate-800 rounded-[2.5rem]">
@@ -283,7 +416,6 @@ export default function StaffPerformance() {
         )}
       </div>
 
-      {/* Pagination UI */}
       {filteredStaff.length > itemsPerPage && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-4 py-8 mt-4 border-t border-slate-800/50">
           <p className="text-sm font-bold text-slate-500">

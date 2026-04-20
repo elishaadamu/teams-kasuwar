@@ -12,7 +12,7 @@ export default function HRDashboardLayout({ children }) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    router.push("/signin-sm");
+    router.push("/");
   };
 
   return (
