@@ -33,16 +33,56 @@ ChartJS.register(
 );
 
 const PerformanceBar = ({ percentage, color }) => (
-  <div className="w-full bg-slate-800 rounded-full h-4 relative overflow-hidden group">
+  <div className="w-full bg-slate-100 rounded-full h-4 relative overflow-hidden group">
     <div 
       className={`h-full rounded-full transition-all duration-1000 ease-out shadow-2xl ${color}`} 
       style={{ width: `${percentage}%` }}
     />
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[10px] font-black text-white drop-shadow-md">{Math.round(percentage)}% ACHIEVEMENT</span>
+    <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[10px] font-black text-slate-500">{Math.round(percentage)}% ACHIEVEMENT</span>
     </div>
   </div>
 );
+
+const calculateTargetKPI = (role, metrics) => {
+  const r = role.toLowerCase();
+  const m = metrics || {};
+  const stats = m.metrics || m;
+  
+  const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250 };
+  const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250 };
+  const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250 };
+
+  if (r === 'rm' || r === 'regional-leader' || r === 'regional manager' || r === 'rm') {
+    const v = (stats.vendorsCount || 0) / vTarget['rm'];
+    const s = (stats.salesCount || 0) / sTarget['rm'];
+    const d = (stats.deliveryCount || 0) / dTarget['rm'];
+    return Math.min(100, ((v + s + d) / 3) * 100);
+  }
+  
+  if (r === 'tl' || r === 'team-lead' || r === 'state-manager' || r === 'state manager') {
+    const v = (stats.vendorsCount || 0) / vTarget['tl'];
+    const s = (stats.salesCount || 0) / sTarget['tl'];
+    const d = (stats.deliveryCount || 0) / dTarget['tl'];
+    return Math.min(100, ((v + s + d) / 3) * 100);
+  }
+  
+  if (r === 'bdm') {
+    return Math.min(100, ((stats.vendorsCount || 0) / vTarget['bdm']) * 100);
+  }
+  
+  if (r === 'bd') {
+    return Math.min(100, ((stats.vendorsCount || 0) / vTarget['bd']) * 100);
+  }
+  
+  if (r === 'sm' || r === 'sales manager') {
+    const s = (stats.salesCount || 0) / sTarget['sm'];
+    const d = (stats.deliveryCount || 0) / dTarget['sm'];
+    return Math.min(100, ((s + d) / 2) * 100);
+  }
+  
+  return m.achievement || 0;
+};
 
 export default function StaffPerformance() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -108,7 +148,7 @@ export default function StaffPerformance() {
                 name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
                 role: (staff.role || 'STAFF').toUpperCase(),
                 region: staff.region || staff.state || 'Global',
-                kpi: Math.round(monthData.achievement || 0),
+                kpi: Math.round(calculateTargetKPI(staff.role || 'STAFF', monthData)),
                 trend: 0, 
                 metrics: monthData.metrics || {},
                 yearlyPerformance: performance // Store whole performance for modal
@@ -188,19 +228,19 @@ export default function StaffPerformance() {
         
         <div className="flex flex-wrap gap-4">
             <div className="relative group">
-                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                 <input 
                     type="text" 
                     placeholder="Search staff or region..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl w-full md:w-80 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all shadow-xl"
+                    className="pl-12 pr-6 h-14 bg-white border-2 border-slate-100 rounded-2xl w-full md:w-80 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                 />
             </div>
             <select 
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
+                className="px-6 h-14 bg-white border-2 border-slate-100 rounded-2xl text-slate-600 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-sm"
             >
                 {years.map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -209,7 +249,7 @@ export default function StaffPerformance() {
             <select 
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
+                className="px-6 h-14 bg-white border-2 border-slate-100 rounded-2xl text-slate-600 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-sm"
             >
                 <option value="all">All Roles</option>
                 <option value="SM">SM Only</option>
@@ -223,53 +263,53 @@ export default function StaffPerformance() {
       {/* Performance List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {isLoading ? (
-          <div className="col-span-full py-20 text-center bg-slate-900 border-2 border-slate-800 rounded-[2.5rem]">
+          <div className="col-span-full py-20 text-center bg-white border-2 border-slate-100 rounded-[2.5rem]">
             <Loading fullPage={false} />
             <p className="text-slate-400 font-bold uppercase tracking-widest mt-8">Loading Personnel Data...</p>
           </div>
         ) : currentStaff.length > 0 ? (
           currentStaff.map((staff) => (
-          <div key={staff.id} className="p-8 rounded-[2.5rem] bg-slate-900 border-2 border-slate-800 hover:border-blue-500/30 transition-all duration-500 shadow-2xl relative overflow-hidden group">
+          <div key={staff.id} className="p-8 rounded-[2.5rem] bg-white border-2 border-slate-100 hover:border-blue-500/30 transition-all duration-500 shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 {getRoleIcon(staff.role)}
             </div>
             
             <div className="flex items-start justify-between mb-8">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-2xl font-black text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 rounded-2xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center text-2xl font-black text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
                   {(staff.name || staff.fullName || "UN").split(' ').map(n=>n[0]).join('')}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">{staff.name || staff.fullName}</h3>
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">{staff.name || staff.fullName}</h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="px-3 py-1 rounded-lg bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-600/20">{staff.role}</span>
-                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{staff.region || staff.state}</span>
+                    <span className="px-3 py-1 rounded-lg bg-blue-600/10 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-600/20">{staff.role}</span>
+                    <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">{staff.region || staff.state}</span>
                   </div>
                 </div>
               </div>
               
-              <div className={`flex flex-col items-end ${(staff.trend || 0) > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              <div className={`flex flex-col items-end ${(staff.trend || 0) > 0 ? "text-emerald-500" : "text-rose-500"}`}>
                 <div className="flex items-center gap-2">
                     {(staff.trend || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
                     <span className="text-xl font-black">{Math.abs(staff.trend || 0)}%</span>
                 </div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">vs Last Month</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">vs Last Month</span>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <span className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Current KPI Achievement</span>
-                <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-400" : staff.kpi >= 60 ? "text-blue-400" : "text-amber-400"}`}>{staff.kpi}%</span>
+                <span className="text-xs uppercase font-black text-slate-400 tracking-[0.2em]">Current KPI Achievement</span>
+                <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-500" : staff.kpi >= 60 ? "text-blue-500" : "text-amber-500"}`}>{staff.kpi}%</span>
               </div>
               <PerformanceBar percentage={staff.kpi} color={`bg-gradient-to-r ${getStatusColor(staff.kpi)} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center gap-4">
-                <p className="text-xs text-slate-500 font-medium italic">"Consistent performance across all field metrics."</p>
+            <div className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center gap-4">
+                <p className="text-xs text-slate-400 font-medium italic">"Consistent performance across all field metrics."</p>
                 <button 
                   onClick={() => setSelectedStaff(staff)}
-                  className="px-6 py-3 rounded-xl bg-slate-950 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl"
+                  className="px-6 py-3 rounded-xl bg-slate-50 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                 >
                     Detailed Report
                 </button>
@@ -277,8 +317,8 @@ export default function StaffPerformance() {
           </div>
           ))
         ) : (
-          <div className="col-span-full py-20 bg-slate-900/50 rounded-[2.5rem] border-2 border-dashed border-slate-800 text-center">
-            <p className="text-slate-500 font-bold uppercase tracking-widest">No matching staff found</p>
+          <div className="col-span-full py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 text-center">
+            <p className="text-slate-400 font-bold uppercase tracking-widest">No matching staff found</p>
           </div>
         )}
       </div>
@@ -332,11 +372,11 @@ export default function StaffPerformance() {
 
       {/* Detailed Modal using Portal */}
       {isMounted && selectedStaff && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] w-full max-w-6xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white border-2 border-slate-100 rounded-[3rem] w-full max-w-6xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
             <button 
               onClick={() => setSelectedStaff(null)}
-              className="absolute top-8 right-8 w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/50 transition-all z-10"
+              className="absolute top-8 right-8 w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500 transition-all z-10"
             >
               <FaTimes />
             </button>
@@ -346,30 +386,30 @@ export default function StaffPerformance() {
                 {/* Left Side: Stats */}
                 <div className="flex-1 space-y-8">
                   <div className="space-y-4 text-left">
-                    <span className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-[0.2em]">Personnel Profile</span>
-                    <h2 className="text-5xl font-black text-white tracking-tighter text-left">{selectedStaff.name}</h2>
+                    <span className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-600 text-xs font-black uppercase tracking-[0.2em]">Personnel Profile</span>
+                    <h2 className="text-5xl font-black text-slate-900 tracking-tighter text-left">{selectedStaff.name}</h2>
                     <div className="flex items-center gap-4">
                       <span className="text-slate-500 font-bold uppercase tracking-widest">{selectedStaff.role}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                       <span className="text-slate-500 font-bold uppercase tracking-widest">{selectedStaff.region}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     {Object.entries(selectedStaff.metrics).map(([key, val]) => (
-                      <div key={key} className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
+                      <div key={key} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-left">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
-                        <p className="text-2xl font-black text-white">{val}</p>
+                        <p className="text-2xl font-black text-slate-900">{val}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Right Side: Chart */}
-                <div className="flex-1 bg-slate-900/40 border border-slate-800/50 rounded-[2.5rem] p-8 md:p-12">
+                <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[2.5rem] p-8 md:p-12">
                   <div className="h-full flex flex-col items-start justify-start text-left">
                     <div className="mb-0 text-left">
-                      <h3 className="text-2xl font-black text-white tracking-tight italic flex items-center gap-3">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight italic flex items-center gap-3">
                          <div className="w-2 h-8 bg-blue-500 rounded-full" />
                          Performance Analytics
                       </h3>
@@ -396,11 +436,11 @@ export default function StaffPerformance() {
                               Math.round(selectedStaff.yearlyPerformance?.november?.achievement || 0),
                               Math.round(selectedStaff.yearlyPerformance?.december?.achievement || 0),
                             ],
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
                             borderColor: 'rgba(59, 130, 246, 1)',
                             borderWidth: 2,
                             borderRadius: 8,
-                            hoverBackgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
                           }]
                         }}
                         options={{
@@ -409,7 +449,11 @@ export default function StaffPerformance() {
                           plugins: {
                             legend: { display: false },
                             tooltip: {
-                              backgroundColor: '#0f172a',
+                              backgroundColor: '#ffffff',
+                              titleColor: '#0f172a',
+                              bodyColor: '#475569',
+                              borderColor: '#e2e8f0',
+                              borderWidth: 1,
                               titleFont: { size: 14, weight: 'bold' },
                               bodyFont: { size: 12 },
                               padding: 12,
@@ -423,7 +467,7 @@ export default function StaffPerformance() {
                             y: {
                               beginAtZero: true,
                               max: 100,
-                              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                              grid: { color: 'rgba(0, 0, 0, 0.05)' },
                               ticks: { color: '#64748b', font: { weight: 'bold' } }
                             },
                             x: {
@@ -435,8 +479,8 @@ export default function StaffPerformance() {
                       />
                     </div>
                     
-                    <div className="mt-8 p-6 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
-                      <p className="text-xs text-slate-400 leading-relaxed italic">
+                    <div className="mt-8 p-6 rounded-2xl bg-blue-50 border border-blue-100 text-left">
+                      <p className="text-xs text-slate-500 leading-relaxed italic">
                         Data is aggregated monthly from field operations. Achievement scores reflect performance against weighted quota targets.
                       </p>
                     </div>

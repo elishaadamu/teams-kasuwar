@@ -69,18 +69,7 @@ export default function StaffPerformance() {
   const fetchPerformanceReport = async () => {
     if (!userData?.id) return;
     
-    let endpoint = "";
-    if (userData.role?.toLowerCase() === 'bdm' || userData.role?.toLowerCase() === 'tl') {
-      endpoint = API_CONFIG.ENDPOINTS.REPORTS.BDM_PERFORMANCE;
-    } else if (userData.role?.toLowerCase() === 'bd') {
-      endpoint = API_CONFIG.ENDPOINTS.REPORTS.BD_PERFORMANCE;
-    }
-    
-    if (!endpoint) {
-      toast.info("Performance report is not available for your role.");
-      return;
-    }
-
+    const endpoint = API_CONFIG.ENDPOINTS.REPORTS.TEAM_PERFORMANCE;
     setReportLoading(true);
     setPerformanceData(null);
     try {
@@ -91,7 +80,8 @@ export default function StaffPerformance() {
         },
         withCredentials: true
       });
-      setPerformanceData(response.data?.report || response.data?.data || null);
+      console.log("Personal Performance Report Response:", response.data);
+      setPerformanceData(response.data?.report || response.data?.summary || response.data?.data || null);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch performance report");
     } finally {
@@ -109,51 +99,33 @@ export default function StaffPerformance() {
     const fetchPerformance = async () => {
       setIsLoading(true);
       try {
-        const endpoints = [];
-        if (filterRole === "all") {
-          endpoints.push(
-            { role: "bdm", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.BDM },
-            { role: "bd", endpoint: API_CONFIG.ENDPOINTS.HR.PERFORMANCE.BD }
-          );
-        } else {
-          const roleEndpoint = API_CONFIG.ENDPOINTS.HR.PERFORMANCE[filterRole.toUpperCase()];
-          if (roleEndpoint) {
-            endpoints.push({ role: filterRole.toLowerCase(), endpoint: roleEndpoint });
-          }
-        }
-
-        const responses = await Promise.all(
-          endpoints.map(ep => {
-            return axios.get(`${apiUrl(ep.endpoint)}?year=${selectedYear}`, { withCredentials: true });
-          })
-        );
-
-        const results = responses.map(res => res.data);
+        const response = await axios.get(`${apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_PERFORMANCE)}?year=${selectedYear}`, { withCredentials: true });
+        console.log("Team Performance List Response:", response.data);
+        const res = response.data;
 
         const currentMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
         let allData = [];
         
-        results.forEach((res) => {
-          if (res.success) {
-            const mapped = (res.data || []).map(item => {
-              const staff = item.staff || {};
-              const performance = item.yearlyPerformance || {};
-              const monthData = performance[currentMonth] || {};
-              
-              return {
-                id: staff._id || Math.random().toString(),
-                name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
-                role: (staff.role || 'STAFF').toUpperCase(),
-                region: staff.region || staff.state || 'Global',
-                kpi: Math.round(monthData.achievement || 0),
-                trend: 0, 
-                metrics: monthData.metrics || {},
-                yearlyPerformance: performance
-              };
-            });
-            allData = [...allData, ...mapped];
-          }
-        });
+        if (res.success) {
+          const allMembers = [...(res.bdms || []), ...(res.sms || [])];
+          const mapped = allMembers.map(item => {
+            const staff = item.staff || {};
+            const performance = item.yearlyPerformance || {};
+            const monthData = performance[currentMonth] || {};
+            
+            return {
+              id: staff._id || Math.random().toString(),
+              name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
+              role: (staff.role || item.role || 'STAFF').toUpperCase(),
+              region: staff.region || staff.state || 'Global',
+              kpi: Math.round(monthData.achievement || 0),
+              trend: 0, 
+              metrics: monthData.metrics || {},
+              yearlyPerformance: performance
+            };
+          });
+          allData = mapped;
+        }
 
         setStaffData(allData);
       } catch (error) {
@@ -306,27 +278,27 @@ export default function StaffPerformance() {
           ) : performanceData ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 animate-fade-in">
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-blue-500/30 transition-all group">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-400 transition-colors">Direct Vendors</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-400 transition-colors">Total BDMs</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeVendors || 0}</h4>
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.totalBDMs || 0}</h4>
                     <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
                         <FaChartLine className="text-blue-500/20" />
                     </div>
                 </div>
               </div>
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-emerald-500/30 transition-all group">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-emerald-400 transition-colors">Pulse Customers</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-emerald-400 transition-colors">Total SMs</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeUsers || performanceData?.activeCustomers || 0}</h4>
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.totalSMs || 0}</h4>
                     <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
                         <FaChartLine className="text-emerald-500/20" />
                     </div>
                 </div>
               </div>
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-purple-500/30 transition-all group">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-purple-400 transition-colors">Team Reach</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-purple-400 transition-colors">Active Vendors</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.agentsCount || performanceData?.totalAgents || 0}</h4>
+                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeVendors || 0}</h4>
                     <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
                         <FaChartLine className="text-purple-500/20" />
                     </div>

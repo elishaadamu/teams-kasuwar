@@ -510,7 +510,52 @@ export default function DisciplinaryActions() {
                                     </td>
                                     <td className="p-5 text-right">
                                         <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{new Date(log.createdAt || log.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                                        <p className="text-[9px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-widest">{new Date(log.createdAt || log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <button 
+                                          onClick={() => {
+                                            const printWindow = window.open('', '_blank');
+                                            const content = `
+                                              <div style="font-family: sans-serif; padding: 50px; line-height: 1.6;">
+                                                <div style="text-align: center; border-bottom: 4px solid #e11d48; padding-bottom: 20px; margin-bottom: 40px;">
+                                                  <h1 style="color: #e11d48; margin: 0; font-size: 32px; text-transform: uppercase;">Official Disciplinary Action</h1>
+                                                  <p style="margin: 5px 0 0; color: #64748b; font-weight: bold; letter-spacing: 2px;">KASUWAR COMPLIANCE DEPARTMENT</p>
+                                                </div>
+                                                
+                                                <div style="margin-bottom: 30px;">
+                                                  <p><strong>Date:</strong> ${new Date(log.createdAt || log.date).toLocaleDateString()}</p>
+                                                  <p><strong>Staff Member:</strong> ${log.staffId ? `${log.staffId.firstName} ${log.staffId.lastName}` : (log.staffName || "Unknown")}</p>
+                                                  <p><strong>Department:</strong> ${log.staffId?.role || log.staffRole || "Member"}</p>
+                                                </div>
+
+                                                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                                                  <h2 style="margin-top: 0; font-size: 18px; text-transform: uppercase; color: #1e293b;">Action Taken: ${log.type || "Official Warning"}</h2>
+                                                  <p><strong>Subject:</strong> ${log.reason}</p>
+                                                  <p><strong>Severity:</strong> ${log.severity?.toUpperCase()}</p>
+                                                </div>
+
+                                                <div style="margin-bottom: 40px;">
+                                                  <h3 style="font-size: 16px; color: #1e293b;">Incident Description:</h3>
+                                                  <p style="color: #475569;">${log.description || "No description provided."}</p>
+                                                </div>
+
+                                                <p>This is a formal communication. Failure to improve performance or conduct may lead to further disciplinary actions up to and including termination.</p>
+
+                                                <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+                                                  <div style="border-top: 1px solid #cbd5e1; width: 200px; text-align: center; padding-top: 10px;">
+                                                    <p style="margin: 0; font-size: 12px;"><strong>HR Authorized Signature</strong></p>
+                                                  </div>
+                                                  <div style="border-top: 1px solid #cbd5e1; width: 200px; text-align: center; padding-top: 10px;">
+                                                    <p style="margin: 0; font-size: 12px;"><strong>Staff Acknowledgment</strong></p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            `;
+                                            printWindow.document.write(`<html><head><title>Warning Letter - ${log.staffName}</title></head><body onload="window.print()">${content}</body></html>`);
+                                            printWindow.document.close();
+                                          }}
+                                          className="text-[9px] font-black uppercase text-rose-600 hover:underline mt-1 block w-full text-right"
+                                        >
+                                          Print Letter
+                                        </button>
                                     </td>
                                 </tr>
                             )) : (

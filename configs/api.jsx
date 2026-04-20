@@ -173,8 +173,7 @@ export const API_CONFIG = {
       GET_ALL: "/shipping-fee/all",
     },
     REPORTS: {
-      BDM_PERFORMANCE: "/api/report/bdm/my-performance",
-      BD_PERFORMANCE: "/api/report/bd/my-performance",
+      TEAM_PERFORMANCE: "/team-members/performance/my-team",
     },
     HR: {
       GET_STAFF: "/hr/get-staff-list",
@@ -190,7 +189,9 @@ export const API_CONFIG = {
         BDM: "/hr/performance/bdm",
         SM: "/hr/performance/sm",
         TL: "/hr/performance/tl",
-      }
+      },
+      UPDATE_STAFF: "/hr/update-staff",
+      TERMINATE_STAFF: "/hr/terminate-staff",
     },
   },
 };

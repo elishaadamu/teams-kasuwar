@@ -72,16 +72,56 @@ const StatCard = ({ title, value, icon: Icon, color, subValue, trend }) => (
 );
 
 const PerformanceBar = ({ percentage, color }) => (
-  <div className="w-full bg-slate-800 rounded-full h-3 relative overflow-hidden group">
+  <div className="w-full bg-slate-100 rounded-full h-3 relative overflow-hidden group">
     <div
       className={`h-full rounded-full transition-all duration-1000 ease-out shadow-2xl ${color}`}
       style={{ width: `${percentage}%` }}
     />
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[9px] font-black text-white drop-shadow-md">{Math.round(percentage)}%</span>
+    <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[9px] font-black text-slate-500">{Math.round(percentage)}%</span>
     </div>
   </div>
 );
+
+const calculateTargetKPI = (role, metrics) => {
+  const r = role.toLowerCase();
+  const m = metrics || {};
+  const stats = m.metrics || m; // Handle both nested metrics and direct metrics
+  
+  const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250 };
+  const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250 };
+  const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250 };
+
+  if (r === 'rm' || r === 'regional-leader' || r === 'regional manager' || r === 'rm') {
+    const v = (stats.vendorsCount || 0) / vTarget['rm'];
+    const s = (stats.salesCount || 0) / sTarget['rm'];
+    const d = (stats.deliveryCount || 0) / dTarget['rm'];
+    return Math.min(100, ((v + s + d) / 3) * 100);
+  }
+  
+  if (r === 'tl' || r === 'team-lead' || r === 'state-manager' || r === 'state manager') {
+    const v = (stats.vendorsCount || 0) / vTarget['tl'];
+    const s = (stats.salesCount || 0) / sTarget['tl'];
+    const d = (stats.deliveryCount || 0) / dTarget['tl'];
+    return Math.min(100, ((v + s + d) / 3) * 100);
+  }
+  
+  if (r === 'bdm') {
+    return Math.min(100, ((stats.vendorsCount || 0) / vTarget['bdm']) * 100);
+  }
+  
+  if (r === 'bd') {
+    return Math.min(100, ((stats.vendorsCount || 0) / vTarget['bd']) * 100);
+  }
+  
+  if (r === 'sm' || r === 'sales manager') {
+    const s = (stats.salesCount || 0) / sTarget['sm'];
+    const d = (stats.deliveryCount || 0) / dTarget['sm'];
+    return Math.min(100, ((s + d) / 2) * 100);
+  }
+  
+  return m.achievement || 0;
+};
 
 export default function HRDashboard() {
   const router = useRouter();
@@ -102,10 +142,10 @@ export default function HRDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   const staffCategories = [
-    { title: "Business Dev. Managers", role: "BDM", count: stats.totalBDM, icon: FaUserShield, link: "/hr-dashboard/staff?role=bdm" },
-    { title: "Sales Managers", role: "SM", count: stats.totalSM, icon: FaUserTie, link: "/hr-dashboard/staff?role=sm" },
-    { title: "Business Developers", role: "BD", count: stats.totalBD, icon: FaUserEdit, link: "/hr-dashboard/staff?role=bd" },
-    { title: "Team Leaders", role: "TL", count: 4, icon: FaUserFriends, link: "/hr-dashboard/staff?role=tl" },
+    { title: "Business Dev. Managers", role: "BDM", count: stats.totalBDM, icon: FaUserShield, link: "/hr-dashboard/staff" },
+    { title: "Sales Managers", role: "SM", count: stats.totalSM, icon: FaUserTie, link: "/hr-dashboard/staff" },
+    { title: "Business Developers", role: "BD", count: stats.totalBD, icon: FaUserEdit, link: "/hr-dashboard/staff" },
+    { title: "Team Leaders", role: "TL", count: 4, icon: FaUserFriends, link: "/hr-dashboard/staff" },
   ];
 
   useEffect(() => {
@@ -146,7 +186,7 @@ export default function HRDashboard() {
                 name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
                 role: (staff.role || 'STAFF').toUpperCase(),
                 region: staff.region || staff.state || 'Global',
-                kpi: Math.round(monthData.achievement || 0),
+                kpi: Math.round(calculateTargetKPI(staff.role || 'STAFF', monthData)),
                 trend: 0,
               };
             });
@@ -249,7 +289,7 @@ export default function HRDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link
           href="/hr-dashboard/onboarding"
           className="group p-6 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-600/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex items-center gap-5"
@@ -259,7 +299,7 @@ export default function HRDashboard() {
           </div>
           <div>
             <h3 className="text-lg font-black uppercase tracking-wider">Create Staff</h3>
-            <p className="text-sm opacity-80">Onboard new team member</p>
+            <p className="text-sm opacity-80">Onboard new personnel</p>
           </div>
         </Link>
 
@@ -271,8 +311,21 @@ export default function HRDashboard() {
             <FaIdCard className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-lg font-black uppercase tracking-wider">Create ID Card</h3>
-            <p className="text-sm opacity-80">Generate staff ID cards</p>
+            <h3 className="text-lg font-black uppercase tracking-wider">ID Cards</h3>
+            <p className="text-sm opacity-80">Generate staff IDs</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/hr-dashboard/staff"
+          className="group p-6 rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-800 dark:to-slate-950 text-white shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex items-center gap-5"
+        >
+          <div className="p-4 rounded-2xl bg-white/20 group-hover:bg-white/30 transition-colors">
+            <FaUsers className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-lg font-black uppercase tracking-wider">Manage Staff</h3>
+            <p className="text-sm opacity-80">Update & Terminate</p>
           </div>
         </Link>
 
@@ -285,7 +338,7 @@ export default function HRDashboard() {
           </div>
           <div>
             <h3 className="text-lg font-black uppercase tracking-wider">Payslips</h3>
-            <p className="text-sm opacity-80">Manage payroll</p>
+            <p className="text-sm opacity-80">Payroll and Salaries</p>
           </div>
         </Link>
       </div>

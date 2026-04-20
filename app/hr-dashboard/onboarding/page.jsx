@@ -126,8 +126,8 @@ export default function Onboarding() {
     if (type === "file") {
       const file = files[0];
       if (file) {
-        if (file.size > 50 * 1024) {
-          toast.error("Image must be less than 50KB");
+        if (file.size > 100 * 1024) {
+          toast.error("Image must be less than 100KB");
           e.target.value = "";
           return;
         }
