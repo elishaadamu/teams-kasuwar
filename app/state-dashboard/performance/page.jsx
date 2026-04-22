@@ -5,16 +5,16 @@ import { FaChartBar, FaSearch, FaFilter, FaArrowUp, FaArrowDown, FaUserTie, FaUs
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
-  Legend, 
-  PointElement, 
-  LineElement 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { apiUrl, API_CONFIG } from "@/configs/api";
@@ -35,12 +35,12 @@ ChartJS.register(
 
 const PerformanceBar = ({ percentage, color }) => (
   <div className="w-full bg-slate-800 rounded-full h-4 relative overflow-hidden group">
-    <div 
-      className={`h-full rounded-full transition-all duration-1000 ease-out shadow-2xl ${color}`} 
+    <div
+      className={`h-full rounded-full transition-all duration-1000 ease-out shadow-2xl ${color}`}
       style={{ width: `${percentage}%` }}
     />
     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[10px] font-black text-white drop-shadow-md">{Math.round(percentage)}% ACHIEVEMENT</span>
+      <span className="text-[10px] font-black text-white drop-shadow-md">{Math.round(percentage)}% ACHIEVEMENT</span>
     </div>
   </div>
 );
@@ -53,22 +53,23 @@ export default function StaffPerformance() {
   const [selectedYear, setSelectedYear] = useState("2026");
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   const { userData } = useAppContext();
-  
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  
+
   // Personal Performance Report State
   const [reportLoading, setReportLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
+  const [initialSummary, setInitialSummary] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [personalSelectedYear, setPersonalSelectedYear] = useState(new Date().getFullYear());
 
   const fetchPerformanceReport = async () => {
     if (!userData?.id) return;
-    
+
     const endpoint = API_CONFIG.ENDPOINTS.REPORTS.TEAM_PERFORMANCE;
     setReportLoading(true);
     setPerformanceData(null);
@@ -88,7 +89,7 @@ export default function StaffPerformance() {
       setReportLoading(false);
     }
   };
-  
+
   const years = ["2024", "2025", "2026", "2027"];
 
   useEffect(() => {
@@ -105,21 +106,22 @@ export default function StaffPerformance() {
 
         const currentMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
         let allData = [];
-        
+
         if (res.success) {
+          setInitialSummary(res.summary);
           const allMembers = [...(res.bdms || []), ...(res.sms || [])];
           const mapped = allMembers.map(item => {
             const staff = item.staff || {};
             const performance = item.yearlyPerformance || {};
             const monthData = performance[currentMonth] || {};
-            
+
             return {
               id: staff._id || Math.random().toString(),
               name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
               role: (staff.role || item.role || 'STAFF').toUpperCase(),
               region: staff.region || staff.state || 'Global',
               kpi: Math.round(monthData.achievement || 0),
-              trend: 0, 
+              trend: 0,
               metrics: monthData.metrics || {},
               yearlyPerformance: performance
             };
@@ -139,7 +141,7 @@ export default function StaffPerformance() {
   }, [filterRole, selectedYear]);
 
   const getRoleIcon = (role) => {
-    switch(role) {
+    switch (role) {
       case "SM": return <FaUserTie className="text-blue-400" />;
       case "BDM": return <FaUserShield className="text-indigo-400" />;
       case "BD": return <FaUserEdit className="text-violet-400" />;
@@ -157,10 +159,10 @@ export default function StaffPerformance() {
   const filteredStaff = staffData.filter(s => {
     const staffName = s.name || s.fullName || "";
     const staffRegion = s.region || s.state || "";
-    return (
-      staffName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      staffRegion.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const matchesSearch = staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staffRegion.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = filterRole === "all" || s.role === filterRole;
+    return matchesSearch && matchesRole;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -181,64 +183,54 @@ export default function StaffPerformance() {
   return (
     <div className="space-y-10 animate-fade-in">
       <ToastContainer theme="dark" />
-      
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-5xl font-black text-white tracking-tighter">
-            <span className="text-gray-950 dark:text-white">Staff</span> <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent underline decoration-emerald-500/20 underline-offset-8">Metric</span>
+            <span className="text-gray-950 dark:text-white">State Manager</span> <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent underline decoration-emerald-500/20 underline-offset-8">Metric</span>
           </h1>
           <p className="text-slate-400 font-medium text-lg">
             Individual performance tracking based on real-time KPI data.
           </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-4">
-            <div className="relative group">
-                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                <input 
-                    type="text" 
-                    placeholder="Search staff or region..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl w-full md:w-80 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-all shadow-xl"
-                />
-            </div>
-            <select 
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
-            >
-                {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                ))}
-            </select>
-            <select 
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
-            >
-                <option value="all">All Management</option>
-                <option value="BDM">BDM Only</option>
-                <option value="BD">BD Only</option>
-            </select>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
+          >
+            {years.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+          <select
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+            className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
+          >
+            <option value="all">All Management</option>
+            <option value="SM">SM Only</option>
+            <option value="BDM">BDM Only</option>
+          </select>
         </div>
       </div>
 
-      {(userData?.role?.toLowerCase() === 'bdm' || userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'bd') && (
+      {(userData?.role?.toLowerCase() === 'bdm' || userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'sm') && (
         <section className="bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-800 shadow-2xl overflow-hidden relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -mr-32 -mt-32 rounded-full" />
-          
+
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 mb-10 relative z-10">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <FaChartLine className="text-blue-400" />
+                  <FaChartLine className="text-blue-400" />
                 </div>
                 <h2 className="text-2xl font-black text-white tracking-tight italic">My Growth Metrics</h2>
               </div>
               <p className="text-slate-500 text-sm font-medium">Analyze your personal performance impact for the selected period.</p>
             </div>
-            
+
             <div className="flex flex-wrap gap-3">
               <select
                 value={selectedMonth}
@@ -249,7 +241,7 @@ export default function StaffPerformance() {
                   <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
                 ))}
               </select>
-              
+
               <select
                 value={personalSelectedYear}
                 onChange={(e) => setPersonalSelectedYear(Number(e.target.value))}
@@ -259,7 +251,7 @@ export default function StaffPerformance() {
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
-              
+
               <button
                 onClick={fetchPerformanceReport}
                 disabled={reportLoading}
@@ -275,42 +267,42 @@ export default function StaffPerformance() {
               <Loading fullPage={false} />
               <p className="mt-8 text-slate-500 font-black uppercase tracking-[0.2em] animate-pulse">Processing Analysis Data...</p>
             </div>
-          ) : performanceData ? (
+          ) : performanceData || initialSummary ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 animate-fade-in">
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-blue-500/30 transition-all group">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-blue-400 transition-colors">Total BDMs</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.totalBDMs || 0}</h4>
-                    <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
-                        <FaChartLine className="text-blue-500/20" />
-                    </div>
+                  <h4 className="text-4xl font-black text-white tracking-tighter">{(performanceData || initialSummary)?.totalBDMs || 0}</h4>
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
+                    <FaChartLine className="text-blue-500/20" />
+                  </div>
                 </div>
               </div>
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-emerald-500/30 transition-all group">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-emerald-400 transition-colors">Total SMs</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.totalSMs || 0}</h4>
-                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                        <FaChartLine className="text-emerald-500/20" />
-                    </div>
+                  <h4 className="text-4xl font-black text-white tracking-tighter">{(performanceData || initialSummary)?.totalSMs || 0}</h4>
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                    <FaChartLine className="text-emerald-500/20" />
+                  </div>
                 </div>
               </div>
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-purple-500/30 transition-all group">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-purple-400 transition-colors">Active Vendors</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">{performanceData?.activeVendors || 0}</h4>
-                    <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
-                        <FaChartLine className="text-purple-500/20" />
-                    </div>
+                  <h4 className="text-4xl font-black text-white tracking-tighter">{(performanceData || initialSummary)?.activeVendors || 0}</h4>
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-full flex items-center justify-center">
+                    <FaChartLine className="text-purple-500/20" />
+                  </div>
                 </div>
               </div>
               <div className="p-8 rounded-3xl bg-slate-950/50 border border-slate-800 hover:border-amber-500/30 transition-all group">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 group-hover:text-amber-400 transition-colors">Total Revenue</p>
                 <div className="flex items-end justify-between">
-                    <h4 className="text-4xl font-black text-white tracking-tighter">₦{(performanceData?.commissions || 0).toLocaleString()}</h4>
-                    <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
-                        <FaChartLine className="text-amber-500/20" />
-                    </div>
+                  <h4 className="text-4xl font-black text-white tracking-tighter">₦{((performanceData || initialSummary)?.commissions || 0).toLocaleString()}</h4>
+                  <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                    <FaChartLine className="text-amber-500/20" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -334,58 +326,54 @@ export default function StaffPerformance() {
           </div>
         ) : currentStaff.length > 0 ? (
           currentStaff.map((staff) => (
-          <div key={staff.id} className="p-8 rounded-[2.5rem] bg-slate-900 border-2 border-slate-800 hover:border-blue-500/30 transition-all duration-500 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <div key={staff.id} className="p-8 rounded-[2.5rem] bg-slate-900 border-2 border-slate-800 hover:border-blue-500/30 transition-all duration-500 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 {getRoleIcon(staff.role)}
-            </div>
-            
-            <div className="flex items-start justify-between mb-8">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-2xl font-black text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
-                  {(staff.name || staff.fullName || "UN").split(' ').map(n=>n[0]).join('')}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">{staff.name || staff.fullName}</h3>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="px-3 py-1 rounded-lg bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-600/20">{staff.role}</span>
-                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{staff.region || staff.state}</span>
+              </div>
+
+              <div className="flex items-start justify-between mb-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-2xl font-black text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
+                    {(staff.name || staff.fullName || "UN").split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">{staff.name || staff.fullName}</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="px-3 py-1 rounded-lg bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-600/20">{staff.role}</span>
+                      <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{staff.region || staff.state}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className={`flex flex-col items-end ${(staff.trend || 0) > 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                <div className="flex items-center gap-2">
+
+                <div className={`flex flex-col items-end ${(staff.trend || 0) > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  <div className="flex items-center gap-2">
                     {(staff.trend || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
                     <span className="text-xl font-black">{Math.abs(staff.trend || 0)}%</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">vs Last Month</span>
                 </div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">vs Last Month</span>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-end">
-                <span className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Current KPI Achievement</span>
-                <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-400" : staff.kpi >= 60 ? "text-blue-400" : "text-amber-400"}`}>{staff.kpi}%</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Current KPI Achievement</span>
+                  <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-400" : staff.kpi >= 60 ? "text-blue-400" : "text-amber-400"}`}>{staff.kpi}%</span>
+                </div>
+                <PerformanceBar percentage={staff.kpi} color={`bg-gradient-to-r ${getStatusColor(staff.kpi)} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
               </div>
-              <PerformanceBar percentage={staff.kpi} color={`bg-gradient-to-r ${getStatusColor(staff.kpi)} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
-            </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center gap-4">
+              <div className="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center gap-4">
                 <p className="text-xs text-slate-500 font-medium italic">"Consistent performance across all field metrics."</p>
-                <button 
+                <button
                   onClick={() => setSelectedStaff(staff)}
                   className="px-6 py-3 rounded-xl bg-slate-950 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl"
                 >
-                    Detailed Report
+                  Detailed Report
                 </button>
+              </div>
             </div>
-          </div>
           ))
-        ) : (
-          <div className="col-span-full py-20 bg-slate-900/50 rounded-[2.5rem] border-2 border-dashed border-slate-800 text-center">
-            <p className="text-slate-500 font-bold uppercase tracking-widest">No matching staff found</p>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {filteredStaff.length > itemsPerPage && (
@@ -395,7 +383,7 @@ export default function StaffPerformance() {
             <span className="text-slate-300 font-black">{Math.min(indexOfLastItem, filteredStaff.length)}</span> of{" "}
             <span className="text-slate-300 font-black">{filteredStaff.length}</span> staff members
           </p>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => paginate(Math.max(1, currentPage - 1))}
@@ -405,17 +393,16 @@ export default function StaffPerformance() {
             >
               <FaChevronLeft className="text-sm group-active:-translate-x-1 transition-transform" />
             </button>
-            
+
             <div className="flex items-center gap-2">
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i + 1}
                   onClick={() => paginate(i + 1)}
-                  className={`w-12 h-12 rounded-2xl font-black text-sm transition-all duration-300 ${
-                    currentPage === i + 1
+                  className={`w-12 h-12 rounded-2xl font-black text-sm transition-all duration-300 ${currentPage === i + 1
                       ? "bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.4)] scale-110 border-2 border-blue-400"
                       : "bg-slate-900 border-2 border-slate-800 text-slate-500 hover:border-blue-500/50 hover:text-blue-400"
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </button>
@@ -438,7 +425,7 @@ export default function StaffPerformance() {
       {isMounted && selectedStaff && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xl animate-fade-in">
           <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] w-full max-w-6xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
-            <button 
+            <button
               onClick={() => setSelectedStaff(null)}
               className="absolute top-8 right-8 w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/50 transition-all z-10"
             >
@@ -474,14 +461,14 @@ export default function StaffPerformance() {
                   <div className="h-full flex flex-col items-start justify-start text-left">
                     <div className="mb-0 text-left">
                       <h3 className="text-2xl font-black text-white tracking-tight italic flex items-center gap-3">
-                         <div className="w-2 h-8 bg-blue-500 rounded-full" />
-                         Performance Analytics
+                        <div className="w-2 h-8 bg-blue-500 rounded-full" />
+                        Performance Analytics
                       </h3>
                       <p className="text-slate-500 text-sm font-medium mt-1">Monthly KPI achievement distribution for {selectedYear}</p>
                     </div>
-                    
+
                     <div className="flex-1 min-h-[400px] w-full mt-5">
-                      <Bar 
+                      <Bar
                         data={{
                           labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                           datasets: [{
@@ -538,7 +525,7 @@ export default function StaffPerformance() {
                         }}
                       />
                     </div>
-                    
+
                     <div className="mt-8 p-6 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
                       <p className="text-xs text-slate-400 leading-relaxed italic">
                         Data is aggregated monthly from field operations. Achievement scores reflect performance against weighted quota targets.

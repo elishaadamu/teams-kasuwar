@@ -12,7 +12,6 @@ import {
   FaClipboardList,
   FaUpload,
   FaMoneyBillWave,
-  FaPlus,
   FaLayerGroup,
   FaUserTie,
   FaUser,
@@ -215,13 +214,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
               icon={FaClipboardList}
               label="Performance Report"
               active={pathname.includes("/state-dashboard/performance")}
-            />
-
-            <NavItem
-              href="/state-dashboard/create-team"
-              icon={FaPlus}
-              label="Create Team"
-              active={pathname.includes("/state-dashboard/create-team")}
             />
 
             <NavItem
