@@ -446,13 +446,53 @@ export default function StaffPerformance() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedStaff.metrics).map(([key, val]) => (
-                      <div key={key} className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
-                        <p className="text-2xl font-black text-white">{val}</p>
-                      </div>
-                    ))}
+                  <div className="space-y-4">
+                    {(() => {
+                      const r = (selectedStaff?.role || '').toLowerCase();
+                      const stats = selectedStaff?.metrics || {};
+                      
+                      const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250, 'regional manager': 130000, 'state manager': 13000, 'team lead': 13000 };
+                      const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+                      const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+
+                      const vt = vTarget[r] || 0;
+                      const st = sTarget[r] || 0;
+                      const dt = dTarget[r] || 0;
+
+                      const targets = [];
+                      if (vt > 0) targets.push({ name: 'Vendors', target: vt, achieved: stats.vendorsCount || 0, color: 'emerald' });
+                      if (st > 0) targets.push({ name: 'Sales', target: st, achieved: stats.salesCount || 0, color: 'blue' });
+                      if (dt > 0) targets.push({ name: 'Delivery', target: dt, achieved: stats.deliveryCount || 0, color: 'purple' });
+
+                      if (targets.length === 0) {
+                        return (
+                          <div className="grid grid-cols-2 gap-4">
+                            {Object.entries(stats).map(([key, val]) => (
+                              <div key={key} className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
+                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
+                                <p className="text-2xl font-black text-white">{val}</p>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      return targets.map((t, idx) => {
+                        const progress = t.target > 0 ? Math.min(100, Math.round((t.achieved / t.target) * 100)) : 0;
+                        return (
+                          <div key={idx} className="p-5 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
+                            <div className="flex justify-between items-center mb-2 text-xs">
+                              <span className="font-semibold text-slate-400">{t.name} Target: {t.target.toLocaleString()}</span>
+                              <span className={`font-bold text-${t.color}-400`}>Achieved: {progress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-800 rounded-full h-2">
+                              <div className={`bg-${t.color}-500 h-2 rounded-full transition-all duration-1000`} style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-medium text-slate-500 mt-2">Current Count: {t.achieved.toLocaleString()}</p>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
 

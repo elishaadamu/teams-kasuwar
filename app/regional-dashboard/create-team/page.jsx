@@ -126,7 +126,7 @@ const CreateTeamPage = () => {
             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white">
                     <h1 className="text-3xl font-bold flex items-center gap-3">
-                        <FaPlusCircle className="text-blue-200" /> Create New Team
+                        <FaPlusCircle className="text-blue-200" /> State Creation
                     </h1>
                     <p className="text-blue-100 mt-2">Initialize a new operations team within a specific zone.</p>
                 </div>
@@ -181,9 +181,9 @@ const CreateTeamPage = () => {
                             className={`flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50`}
                         >
                             {loading ? (
-                                <><FaSpinner className="animate-spin" /> Creating Team...</>
+                                <><FaSpinner className="animate-spin" /> Creating State...</>
                             ) : (
-                                <><FaPlusCircle /> Create Team</>
+                                <><FaPlusCircle /> State Creation</>
                             )}
                         </button>
                     </div>

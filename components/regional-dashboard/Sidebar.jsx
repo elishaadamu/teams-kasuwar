@@ -216,7 +216,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                             <div key={member.email} className="flex items-center space-x-3 px-4 py-2 ml-4 text-gray-400 hover:text-white transition-colors">
                                 <FaUser className="w-3 h-3" />
                                 <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
-                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="TL" />}
+                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="State Co-ordinator" />}
                             </div>
                         ))}
                     </div>
@@ -228,17 +228,24 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
             </p>
 
            
-             <NavItem
+             {/* <NavItem
               href="/regional-dashboard/financial-report"
               icon={FaMoneyBillWave}
               label="Financial Reports"
               active={pathname.includes("/regional-dashboard/financial-report")}
-            />
+            /> */}
             <NavItem
               href="/regional-dashboard/create-team"
               icon={FaPlus}
-              label="Create Team"
+              label="State Creation"
               active={pathname.includes("/regional-dashboard/create-team")}
+            />
+
+            <NavItem
+              href="/regional-dashboard/vendors-target"
+              icon={FaClipboardList}
+              label="Targets Overview"
+              active={pathname.includes("/regional-dashboard/vendors-target")}
             />
 
             <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
