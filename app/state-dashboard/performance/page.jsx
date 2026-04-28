@@ -360,6 +360,41 @@ export default function StaffPerformance() {
                   <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-400" : staff.kpi >= 60 ? "text-blue-400" : "text-amber-400"}`}>{staff.kpi}%</span>
                 </div>
                 <PerformanceBar percentage={staff.kpi} color={`bg-gradient-to-r ${getStatusColor(staff.kpi)} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
+                
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-800">
+                  {(() => {
+                    const r = (staff?.role || '').toLowerCase();
+                    const stats = staff?.metrics || {};
+                    const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250, 'regional manager': 130000, 'state manager': 13000, 'team lead': 13000 };
+                    const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+                    const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+
+                    const vt = vTarget[r] || 0;
+                    const st = sTarget[r] || 0;
+                    const dt = dTarget[r] || 0;
+
+                    const targets = [];
+                    if (vt > 0) targets.push({ name: 'Vendors', target: vt, achieved: stats.vendorsCount || 0, color: 'emerald' });
+                    if (st > 0) targets.push({ name: 'Sales', target: st, achieved: stats.salesCount || 0, color: 'blue' });
+                    if (dt > 0) targets.push({ name: 'Delivery', target: dt, achieved: stats.deliveryCount || 0, color: 'purple' });
+
+                    return targets.map((t, idx) => {
+                      const progress = t.target > 0 ? Math.min(100, Math.round((t.achieved / t.target) * 100)) : 0;
+                      return (
+                        <div key={idx} className="text-left bg-slate-950 p-2 rounded-xl border border-slate-800/50">
+                          <p className="text-[9px] font-black uppercase text-slate-500 mb-1">{t.name}</p>
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] font-bold text-slate-300">{t.achieved.toLocaleString()}</span>
+                            <span className={`text-[10px] font-black text-${t.color}-400`}>{progress}%</span>
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-full h-1">
+                            <div className={`bg-${t.color}-500 h-1 rounded-full transition-all`} style={{ width: `${progress}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               <div className="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center gap-4">
