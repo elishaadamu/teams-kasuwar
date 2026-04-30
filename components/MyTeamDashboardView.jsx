@@ -893,8 +893,8 @@ const MyTeamDashboardView = ({ teamId }) => {
         }
     };
 
-    const openSetLeadModal = (teamId) => {
-        setSetLeadForm({ email: "", teamId });
+    const openSetLeadModal = (teamId, email = "") => {
+        setSetLeadForm({ email, teamId });
         setShowSetLeadModal(true);
     };
 
@@ -941,6 +941,7 @@ const MyTeamDashboardView = ({ teamId }) => {
         : (dashboardData?.teams || (selectedTeam ? [selectedTeam] : (dashboardData?.team ? [dashboardData.team] : [])));
 
     const isUserRegionalLeader = userData?.role === 'rm' || userData?.role === 'regional-leader' || userData?.role === 'bdm' || userData?.role === 'bd' || userData?.role === 'sm';
+    const canManageMembers = userData?.role === 'rm' || userData?.role === 'regional-leader' || userData?.role === 'tl' || userData?.role === 'team lead' || userData?.role === 'state coordinator';
 
 
     return (
@@ -1037,42 +1038,77 @@ const MyTeamDashboardView = ({ teamId }) => {
                 </div>
             </div>
 
-            {/* Wallet Overview */}
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isRegionalView ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6`}>
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-100 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <FaWallet className="text-8xl" />
-                    </div>
-                    <div className="relative z-10 flex flex-col h-full justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 mb-4 opacity-80">
-                                <FaWallet className="text-sm" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Current Balance</span>
-                            </div>
-                            {walletLoading ? (
-                                 <FaSpinner className="animate-spin text-2xl" />
-                            ) : (
-                                <h2 className="text-2xl font-bold">₦{walletData?.balance?.toLocaleString() || "0"}</h2>
-                            )}
-                            <p className="text-xs mt-2 opacity-60">Currency: {walletData?.currency || "NGN"}</p>
-                        </div>
-                        
-                        <div className="space-y-2 mt-4 pt-4 border-t border-indigo-500/30 text-sm">
-                            <div className="flex justify-between items-center">
-                                <span className="opacity-80 text-xs text-indigo-100">Commission on Sales</span>
-                                <span className="font-semibold">₦{walletData?.commissions?.sales?.toLocaleString() || "0"}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="opacity-80 text-xs text-indigo-100">Delivery</span>
-                                <span className="font-semibold">₦{walletData?.commissions?.delivery?.toLocaleString() || "0"}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="opacity-80 text-xs text-indigo-100">Vendor Subscriptions</span>
-                                <span className="font-semibold">₦{walletData?.commissions?.subscriptions?.toLocaleString() || "0"}</span>
+            {/* Targets Overview */}
+            {(() => {
+                const isStateCoordinator = userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'team lead' || userData?.role?.toLowerCase() === 'state coordinator';
+                const vTarget = isStateCoordinator ? 13000 : 130000;
+                const dTarget = isStateCoordinator ? 4500 : 40000;
+                const sTarget = isStateCoordinator ? 4500 : 40000;
+                
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        {/* Vendors Target Card */}
+                        <div className="bg-white rounded-[1.5rem] p-5 border border-gray-100 flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-lg group">
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-emerald-500 transition-colors">Vendors Target</h4>
+                                    <span className="text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                        {Math.min(100, Math.round(((dashboardData?.metrics?.totalVendors || 0) / vTarget) * 100))}%
+                                    </span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.metrics?.totalVendors || 0).toLocaleString()}</span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">/ {vTarget.toLocaleString()}</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.metrics?.totalVendors || 0) / vTarget) * 100)}%` }}></div>
+                                </div>
                             </div>
                         </div>
+
+                        {/* Delivery Target Card */}
+                        <div className="bg-white rounded-[1.5rem] p-5 border border-gray-100 flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-lg group">
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-blue-500 transition-colors">Delivery Target</h4>
+                                    <span className="text-xs font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                                        {Math.min(100, Math.round(((dashboardData?.metrics?.totalDeliveryMen || 0) / dTarget) * 100))}%
+                                    </span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.metrics?.totalDeliveryMen || 0).toLocaleString()}</span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">/ {dTarget.toLocaleString()}</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.metrics?.totalDeliveryMen || 0) / dTarget) * 100)}%` }}></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sales Target Card */}
+                        <div className="bg-white rounded-[1.5rem] p-5 border border-gray-100 flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-lg group">
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-purple-500 transition-colors">Sales Target</h4>
+                                    <span className="text-xs font-black text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                                        {Math.min(100, Math.round(((dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0) / sTarget) * 100))}%
+                                    </span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0).toLocaleString()}</span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">/ {sTarget.toLocaleString()}</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0) / sTarget) * 100)}%` }}></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                );
+            })()}
+
+            {/* General Overview */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isRegionalView ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
 
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
                     <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
@@ -1290,17 +1326,18 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 <p className="text-sm text-gray-500">{teamMembers.length} members in this team</p>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4 font-semibold">Member Name</th>
                                             <th className="px-6 py-4 font-semibold">Email</th>
                                             <th className="px-6 py-4 font-semibold">Role</th>
                                             <th className="px-6 py-4 font-semibold">Status</th>
-                                            {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                            {canManageMembers && <th className="px-6 py-4 font-semibold">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
+                                        {console.log("Table 1 Members:", teamMembers)}
                                         {teamMembers.map((member, index) => (
                                             <tr key={index} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4">
@@ -1316,15 +1353,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                                                 <td className="px-6 py-4 text-sm">
                                                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                        (member.isTeamLead || member.role === 'team_lead' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
+                                                        (member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
                                                             ? 'bg-indigo-100 text-indigo-700' 
                                                             : 'bg-gray-100 text-gray-600'
                                                     }`}>
-                                                        {(member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
-                                                            ? 'State Co-ordinator'
-                                                            : (member.role?.toUpperCase() || 'MEMBER')}
+                                                        {member.role?.toUpperCase() || 'MEMBER'}
                                                     </span>
                                                 </td>
+
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                         (member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -1333,14 +1369,21 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                     </span>
                                                 </td>
 
-                                                {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
-                                                    <td className="px-6 py-4">
+                                                {canManageMembers && (
+                                                    <td className="px-6 py-4 flex gap-2">
                                                         <button 
                                                             onClick={() => openReassignModal(member.email)}
                                                             className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
                                                             title="Reassign to another team"
                                                         >
                                                             <FaExchangeAlt className="text-[10px]" /> Reassign
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)}
+                                                            className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100"
+                                                            title="Make State Co-ordinator (TL)"
+                                                        >
+                                                            <FaUserTie className="text-[10px]" /> Make TL
                                                         </button>
                                                     </td>
                                                 )}
@@ -1381,17 +1424,18 @@ const MyTeamDashboardView = ({ teamId }) => {
                     </div>
                     
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-semibold">Member Name</th>
                                     <th className="px-6 py-4 font-semibold">Email</th>
                                     <th className="px-6 py-4 font-semibold">Role</th>
                                     <th className="px-6 py-4 font-semibold">Status</th>
-                                    {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                    {canManageMembers && <th className="px-6 py-4 font-semibold">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
+                                {console.log("Table 2 Members:", dashboardData.members)}
                                 {dashboardData.members?.map((member, index) => (
                                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
@@ -1409,9 +1453,10 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                                                 (member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
                                             }`}>
-                                                {(member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'State Co-ordinator' : (member.role?.toUpperCase() || 'MEMBER')}
+                                                {member.role?.toUpperCase() || 'MEMBER'}
                                             </span>
                                         </td>
+
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                 (member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -1419,14 +1464,21 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 {(member.isActive !== false) ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
-                                        {isUserRegionalLeader && dashboardData?.role !== 'tl' && dashboardData?.role !== 'team-lead' && dashboardData?.role !== 'member' && (
-                                            <td className="px-6 py-4">
+                                        {canManageMembers && (
+                                            <td className="px-6 py-4 flex gap-2">
                                                 <button 
                                                     onClick={() => openReassignModal(member.email)}
                                                     className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
                                                     title="Reassign to another team"
                                                 >
                                                     <FaExchangeAlt className="text-[10px]" /> Reassign
+                                                </button>
+                                                <button 
+                                                    onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)}
+                                                    className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100"
+                                                    title="Make State Co-ordinator (TL)"
+                                                >
+                                                    <FaUserTie className="text-[10px]" /> Make TL
                                                 </button>
                                             </td>
                                         )}

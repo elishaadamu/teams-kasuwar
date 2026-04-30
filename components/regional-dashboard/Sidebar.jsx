@@ -187,12 +187,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 
            
 
-            <NavItem
-              href="/regional-dashboard/regional-leader"
-              icon={FaUsers}
-              label="Regional Manager"
-              active={pathname === "/regional-dashboard/regional-leader"}
-            />
 
             {/* Dynamic Team Section */}
             {(isRegionalLeader || isTL) && (

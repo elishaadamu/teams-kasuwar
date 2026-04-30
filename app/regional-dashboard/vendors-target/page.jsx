@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaChartLine, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { FaChartLine, FaCheckCircle, FaExclamationCircle, FaWallet } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Loading from "@/components/Loading";
 
@@ -71,27 +71,32 @@ const VendorsTargetPage = () => {
 
     if (loading) return <Loading />;
 
+    const isStateCoordinator = userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'team lead' || userData?.role?.toLowerCase() === 'state coordinator';
+    const vTarget = isStateCoordinator ? 13000 : 130000;
+    const dTarget = isStateCoordinator ? 4500 : 40000;
+    const sTarget = isStateCoordinator ? 4500 : 40000;
+
     const targets = [
         {
             title: "Vendors Target",
-            target: 130000,
-            achieved: walletData?.commissions?.subscriptions || 0,
+            target: vTarget,
+            achieved: dashboardData?.metrics?.totalVendors || 0,
             iconColor: "text-emerald-500",
             bgColor: "bg-emerald-50",
             barColor: "bg-emerald-500"
         },
         {
             title: "Delivery Target",
-            target: 40000,
-            achieved: walletData?.commissions?.delivery || 0,
+            target: dTarget,
+            achieved: dashboardData?.metrics?.totalDeliveryMen || 0,
             iconColor: "text-blue-500",
             bgColor: "bg-blue-50",
             barColor: "bg-blue-500"
         },
         {
             title: "Sales Target",
-            target: 40000,
-            achieved: walletData?.commissions?.sales || 0,
+            target: sTarget,
+            achieved: dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0,
             iconColor: "text-purple-500",
             bgColor: "bg-purple-50",
             barColor: "bg-purple-500"
@@ -100,60 +105,61 @@ const VendorsTargetPage = () => {
 
     return (
         <div className="p-4 md:p-6 lg:p-8 space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Targets & Achievements</h1>
-                <p className="text-sm text-gray-500 mt-1">Track your progress across vendors, delivery, and sales</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                <div>
+                    <h1 className="text-4xl font-black text-gray-900 tracking-tighter">Targets & <span className="text-blue-600">Achievements</span></h1>
+                    <p className="text-sm text-gray-500 font-medium mt-1">Real-time tracking of active users and service metrics</p>
+                </div>
+                
+                {/* Wallet Balance Card - More Compact */}
+                <div className="bg-slate-900 rounded-2xl p-5 shadow-xl text-white min-w-[280px] w-full md:w-auto relative overflow-hidden border border-slate-800">
+                    <div className="absolute -right-6 -bottom-6 opacity-10">
+                        <FaWallet className="text-7xl rotate-12" />
+                    </div>
+                    <div className="relative z-10">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 block mb-1">Current Balance</span>
+                        <h2 className="text-3xl font-black tracking-tighter">₦{walletData?.balance?.toLocaleString() || "0"}</h2>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {targets.map((item, index) => {
                     const progress = item.target > 0 ? Math.min(100, Math.round((item.achieved / item.target) * 100)) : 0;
-                    const isTargetMet = item.achieved >= item.target;
 
                     return (
-                        <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden transition-all hover:shadow-md">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className={`w-10 h-10 rounded-full ${item.bgColor} flex items-center justify-center`}>
-                                    <FaChartLine className={`text-lg ${item.iconColor}`} />
+                        <div key={index} className="bg-white rounded-[2rem] p-7 shadow-sm border border-gray-100 flex flex-col h-full relative transition-all hover:shadow-xl hover:border-blue-500/10 group">
+                            <div className="flex justify-between items-start mb-6">
+                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-blue-500 transition-colors">{item.title}</span>
+                                <div className={`px-3 py-1 rounded-full ${item.bgColor} ${item.iconColor} text-xs font-black`}>
+                                    {progress}%
                                 </div>
-                                <span className="text-sm font-bold uppercase tracking-widest text-gray-700">{item.title}</span>
                             </div>
                             
-                            <div className="mb-6 flex-1">
-                                <div className="flex items-end gap-2 mb-2">
-                                    <h2 className="text-4xl font-bold tracking-tight text-gray-800">
-                                        ₦{item.achieved.toLocaleString()}
-                                    </h2>
-                                </div>
-                                <p className="text-sm font-medium text-gray-500">
-                                    Target: ₦{item.target.toLocaleString()}
+                            <div className="mb-8 flex-1">
+                                <h2 className="text-5xl font-black tracking-tighter text-gray-900 mb-1">
+                                    {item.achieved.toLocaleString()}
+                                </h2>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    Goal: {item.target.toLocaleString()}
                                 </p>
                             </div>
                             
                             <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-500 font-medium">Achievement Rate</span>
-                                    <span className={`text-sm font-bold ${item.iconColor}`}>{progress}%</span>
-                                </div>
-                                
                                 <div className="w-full bg-gray-100 rounded-full h-2">
                                     <div 
-                                        className={`h-2 rounded-full transition-all duration-1000 ${item.barColor}`}
+                                        className={`h-2 rounded-full transition-all duration-1000 ${item.barColor} shadow-[0_0_10px_rgba(0,0,0,0.1)]`}
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>
-                                
-                                {isTargetMet ? (
-                                    <div className="flex items-center gap-2 text-green-600 mt-2">
-                                        <FaCheckCircle className="text-xs" />
-                                        <span className="text-xs font-medium">Target Reached! Excellent work.</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-gray-500 mt-2">
-                                        <FaExclamationCircle className="text-xs" />
-                                        <span className="text-xs font-medium">₦{(item.target - item.achieved).toLocaleString()} more needed.</span>
-                                    </div>
-                                )}
+                                <div className="flex justify-between items-center">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                        {(item.target - item.achieved).toLocaleString()} remaining
+                                    </p>
+                                    {item.achieved >= item.target && (
+                                        <FaCheckCircle className="text-emerald-500 text-sm" />
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );
