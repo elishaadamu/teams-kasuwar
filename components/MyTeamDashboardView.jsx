@@ -156,7 +156,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-purple-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm appearance-none"
                                             >
                                                 <option value="">Select Team</option>
-                                                {teams?.map(team => (
+                                                {teams?.filter(team => form.role === 'tl' ? (!team.teamLeadId && !team.teamLead) : true).map(team => (
                                                     <option key={team._id || team.id} value={team._id || team.id}>{team.name}</option>
                                                 ))}
                                             </select>
@@ -883,7 +883,8 @@ const MyTeamDashboardView = ({ teamId }) => {
 
     const handleViewTeam = (tId) => {
         let base = "";
-        if (pathname.includes("/bd-dashboard")) base = "/bd-dashboard";
+        if (pathname.includes("/regional-dashboard")) base = "/regional-dashboard";
+        else if (pathname.includes("/bd-dashboard")) base = "/bd-dashboard";
         else if (pathname.includes("/agent-dashboard")) base = "/agent-dashboard";
         else if (pathname.includes("/sales-manager")) base = "/sales-manager";
         else if (pathname.includes("/dashboard")) base = "/dashboard";
@@ -1170,82 +1171,91 @@ const MyTeamDashboardView = ({ teamId }) => {
             {isRegionalView && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                         {dashboardData.teams?.map((team, index) => (
-                             <div 
-                                 key={index} 
-                                 className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all relative group cursor-pointer"
-                                 onClick={(e) => {
-                                     if (!e.target.closest('button')) {
-                                         handleViewTeam(team._id || team.id);
-                                     }
-                                 }}
-                             >
-                                 <div className="flex items-center justify-between mb-4">
-                                     <div className="flex items-center gap-4">
-                                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                             <FaLayerGroup />
-                                         </div>
-                                         <div>
-                                             <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{team.name || "Unnamed Team"}</h3>
-                                              <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
-                                         </div>
+                         {dashboardData.teams?.map((team, index) => {
+                             const hasCoordinator = !!(team.teamLeadId?.firstName || team.teamLead?.firstName);
+                             return (
+                                 <div 
+                                     key={index} 
+                                     className={`bg-white rounded-2xl p-6 shadow-sm border transition-all relative group cursor-pointer ${hasCoordinator ? 'border-gray-100 hover:shadow-md' : 'border-amber-200 hover:shadow-amber-100 hover:shadow-md ring-1 ring-amber-100'}`}
+                                     onClick={(e) => {
+                                         if (!e.target.closest('button')) {
+                                             handleViewTeam(team._id || team.id);
+                                         }
+                                     }}
+                                 >
+                                     {/* Coordinator status badge */}
+                                     <div className={`absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${hasCoordinator ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                         <span className={`w-1.5 h-1.5 rounded-full ${hasCoordinator ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                         {hasCoordinator ? 'Assigned' : 'Pending'}
                                      </div>
-                                     <div className="p-2 text-gray-300 group-hover:text-blue-500 transition-colors">
-                                         <FaChevronRight className="text-sm" />
-                                     </div>
-                                 </div>
-                                 
-                                 <div className="space-y-3">
-                                     <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl group/lead">
-                                        <div className="flex items-center gap-3">
-                                             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                                 <FaUserTie className="text-sm" />
+
+                                     <div className="flex items-center justify-between mb-4">
+                                         <div className="flex items-center gap-4">
+                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl group-hover:text-white transition-colors ${hasCoordinator ? 'bg-blue-100 text-blue-600 group-hover:bg-blue-600' : 'bg-amber-100 text-amber-600 group-hover:bg-amber-500'}`}>
+                                                 <FaLayerGroup />
                                              </div>
                                              <div>
-                                                 <p className="text-xs text-gray-500">State Co-ordinator</p>
-                                                  <p className="text-sm font-semibold text-gray-800">
-                                                  {(team.teamLeadId?.firstName || team.teamLead?.firstName) ? `${team.teamLeadId?.firstName || team.teamLead?.firstName} ${team.teamLeadId?.lastName || team.teamLead?.lastName}` : "Not Assigned"}
-                                              </p>
+                                                 <h3 className={`font-bold group-hover:transition-colors ${hasCoordinator ? 'text-gray-800 group-hover:text-blue-600' : 'text-amber-900 group-hover:text-amber-700'}`}>{team.name || "Unnamed Team"}</h3>
+                                                  <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
                                              </div>
-                                        </div>
-                                         <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                openSetLeadModal(team._id || team.id);
-                                            }}
-                                            className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
-                                            title="Set State Co-ordinator"
-                                         >
-                                            Change
-                                         </button>
+                                         </div>
+                                         <div className="p-2 text-gray-300 group-hover:text-blue-500 transition-colors mr-5">
+                                             <FaChevronRight className="text-sm" />
+                                         </div>
                                      </div>
-                                        
-                                      <div className="grid grid-cols-2 gap-2 mt-2">
-                                         <div className="text-center p-2 bg-blue-50 rounded-lg">
-                                             <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Members</p>
-                                             <p className="font-bold text-blue-900">{team.totalMembers || 0}</p>
+                                     
+                                     <div className="space-y-3">
+                                         <div className={`flex items-center justify-between gap-3 p-3 rounded-xl group/lead ${hasCoordinator ? 'bg-gray-50' : 'bg-amber-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${hasCoordinator ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-700'}`}>
+                                                     <FaUserTie className="text-sm" />
+                                                 </div>
+                                                 <div>
+                                                     <p className="text-xs text-gray-500">State Co-ordinator</p>
+                                                      <p className={`text-sm font-semibold ${hasCoordinator ? 'text-gray-800' : 'text-amber-700 italic'}`}>
+                                                     {hasCoordinator ? `${team.teamLeadId?.firstName || team.teamLead?.firstName} ${team.teamLeadId?.lastName || team.teamLead?.lastName}` : "Not Assigned"}
+                                                 </p>
+                                                 </div>
+                                            </div>
+                                             <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openSetLeadModal(team._id || team.id);
+                                                }}
+                                                className={`text-xs border px-2 py-1 rounded hover:opacity-80 transition-colors ${hasCoordinator ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'}`}
+                                                title="Set State Co-ordinator"
+                                             >
+                                                {hasCoordinator ? 'Change' : 'Assign'}
+                                             </button>
                                          </div>
-                                         <div className="text-center p-2 bg-purple-50 rounded-lg">
-                                             <p className="text-xs text-purple-600 font-bold uppercase tracking-widest text-[10px]">Wallet</p>
-                                             <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
-                                         </div>
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between gap-2 mt-2">
-                                          <div className="flex-1 text-center p-2 bg-green-50 rounded-lg">
-                                              <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
-                                              <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                            
+                                          <div className="grid grid-cols-2 gap-2 mt-2">
+                                             <div className="text-center p-2 bg-blue-50 rounded-lg">
+                                                 <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Members</p>
+                                                 <p className="font-bold text-blue-900">{team.totalMembers || 0}</p>
+                                             </div>
+                                             <div className="text-center p-2 bg-purple-50 rounded-lg">
+                                                 <p className="text-xs text-purple-600 font-bold uppercase tracking-widest text-[10px]">Wallet</p>
+                                                 <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
+                                             </div>
                                           </div>
-                                      </div>
+                                          
+                                          <div className="flex items-center justify-between gap-2 mt-2">
+                                              <div className="flex-1 text-center p-2 bg-green-50 rounded-lg">
+                                                  <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
+                                                  <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                              </div>
+                                          </div>
 
-                                      <div className="pt-3 mt-1 border-t border-gray-50 flex justify-center">
-                                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                              View Team Details <FaArrowRight />
-                                          </span>
-                                      </div>
+                                          <div className="pt-3 mt-1 border-t border-gray-50 flex justify-center">
+                                              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  View Team Details <FaArrowRight />
+                                              </span>
+                                          </div>
+                                       </div>
                                    </div>
-                               </div>
-                          ))}
+                             );
+                         })}
                     </div>
                     {(!dashboardData.teams || dashboardData.teams.length === 0) && dashboardData.zone && (
                         <div className="bg-blue-50 p-8 rounded-2xl border border-blue-100 text-center">
@@ -1261,62 +1271,83 @@ const MyTeamDashboardView = ({ teamId }) => {
             {isSingleTeamFromRegion && (
                 <div className="space-y-6">
                     {/* Team Info Card */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl">
-                                    <FaLayerGroup />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-800">{selectedTeam.name || "Unnamed Team"}</h2>
-                                    <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTeam.code || "No Code"}</p>
+                    {(() => {
+                        const hasCoordinator = !!(selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName);
+                        return (
+                            <div className={`rounded-2xl p-6 shadow-sm border ${hasCoordinator ? 'bg-white border-gray-100' : 'bg-white border-amber-200'}`}>
+                                <div className="flex items-center justify-between flex-wrap gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${hasCoordinator ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
+                                            <FaLayerGroup />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h2 className="text-xl font-bold text-gray-800">{selectedTeam.name || "Unnamed Team"}</h2>
+                                                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${hasCoordinator ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${hasCoordinator ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                                    {hasCoordinator ? 'Coordinator Assigned' : 'Coordinator Pending'}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTeam.code || "No Code"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <div className="text-center px-4 py-2 bg-blue-50 rounded-xl">
+                                            <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Total Members</p>
+                                            <p className="font-bold text-blue-900">{selectedTeam.totalMembers || 0}</p>
+                                        </div>
+                                        <div className="text-center px-4 py-2 bg-purple-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                                            <p className="text-xs text-purple-600">Wallet</p>
+                                            <p className="font-bold text-purple-900">₦{(walletData?.balance || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className="text-center px-4 py-2 bg-green-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                                            <p className="text-xs text-green-600">Performance</p>
+                                            <p className="font-bold text-green-900">{selectedTeam.performance || 0}%</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="text-center px-4 py-2 bg-blue-50 rounded-xl">
-                                    <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Total Members</p>
-                                    <p className="font-bold text-blue-900">{selectedTeam.totalMembers || 0}</p>
-                                </div>
-                                <div className="text-center px-4 py-2 bg-purple-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
-                                    <p className="text-xs text-purple-600">Wallet</p>
-                                    <p className="font-bold text-purple-900">₦{(walletData?.balance || 0).toLocaleString()}</p>
-                                </div>
-                                <div className="text-center px-4 py-2 bg-green-50 rounded-xl font-bold uppercase tracking-widest text-[10px]">
-                                    <p className="text-xs text-green-600">Performance</p>
-                                    <p className="font-bold text-green-900">{selectedTeam.performance || 0}%</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* Team Lead Card */}
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">State Co-ordinator</h3>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                    <FaUserTie className="text-lg" />
+                    {(() => {
+                        const hasCoordinator = !!(selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName);
+                        return (
+                            <div className={`rounded-2xl p-6 shadow-sm border relative overflow-hidden ${hasCoordinator ? 'bg-white border-gray-100' : 'bg-amber-50 border-amber-200 ring-1 ring-amber-100'}`}>
+                                {/* Status badge */}
+                                <div className={`absolute top-4 right-4 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${hasCoordinator ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${hasCoordinator ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                    {hasCoordinator ? 'Assigned' : 'Pending'}
                                 </div>
-                                 <div>
-                                    <p className="font-semibold text-gray-800">
-                                        {(selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName) 
-                                            ? `${selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName} ${selectedTeam.teamLeadId?.lastName || selectedTeam.teamLead?.lastName}` 
-                                            : "Not Assigned"}
-                                    </p>
-                                    {(selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email) && (
-                                        <p className="text-sm text-gray-500">{selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email}</p>
-                                    )}
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">State Co-ordinator</h3>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${hasCoordinator ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-700'}`}>
+                                            <FaUserTie className="text-lg" />
+                                        </div>
+                                         <div>
+                                            <p className={`font-semibold ${hasCoordinator ? 'text-gray-800' : 'text-amber-800 italic'}`}>
+                                                {hasCoordinator
+                                                    ? `${selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName} ${selectedTeam.teamLeadId?.lastName || selectedTeam.teamLead?.lastName}`
+                                                    : "Not Assigned"}
+                                            </p>
+                                            {(selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email) && (
+                                                <p className="text-sm text-gray-500">{selectedTeam.teamLeadId?.email || selectedTeam.teamLead?.email}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id)}
+                                        className={`text-xs px-3 py-1.5 rounded-lg transition-colors border ${hasCoordinator ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'}`}
+                                        title="Set State Co-ordinator"
+                                    >
+                                        {hasCoordinator ? 'Change State Co-ordinator' : 'Assign Co-ordinator'}
+                                    </button>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id)}
-                                className="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                                title="Set State Co-ordinator"
-                            >
-                                Change State Co-ordinator
-                            </button>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* Members Table */}
                     {teamMembers.length > 0 ? (
