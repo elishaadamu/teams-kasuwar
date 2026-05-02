@@ -13,12 +13,11 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const pathname = usePathname();
   const { userData } = useAppContext();
   const userRole = userData?.role || null;
-  
+
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      } md:translate-x-0`}
+      className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
     >
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -53,9 +52,8 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
           <nav className="space-y-2">
             <Link
               href="/dashboard"
-              className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                pathname === "/dashboard" ? "bg-gray-700" : ""
-              }`}
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard" ? "bg-gray-700" : ""
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -79,19 +77,17 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
                 {/* Team Management */}
                 <Link
                   href="/dashboard/manage-bds"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/manage-bds" ? "bg-gray-700" : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/manage-bds" ? "bg-gray-700" : ""
+                    }`}
                 >
                   <FaUsers className="w-5 h-5" />
                   <span>Manage BDs</span>
                 </Link>
-               
+
                 <Link
                   href="/dashboard/agents"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/agents" ? "bg-gray-700" : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/agents" ? "bg-gray-700" : ""
+                    }`}
                 >
                   <FaUsers className="w-5 h-5" />
                   <span>Agents List</span>
@@ -101,11 +97,10 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 
                 <Link
                   href="/dashboard/withdrawal-request"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/withdrawal-request"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/withdrawal-request"
+                    ? "bg-gray-700"
+                    : ""
+                    }`}
                 >
                   <FaWallet className="w-5 h-5" />
                   <span>Withdrawal Requests</span>
@@ -113,44 +108,24 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 
                 <Link
                   href="/dashboard/transactions"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/transactions"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/transactions"
+                    ? "bg-gray-700"
+                    : ""
+                    }`}
                 >
                   <FaLayerGroup className="w-5 h-5" />
                   <span>Transactions</span>
                 </Link>
 
-                <Link
-                  href="/dashboard/delivery-request"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/delivery-request" ? "bg-gray-700" : ""
-                  }`}
-                >
-                  <FaTruck className="w-5 h-5" />
-                  <span>Delivery Request</span>
-                </Link>
 
-                <Link
-                  href="/dashboard/delivery-payment"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/delivery-payment" ? "bg-gray-700" : ""
-                  }`}
-                >
-                  <FaMoneyBillWave className="w-5 h-5" />
-                  <span>Delivery Payment</span>
-                </Link>
 
                 {/* Settings */}
                 <Link
                   href="/dashboard/personal-details"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/personal-details"
-                      ? "bg-gray-700"
-                      : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/personal-details"
+                    ? "bg-gray-700"
+                    : ""
+                    }`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -170,9 +145,8 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 
                 <Link
                   href="/dashboard/pin-management"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${
-                    pathname === "/dashboard/pin-management" ? "bg-gray-700" : ""
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg hover:bg-gray-700 transition-colors ${pathname === "/dashboard/pin-management" ? "bg-gray-700" : ""
+                    }`}
                 >
                   <FaLock className="w-5 h-5" />
                   <span>PIN Management</span>
