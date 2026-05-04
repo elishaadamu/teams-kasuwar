@@ -626,15 +626,6 @@ const ManageBDsPage = () => {
                     onChange={handleInputChange}
                     required
                   />
-                  <InputField
-                    label="Date of Birth"
-                    name="dateOfBirth"
-                    type="date"
-                    placeholder="Select date of birth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    required
-                  />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Skills
