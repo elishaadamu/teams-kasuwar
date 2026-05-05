@@ -38,25 +38,26 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   // Fetch Team Dashboard Data for Sidebar
   useEffect(() => {
     const fetchTeamData = async () => {
-        if (!userData) return;
-        try {
-            const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
-            if (response.data.success) {
-                const data = response.data;
-                setTeamData(data);
-                
-                // Check if Regional Leader
-                if (String(userData.id) === REGIONAL_LEADER_ID || (data.teams && data.teams.length > 0)) {
-                    setIsRegionalLeader(true);
-                } 
-                // Check if TL (Case-Insensitive)
-                else if (data.team && data.members || userRole === 'tl') {
-                    setIsTL(true);
-                }
-            }
-        } catch (error) {
-            console.error("State Sidebar Team Fetch Error:", error);
+      if (!userData) return;
+      try {
+        const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
+        if (response.data.success) {
+          const data = response.data;
+          console.log("Sidebar Team Data:", data);
+          setTeamData(data);
+
+          // Check if Regional Leader
+          if (String(userData.id) === REGIONAL_LEADER_ID || (data.teams && data.teams.length > 0)) {
+            setIsRegionalLeader(true);
+          }
+          // Check if TL (Case-Insensitive)
+          else if (data.team && data.members || userRole === 'tl') {
+            setIsTL(true);
+          }
         }
+      } catch (error) {
+        console.error("State Sidebar Team Fetch Error:", error);
+      }
     };
 
     fetchTeamData();
@@ -102,16 +103,14 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   const NavItem = ({ href, icon: Icon, label, active, subItem = false }) => (
     <Link
       href={href}
-      className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-        active
+      className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
           ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
           : "text-gray-400 hover:bg-slate-800 hover:text-white"
-      } ${subItem ? "ml-4 text-sm py-2" : ""}`}
+        } ${subItem ? "ml-4 text-sm py-2" : ""}`}
     >
       <Icon
-        className={`w-5 h-5 ${
-          active ? "text-white" : "text-gray-400 group-hover:text-white"
-        } ${subItem ? "w-4 h-4" : ""}`}
+        className={`w-5 h-5 ${active ? "text-white" : "text-gray-400 group-hover:text-white"
+          } ${subItem ? "w-4 h-4" : ""}`}
       />
       <span className={`font-medium ${subItem ? "text-xs" : "text-sm"}`}>{label}</span>
       {active && !subItem && (
@@ -123,16 +122,14 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-sm transition-opacity md:hidden ${
-          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-sm transition-opacity md:hidden ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsSidebarOpen(false)}
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 flex flex-col`}
+        className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 flex flex-col`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-800">
@@ -178,31 +175,53 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, handleLogout }) => {
 
             {/* Dynamic Team Section */}
             {(isRegionalLeader || isTL) && (
-                 <div className="mt-4 mb-4">
-                    <p className="px-4 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2 border-t border-slate-800/50 pt-4">
-                        {isRegionalLeader ? "Region Teams" : "Team Members"}
-                    </p>
-                    <div className="space-y-1">
-                        {isRegionalLeader && teamData?.teams?.map((team) => (
-                             <NavItem
-                                key={team._id || team.id}
-                                 href={`/regional-dashboard/team?id=${team._id || team.id}`}
-                                 icon={FaLayerGroup}
-                                 label={team.name}
-                                 active={pathname.includes(`/team`) && new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('id') === (team._id || team.id)}
-                                 subItem={true}
-                             />
-                        ))}
+              <div className="mt-4 mb-4">
+                <p className="px-4 text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2 border-t border-slate-800/50 pt-4">
+                  {isRegionalLeader ? "Region Teams" : "Team Members"}
+                </p>
+                <div className="space-y-1">
+                  {isRegionalLeader && teamData?.teams?.map((team) => (
+                    <NavItem
+                      key={team._id || team.id}
+                      href={`/regional-dashboard/team?id=${team._id || team.id}`}
+                      icon={FaLayerGroup}
+                      label={team.name}
+                      active={pathname.includes(`/team`) && new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('id') === (team._id || team.id)}
+                      subItem={true}
+                    />
+                  ))}
 
-                        {isTL && teamData?.members?.map((member) => (
-                            <div key={member.email} className="flex items-center space-x-3 px-4 py-2 ml-4 text-gray-400 hover:text-white transition-colors">
-                                <FaUser className="w-3 h-3" />
+                  {isTL && teamData?.members && (() => {
+                    const groupedMembers = teamData.members.reduce((acc, member) => {
+                      const role = (member.role || "other").toLowerCase();
+                      if (!acc[role]) acc[role] = [];
+                      acc[role].push(member);
+                      return acc;
+                    }, {});
+
+                    // Custom sort order if desired, or just use Object.entries
+                    return Object.entries(groupedMembers).map(([role, members]) => {
+                      const groupLabel = role === 'agent' ? 'AGENTS' : `${role.toUpperCase()}s`;
+                      return (
+                        <div key={role} className="mt-3 mb-1">
+                          <p className="px-4 text-[10px] font-bold text-indigo-300 uppercase tracking-wider mb-1 ml-4 opacity-80">
+                            {groupLabel}
+                          </p>
+                          <div className="space-y-1">
+                            {members.map((member) => (
+                              <div key={member.email} className="flex items-center space-x-3 px-4 py-1.5 ml-4 text-gray-400 hover:text-white transition-colors">
+                                <FaUser className="w-3 h-3 flex-shrink-0" />
                                 <span className="text-xs font-medium truncate">{member.firstName} {member.lastName}</span>
-                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto" title="TL" />}
-                            </div>
-                        ))}
-                    </div>
-                 </div>
+                                {member.isTeamLead && <FaUserTie className="w-3 h-3 text-indigo-400 ml-auto flex-shrink-0" title="TL" />}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
             )}
 
             <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">
