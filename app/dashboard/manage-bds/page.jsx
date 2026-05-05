@@ -10,7 +10,11 @@ import {
   FaEllipsisV,
   FaBan,
   FaUserCheck,
+  FaChartLine,
 } from "react-icons/fa";
+import { format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
@@ -40,6 +44,9 @@ const ManageBDsPage = () => {
   const [listLoading, setListLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [reportLoading, setReportLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -394,6 +401,114 @@ const ManageBDsPage = () => {
     }
   };
 
+  const downloadBdPerformance = async (bd) => {
+    setReportLoading(true);
+    const toastId = toast.loading(`Generating report for ${bd.firstName}...`);
+    try {
+      const response = await axios.get(
+        apiUrl(API_CONFIG.ENDPOINTS.REPORTS.PERFORMANCE_REPORT_BD),
+        {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+          withCredentials: true,
+        }
+      );
+
+      const performanceData = response.data?.report;
+      if (!performanceData) {
+        throw new Error("No performance data found for this period.");
+      }
+
+      const doc = new jsPDF();
+      const { bdName = `${bd.firstName} ${bd.lastName}`, period = "", summary, agents = [] } = performanceData;
+
+      doc.setFontSize(18);
+      doc.text(`Performance Report for ${bdName}`, 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Period: ${period}`, 14, 29);
+
+      // Summary Section
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("Summary", 14, 40);
+
+      const summaryData = [
+        ["Total Agents", summary?.agentsCount || 0],
+        ["Total Vendors", summary?.totalVendors || 0],
+        ["Total Customers", summary?.totalUsers || 0],
+      ];
+
+      autoTable(doc, {
+        startY: 45,
+        head: [["Metric", "Value"]],
+        body: summaryData,
+        theme: "striped",
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      // Detailed Section
+      doc.setFontSize(14);
+      doc.text("Agent Performance", 14, doc.lastAutoTable.finalY + 15);
+
+      const sortedAgents = [...agents].sort((a, b) => {
+        const perfA = (a.fullyActiveVendors?.length || 0) + (a.fullyActiveCustomers?.length || 0);
+        const perfB = (b.fullyActiveVendors?.length || 0) + (b.fullyActiveCustomers?.length || 0);
+        return perfB - perfA;
+      });
+
+      const detailedTableData = sortedAgents.map((item, index) => [
+        index + 1,
+        item.name || "N/A",
+        item.fullyActiveVendors?.length || 0,
+        item.inactiveVendors?.length || 0,
+        item.fullyActiveCustomers?.length || 0,
+        item.inactiveCustomers?.length || 0,
+      ]);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [["S/N", "Agent Name", "Active Vendors", "Inactive Vendors", "Active Customers", "Inactive Customers"]],
+        body: detailedTableData,
+        theme: "grid",
+        headStyles: { fillColor: [22, 160, 133], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+
+      // Active Vendors List
+      const activeVendors = agents.flatMap((a) =>
+        (a.fullyActiveVendors || []).map((v) => ({ ...v, agentName: a.name }))
+      );
+
+      if (activeVendors.length > 0) {
+        let finalY = doc.lastAutoTable.finalY + 15;
+        if (finalY + 30 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; }
+        doc.setFontSize(14);
+        doc.text("Active Vendors List", 14, finalY);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [["S/N", "Vendor Name", "Business Name", "Phone", "Agent", "Date"]],
+          body: activeVendors.map((v, i) => [
+            i + 1, v.name, v.businessName || "N/A", maskPhoneNumber(v.phone), v.agentName, new Date(v.registrationDate).toLocaleDateString()
+          ]),
+          theme: "grid",
+          headStyles: { fillColor: [46, 204, 113], fontSize: 8 },
+          styles: { fontSize: 8 },
+        });
+      }
+
+      doc.save(`performance-${bdName.replace(/\s+/g, "_")}-${period.replace(/\//g, "-")}.pdf`);
+      toast.success("Report generated successfully!", { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Failed to generate report.", { id: toastId });
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const openAddModal = () => {
     resetForm();
     setIsEditing(false);
@@ -473,6 +588,31 @@ const ManageBDsPage = () => {
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
                 </select>
+
+                <div className="flex gap-2">
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {format(new Date(0, i), "MMMM")}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <option key={new Date().getFullYear() - i} value={new Date().getFullYear() - i}>
+                        {new Date().getFullYear() - i}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -904,11 +1044,10 @@ const ManageBDsPage = () => {
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${status.class}`}
                           >
                             <span
-                              className={`w-2 h-2 rounded-full mr-2 ${
-                                bd.suspended ? "bg-red-500" : "bg-green-500"
-                              }`}
+                              className={`w-2 h-2 rounded-full mr-2 ${bd.suspended ? "bg-red-500" : "bg-green-500"
+                                }`}
                             ></span>
-                            {status.text}
+                             {status.text}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -943,11 +1082,10 @@ const ManageBDsPage = () => {
                                     handleSuspendToggle(bd);
                                     setActiveDropdown(null);
                                   }}
-                                  className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 transition-colors ${
-                                    bd.suspended
-                                      ? "text-green-600 hover:bg-green-50"
-                                      : "text-red-600 hover:bg-red-50"
-                                  }`}
+                                  className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 transition-colors ${bd.suspended
+                                    ? "text-green-600 hover:bg-green-50"
+                                    : "text-red-600 hover:bg-red-50"
+                                    }`}
                                 >
                                   {bd.suspended ? (
                                     <>
@@ -958,6 +1096,17 @@ const ManageBDsPage = () => {
                                       <FaBan /> Suspend User
                                     </>
                                   )}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    downloadBdPerformance(bd);
+                                    setActiveDropdown(null);
+                                  }}
+                                  disabled={reportLoading}
+                                  className="w-full text-left px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 transition-colors disabled:opacity-50 font-medium"
+                                >
+                                  <FaChartLine className="text-blue-500" />
+                                  Performance Report
                                 </button>
                               </div>
                             )}

@@ -7,7 +7,14 @@ import {
   FaEye,
   FaSearch,
   FaFilter,
+  FaEllipsisV,
+  FaChartLine,
+  FaBan,
+  FaUserCheck,
 } from "react-icons/fa";
+import { format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
@@ -37,6 +44,11 @@ const ManageAgentsPage = () => {
   const [listLoading, setListLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [reportLoading, setReportLoading] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -99,6 +111,35 @@ const ManageAgentsPage = () => {
   useEffect(() => {
     fetchAgents();
   }, [userData]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeDropdown && !event.target.closest(".actions-dropdown-btn") && !event.target.closest(".actions-dropdown-menu")) {
+        setActiveDropdown(null);
+      }
+    };
+    const handleScroll = () => setActiveDropdown(null);
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [activeDropdown]);
+
+  const toggleDropdown = (e, id) => {
+    e.stopPropagation();
+    if (activeDropdown === id) {
+      setActiveDropdown(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 5,
+        left: rect.left - 150,
+      });
+      setActiveDropdown(id);
+    }
+  };
 
   useEffect(() => {
     if (formData.state) {
@@ -247,6 +288,98 @@ const ManageAgentsPage = () => {
     }
   };
 
+  const downloadAgentPerformance = async (agent) => {
+    setReportLoading(true);
+    const toastId = toast.loading(`Generating report for ${agent.firstName}...`);
+    try {
+      const response = await axios.get(
+        apiUrl(API_CONFIG.ENDPOINTS.REPORTS.PERFORMANCE_REPORT_AGENT),
+        {
+          params: {
+            agentId: agent._id,
+            month: selectedMonth,
+            year: selectedYear,
+          },
+          withCredentials: true,
+        }
+      );
+
+      const performanceData = response.data?.report;
+      if (!performanceData) throw new Error("No performance data found for this period.");
+
+      const doc = new jsPDF();
+      const { agentName = `${agent.firstName} ${agent.lastName}`, period = "", summary, vendors = {}, users = {} } = performanceData;
+
+      doc.setFontSize(18);
+      doc.text(`Performance Report for ${agentName}`, 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Period: ${period}`, 14, 29);
+
+      // Summary Section
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("Summary", 14, 40);
+
+      const summaryData = [
+        ["Total Vendors", summary?.totalVendors || 0],
+        ["Total Customers", summary?.totalUsers || 0],
+      ];
+
+      autoTable(doc, {
+        startY: 45,
+        head: [["Metric", "Value"]],
+        body: summaryData,
+        theme: "striped",
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      // Active Vendors List
+      const activeVendors = vendors.fullyActive || [];
+      if (activeVendors.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Active Vendors", 14, doc.lastAutoTable.finalY + 15);
+        autoTable(doc, {
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [["S/N", "Vendor Name", "Business Name", "Phone", "Date"]],
+          body: activeVendors.map((v, i) => [
+            i + 1, v.name, v.businessName || "N/A", maskPhoneNumber(v.phone), new Date(v.registrationDate).toLocaleDateString()
+          ]),
+          theme: "grid",
+          headStyles: { fillColor: [46, 204, 113], fontSize: 8 },
+          styles: { fontSize: 8 },
+        });
+      }
+
+      // Active Customers List
+      const activeCustomers = users.fullyActive || [];
+      if (activeCustomers.length > 0) {
+        let finalY = doc.lastAutoTable.finalY + 15;
+        if (finalY + 30 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; }
+        doc.setFontSize(14);
+        doc.text("Active Customers", 14, finalY);
+        autoTable(doc, {
+          startY: finalY + 5,
+          head: [["S/N", "Customer Name", "Phone", "Date"]],
+          body: activeCustomers.map((c, i) => [
+            i + 1, c.name, maskPhoneNumber(c.phone), new Date(c.registrationDate).toLocaleDateString()
+          ]),
+          theme: "grid",
+          headStyles: { fillColor: [52, 152, 219], fontSize: 8 },
+          styles: { fontSize: 8 },
+        });
+      }
+
+      doc.save(`performance-${agentName.replace(/\s+/g, "_")}-${period.replace(/\//g, "-")}.pdf`);
+      toast.success("Report generated successfully!", { id: toastId });
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Failed to generate report.", { id: toastId });
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const openAddModal = () => {
     resetForm();
     setShowAddModal(true);
@@ -322,6 +455,31 @@ const ManageAgentsPage = () => {
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
                 </select>
+
+                <div className="flex gap-2">
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {format(new Date(0, i), "MMMM")}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <option key={new Date().getFullYear() - i} value={new Date().getFullYear() - i}>
+                        {new Date().getFullYear() - i}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -708,21 +866,60 @@ const ManageAgentsPage = () => {
                                 agent.suspended ? "bg-red-500" : "bg-green-500"
                               }`}
                             ></span>
-                            {status.text}
+                             {status.text}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-3">
+                          <div className="relative">
                             <button
-                              onClick={() => handleSuspendToggle(agent)}
-                              className={`font-semibold text-sm px-4 py-2 rounded-lg transition-colors ${
-                                agent.suspended
-                                  ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                  : "bg-red-50 text-red-700 hover:bg-red-100"
-                              }`}
+                              onClick={(e) => toggleDropdown(e, agent._id)}
+                              className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors actions-dropdown-btn"
                             >
-                              {agent.suspended ? "Unsuspend" : "Suspend"}
+                              <FaEllipsisV />
                             </button>
+
+                            {activeDropdown === agent._id && (
+                              <div
+                                className="fixed bg-white rounded-xl shadow-lg border border-gray-100 z-[9999] overflow-hidden actions-dropdown-menu w-48"
+                                style={{
+                                  top: dropdownPos.top,
+                                  left: dropdownPos.left,
+                                }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    handleSuspendToggle(agent);
+                                    setActiveDropdown(null);
+                                  }}
+                                  className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 transition-colors ${
+                                    agent.suspended
+                                      ? "text-green-600 hover:bg-green-50"
+                                      : "text-red-600 hover:bg-red-50"
+                                  }`}
+                                >
+                                  {agent.suspended ? (
+                                    <>
+                                      <FaUserCheck className="text-green-500" /> Unsuspend Agent
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FaBan className="text-red-500" /> Suspend Agent
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    downloadAgentPerformance(agent);
+                                    setActiveDropdown(null);
+                                  }}
+                                  disabled={reportLoading}
+                                  className="w-full text-left px-4 py-3 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 transition-colors disabled:opacity-50 font-medium"
+                                >
+                                  <FaChartLine className="text-blue-500" />
+                                  Performance Report
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

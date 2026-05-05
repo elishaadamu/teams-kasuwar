@@ -164,16 +164,15 @@ const DashboardHome = () => {
     setReportLoading(true);
     setPerformanceData(null); // Clear previous data
     try {
-      const payload = {
-        bdId: userData.id,
-        month: selectedMonth,
-        year: selectedYear,
-      };
-
-      const response = await axios.post(
-        apiUrl(API_CONFIG.REPORTS.PERFORMANCE_REPORT_BD),
-        payload,
-        { withCredentials: true },
+      const response = await axios.get(
+        apiUrl(API_CONFIG.ENDPOINTS.REPORTS.PERFORMANCE_REPORT_BD),
+        {
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+          },
+          withCredentials: true,
+        }
       );
 
       setPerformanceData(response.data?.report || null);
@@ -733,8 +732,8 @@ const DashboardHome = () => {
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bd.suspended
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-green-100 text-green-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
                                 }`}
                             >
                               <span
@@ -792,14 +791,14 @@ const DashboardHome = () => {
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${agent.suspended
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-green-100 text-green-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
                                 }`}
                             >
                               <span
                                 className={`w-2 h-2 mr-1.5 rounded-full ${agent.suspended
-                                    ? "bg-red-500"
-                                    : "bg-green-500"
+                                  ? "bg-red-500"
+                                  : "bg-green-500"
                                   }`}
                               ></span>
                               {agent.suspended ? "Suspended" : "Active"}
@@ -856,22 +855,22 @@ const DashboardHome = () => {
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${w.status === "approved"
-                                  ? "bg-green-100 text-green-800"
-                                  : w.status === "pending"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : w.status === "rejected"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-yellow-100 text-yellow-800"
+                                ? "bg-green-100 text-green-800"
+                                : w.status === "pending"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : w.status === "rejected"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-yellow-100 text-yellow-800"
                                 }`}
                             >
                               <span
                                 className={`w-2 h-2 mr-1.5 rounded-full ${w.status === "approved"
-                                    ? "bg-green-500"
-                                    : w.status === "pending"
-                                      ? "bg-blue-500"
-                                      : w.status === "rejected"
-                                        ? "bg-red-500"
-                                        : "bg-yellow-500"
+                                  ? "bg-green-500"
+                                  : w.status === "pending"
+                                    ? "bg-blue-500"
+                                    : w.status === "rejected"
+                                      ? "bg-red-500"
+                                      : "bg-yellow-500"
                                   }`}
                               ></span>
                               {w.status}

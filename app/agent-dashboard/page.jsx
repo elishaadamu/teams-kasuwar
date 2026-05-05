@@ -22,6 +22,9 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Loading from "@/components/Loading";
+import { format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const DashboardHome = () => {
   const { userData, authLoading } = useAppContext();
@@ -38,6 +41,10 @@ const DashboardHome = () => {
   const [recentVendors, setRecentVendors] = useState([]);
   const [recentCustomers, setRecentCustomers] = useState([]);
   const [recentWithdrawals, setRecentWithdrawals] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [reportLoading, setReportLoading] = useState(false);
+  const [performanceData, setPerformanceData] = useState(null);
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
     activeVendors: 0,
@@ -64,8 +71,8 @@ const DashboardHome = () => {
             axios.get(
               apiUrl(
                 API_CONFIG.ENDPOINTS.ACCOUNT.walletBalance +
-                  userId +
-                  "/balance",
+                userId +
+                "/balance",
               ),
               { withCredentials: true },
             ),
@@ -82,7 +89,7 @@ const DashboardHome = () => {
               { withCredentials: true },
             ),
           ]);
-          console.log(walletResponse.data);
+        console.log(walletResponse.data);
         setWalletBalance(walletResponse.data.data);
         const referredUsers = downlinesResponse.data?.referredUsers || [];
 
@@ -163,6 +170,111 @@ const DashboardHome = () => {
   const onClose = () => {
     toast.info("Payment cancelled");
     setShowFundModal(false);
+  };
+
+  const fetchPerformanceReport = async () => {
+    if (!userData?.id) return;
+    setReportLoading(true);
+    setPerformanceData(null); // Clear previous data
+    try {
+      const response = await axios.get(
+        apiUrl(API_CONFIG.ENDPOINTS.REPORTS.PERFORMANCE_REPORT_AGENT),
+        {
+          params: {
+            agentId: userData.id,
+            month: selectedMonth,
+            year: selectedYear,
+          },
+          withCredentials: true,
+        }
+      );
+
+      setPerformanceData(response.data?.report || null);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to fetch performance report."
+      );
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const downloadPerformanceReport = () => {
+    if (!performanceData) {
+      toast.info("Please generate a report first.");
+      return;
+    }
+
+    const doc = new jsPDF();
+    const {
+      agentName = userData?.firstName + " " + userData?.lastName,
+      period = "",
+      summary,
+      vendors = {},
+      users = {}
+    } = performanceData;
+
+    doc.setFontSize(18);
+    doc.text(`Performance Report for ${agentName}`, 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Period: ${period}`, 14, 29);
+
+    // Summary Section
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Summary", 14, 40);
+
+    const summaryData = [
+      ["Total Vendors", summary?.totalVendors || 0],
+      ["Total Customers", summary?.totalUsers || 0],
+    ];
+
+    autoTable(doc, {
+      startY: 45,
+      head: [["Metric", "Value"]],
+      body: summaryData,
+      theme: "striped",
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
+    // Active Vendors List
+    const activeVendors = vendors.fullyActive || [];
+    if (activeVendors.length > 0) {
+      doc.setFontSize(14);
+      doc.text("Active Vendors", 14, doc.lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [["S/N", "Vendor Name", "Business Name", "Date"]],
+        body: activeVendors.map((v, i) => [
+          i + 1, v.name, v.businessName || "N/A", new Date(v.registrationDate).toLocaleDateString()
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [46, 204, 113], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
+
+    // Active Customers List
+    const activeCustomers = users.fullyActive || [];
+    if (activeCustomers.length > 0) {
+      let finalY = doc.lastAutoTable.finalY + 15;
+      if (finalY + 30 > doc.internal.pageSize.height) { doc.addPage(); finalY = 20; }
+      doc.setFontSize(14);
+      doc.text("Active Customers", 14, finalY);
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [["S/N", "Customer Name", "Date"]],
+        body: activeCustomers.map((c, i) => [
+          i + 1, c.name, new Date(c.registrationDate).toLocaleDateString()
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [52, 152, 219], fontSize: 8 },
+        styles: { fontSize: 8 },
+      });
+    }
+
+    doc.save(`performance-${agentName.replace(/\s+/g, "_")}-${period.replace(/\//g, "-")}.pdf`);
   };
 
   return (
@@ -356,6 +468,127 @@ const DashboardHome = () => {
             </div>
           </div>
 
+          {/* Performance Report Section */}
+          <div className="mb-6">
+            <h2 className="text-base font-semibold text-gray-800 mb-3">
+              Performance Report
+            </h2>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="block w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {format(new Date(0, i), "MMMM")}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="block w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <option
+                      key={new Date().getFullYear() - i}
+                      value={new Date().getFullYear() - i}
+                    >
+                      {new Date().getFullYear() - i}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={fetchPerformanceReport}
+                  disabled={reportLoading}
+                  className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-blue-700 transition disabled:bg-blue-300"
+                >
+                  {reportLoading ? "Loading..." : "Get Performance Report"}
+                </button>
+                <button
+                  onClick={downloadPerformanceReport}
+                  disabled={!performanceData || reportLoading}
+                  className="bg-green-600 text-white px-4 py-1.5 rounded text-sm font-medium hover:bg-green-700 transition disabled:bg-green-300"
+                >
+                  Download PDF
+                </button>
+              </div>
+
+              {reportLoading ? (
+                <div className="text-center py-4">
+                  <Loading fullPage={false} />
+                  <p className="mt-2 text-sm text-gray-600">
+                    Fetching report...
+                  </p>
+                </div>
+              ) : performanceData ? (
+                performanceData.summary && (
+                  <div className="space-y-6">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 text-xs text-left">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
+                              Summary
+                            </th>
+                            <th className="px-3 py-2 font-medium text-gray-500 uppercase tracking-wider">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          <tr>
+                            <td className="px-3 py-2">Total Vendors</td>
+                            <td className="px-3 py-2">
+                              {performanceData.summary?.totalVendors || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2">Total Customers</td>
+                            <td className="px-3 py-2">
+                              {performanceData.summary?.totalUsers || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 text-green-600">Active Vendors</td>
+                            <td className="px-3 py-2 text-green-600">
+                              {performanceData.vendors?.fullyActive?.length || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 text-red-600">Inactive Vendors</td>
+                            <td className="px-3 py-2 text-red-600">
+                              {performanceData.vendors?.inactive?.length || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 text-green-600">Active Customers</td>
+                            <td className="px-3 py-2 text-green-600">
+                              {performanceData.users?.fullyActive?.length || 0}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3 py-2 text-red-600">Inactive Customers</td>
+                            <td className="px-3 py-2 text-red-600">
+                              {performanceData.users?.inactive?.length || 0}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-gray-500 text-center py-3 text-sm">
+                  Select a month and year, then click "Get Performance Report"
+                  to see data.
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Recent Customers Section */}
           {recentCustomers.length > 0 && (
             <div className="mb-6">
@@ -399,18 +632,16 @@ const DashboardHome = () => {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                !customer.fullyActive
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!customer.fullyActive
                                   ? "bg-red-100 text-red-800"
                                   : "bg-green-100 text-green-800"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`w-2 h-2 mr-1.5 rounded-full ${
-                                  !customer.fullyActive
+                                className={`w-2 h-2 mr-1.5 rounded-full ${!customer.fullyActive
                                     ? "bg-red-500"
                                     : "bg-green-500"
-                                }`}
+                                  }`}
                               ></span>
                               {!customer.fullyActive ? "Inactive" : "Active"}
                             </span>
@@ -467,18 +698,16 @@ const DashboardHome = () => {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                !vendor.fullyActive
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!vendor.fullyActive
                                   ? "bg-red-100 text-red-800"
                                   : "bg-green-100 text-green-800"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`w-2 h-2 mr-1.5 rounded-full ${
-                                  !vendor.fullyActive
+                                className={`w-2 h-2 mr-1.5 rounded-full ${!vendor.fullyActive
                                     ? "bg-red-500"
                                     : "bg-green-500"
-                                }`}
+                                  }`}
                               ></span>
                               {!vendor.fullyActive ? "Inactive" : "Active"}
                             </span>
@@ -533,26 +762,24 @@ const DashboardHome = () => {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                w.status === "approved"
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${w.status === "approved"
                                   ? "bg-green-100 text-green-800"
                                   : w.status === "pending"
                                     ? "bg-blue-100 text-blue-800"
                                     : w.status === "rejected"
                                       ? "bg-red-100 text-red-800"
                                       : "bg-yellow-100 text-yellow-800"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`w-2 h-2 mr-1.5 rounded-full ${
-                                  w.status === "approved"
+                                className={`w-2 h-2 mr-1.5 rounded-full ${w.status === "approved"
                                     ? "bg-green-500"
                                     : w.status === "pending"
                                       ? "bg-blue-500"
                                       : w.status === "rejected"
                                         ? "bg-red-500"
                                         : "bg-yellow-500"
-                                }`}
+                                  }`}
                               ></span>
                               {w.status}
                             </span>

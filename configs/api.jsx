@@ -174,6 +174,9 @@ export const API_CONFIG = {
     },
     REPORTS: {
       TEAM_PERFORMANCE: "/team-members/performance/my-team",
+      PERFORMANCE_REPORT_BDM: "/report/bdm/my-performance",
+      PERFORMANCE_REPORT_BD: "/report/bd/my-performance",
+      PERFORMANCE_REPORT_AGENT: "/report/agent/my-performance",
     },
     HR: {
       GET_STAFF: "/hr/get-staff-list",
