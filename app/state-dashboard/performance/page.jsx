@@ -1,49 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FaChartBar, FaSearch, FaFilter, FaArrowUp, FaArrowDown, FaUserTie, FaUserShield, FaUserEdit, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChartBar, FaUserTie, FaUserShield, FaUserEdit, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement
-} from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { FaTimes, FaDatabase, FaChartLine, FaSpinner } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import { useAppContext } from "@/context/AppContext";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const PerformanceBar = ({ percentage, color }) => (
-  <div className="w-full bg-slate-800 rounded-full h-4 relative overflow-hidden group">
-    <div
-      className={`h-full rounded-full transition-all duration-1000 ease-out shadow-2xl ${color}`}
-      style={{ width: `${percentage}%` }}
-    />
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-      <span className="text-[10px] font-black text-white drop-shadow-md">{Math.round(percentage)}% ACHIEVEMENT</span>
-    </div>
-  </div>
-);
 
 export default function StaffPerformance() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,7 +24,19 @@ export default function StaffPerformance() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth < 1024 ? 5 : 10);
+    };
+
+    // Set initial value
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Personal Performance Report State
   const [reportLoading, setReportLoading] = useState(false);
@@ -104,29 +82,55 @@ export default function StaffPerformance() {
         console.log("Team Performance List Response:", response.data);
         const res = response.data;
 
-        const currentMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
         let allData = [];
 
         if (res.success) {
           setInitialSummary(res.summary);
-          const allMembers = [...(res.bdms || []), ...(res.sms || [])];
-          const mapped = allMembers.map(item => {
-            const staff = item.staff || {};
-            const performance = item.yearlyPerformance || {};
-            const monthData = performance[currentMonth] || {};
+
+          // Map BDMs
+          const bdmMembers = (res.bdms || []).map(bdm => {
+            const bds = bdm.bds || [];
+            const totalAgents = bds.reduce((sum, bd) => sum + (bd.agentsCount || 0), 0);
+            const totalVendors = bds.reduce((sum, bd) => sum + (bd.vendorsCount || 0), 0);
+            const bdCount = bds.length;
 
             return {
-              id: staff._id || Math.random().toString(),
-              name: `${staff.firstName || ''} ${staff.lastName || ''}`.trim() || 'Unknown Staff',
-              role: (staff.role || item.role || 'STAFF').toUpperCase(),
-              region: staff.region || staff.state || 'Global',
-              kpi: Math.round(monthData.achievement || 0),
+              id: bdm.staffId || Math.random().toString(),
+              name: bdm.name || 'Unknown Staff',
+              email: bdm.email || '',
+              role: 'BDM',
+              region: '',
+              bdCount,
+              totalAgents,
+              totalVendors,
+              bds,
+              kpi: 0,
               trend: 0,
-              metrics: monthData.metrics || {},
-              yearlyPerformance: performance
+              metrics: { vendorsCount: totalVendors, agentsCount: totalAgents },
+              yearlyPerformance: {}
             };
           });
-          allData = mapped;
+
+          // Map SMs
+          const smMembers = (res.sms || []).map(sm => {
+            return {
+              id: sm.staffId || Math.random().toString(),
+              name: sm.name || 'Unknown Staff',
+              email: sm.email || '',
+              role: 'SM',
+              region: '',
+              bdCount: 0,
+              totalAgents: 0,
+              totalVendors: 0,
+              bds: [],
+              kpi: 0,
+              trend: 0,
+              metrics: {},
+              yearlyPerformance: {}
+            };
+          });
+
+          allData = [...bdmMembers, ...smMembers];
         }
 
         setStaffData(allData);
@@ -147,13 +151,6 @@ export default function StaffPerformance() {
       case "BD": return <FaUserEdit className="text-violet-400" />;
       default: return <FaChartBar className="text-slate-400" />;
     }
-  };
-
-  const getStatusColor = (kpi) => {
-    if (kpi >= 80) return "bg-emerald-500 from-emerald-400 to-emerald-600";
-    if (kpi >= 60) return "bg-blue-500 from-blue-400 to-blue-600";
-    if (kpi >= 40) return "bg-amber-500 from-amber-400 to-amber-600";
-    return "bg-rose-500 from-rose-400 to-rose-600";
   };
 
   const filteredStaff = staffData.filter(s => {
@@ -331,74 +328,81 @@ export default function StaffPerformance() {
                 {getRoleIcon(staff.role)}
               </div>
 
-              <div className="flex items-start justify-between mb-8">
+              <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-2xl font-black text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
-                    {(staff.name || staff.fullName || "UN").split(' ').map(n => n[0]).join('')}
+                    {(staff.name || "UN").split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white tracking-tight">{staff.name || staff.fullName}</h3>
+                    <h3 className="text-xl font-bold text-white tracking-tight">{staff.name}</h3>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="px-3 py-1 rounded-lg bg-blue-600/10 text-blue-400 text-[10px] font-black uppercase tracking-widest border border-blue-600/20">{staff.role}</span>
-                      <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{staff.region || staff.state}</span>
                     </div>
+                    {staff.email && (
+                      <p className="text-slate-500 text-xs mt-1.5 font-medium">{staff.email}</p>
+                    )}
                   </div>
-                </div>
-
-                <div className={`flex flex-col items-end ${(staff.trend || 0) > 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                  <div className="flex items-center gap-2">
-                    {(staff.trend || 0) > 0 ? <FaArrowUp /> : <FaArrowDown />}
-                    <span className="text-xl font-black">{Math.abs(staff.trend || 0)}%</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">vs Last Month</span>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <span className="text-xs uppercase font-black text-slate-500 tracking-[0.2em]">Current KPI Achievement</span>
-                  <span className={`text-3xl font-black tracking-tighter ${staff.kpi >= 80 ? "text-emerald-400" : staff.kpi >= 60 ? "text-blue-400" : "text-amber-400"}`}>{staff.kpi}%</span>
+              {/* Key Metrics */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="text-center bg-slate-950 p-4 rounded-2xl border border-slate-800/50 hover:border-indigo-500/30 transition-all">
+                  <p className="text-[9px] font-black uppercase text-slate-500 mb-2 tracking-widest">BDs</p>
+                  <p className="text-3xl font-black text-indigo-400 tracking-tighter">{staff.bdCount || 0}</p>
                 </div>
-                <PerformanceBar percentage={staff.kpi} color={`bg-gradient-to-r ${getStatusColor(staff.kpi)} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
-                
-                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-800">
-                  {(() => {
-                    const r = (staff?.role || '').toLowerCase();
-                    const stats = staff?.metrics || {};
-                    const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250, 'regional manager': 130000, 'state manager': 13000, 'team lead': 13000 };
-                    const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
-                    const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+                <div className="text-center bg-slate-950 p-4 rounded-2xl border border-slate-800/50 hover:border-emerald-500/30 transition-all">
+                  <p className="text-[9px] font-black uppercase text-slate-500 mb-2 tracking-widest">Agents</p>
+                  <p className="text-3xl font-black text-emerald-400 tracking-tighter">{staff.totalAgents || 0}</p>
+                </div>
+                <div className="text-center bg-slate-950 p-4 rounded-2xl border border-slate-800/50 hover:border-amber-500/30 transition-all">
+                  <p className="text-[9px] font-black uppercase text-slate-500 mb-2 tracking-widest">Vendors</p>
+                  <p className="text-3xl font-black text-amber-400 tracking-tighter">{staff.totalVendors || 0}</p>
+                </div>
+              </div>
 
-                    const vt = vTarget[r] || 0;
-                    const st = sTarget[r] || 0;
-                    const dt = dTarget[r] || 0;
-
-                    const targets = [];
-                    if (vt > 0) targets.push({ name: 'Vendors', target: vt, achieved: stats.vendorsCount || 0, color: 'emerald' });
-                    if (st > 0) targets.push({ name: 'Sales', target: st, achieved: stats.salesCount || 0, color: 'blue' });
-                    if (dt > 0) targets.push({ name: 'Delivery', target: dt, achieved: stats.deliveryCount || 0, color: 'purple' });
-
-                    return targets.map((t, idx) => {
-                      const progress = t.target > 0 ? Math.min(100, Math.round((t.achieved / t.target) * 100)) : 0;
-                      return (
-                        <div key={idx} className="text-left bg-slate-950 p-2 rounded-xl border border-slate-800/50">
-                          <p className="text-[9px] font-black uppercase text-slate-500 mb-1">{t.name}</p>
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-[10px] font-bold text-slate-300">{t.achieved.toLocaleString()}</span>
-                            <span className={`text-[10px] font-black text-${t.color}-400`}>{progress}%</span>
+              {/* BDs List */}
+              {staff.bds && staff.bds.length > 0 && (
+                <div className="space-y-2 pt-4 border-t border-slate-800">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Assigned BDs</p>
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                    {staff.bds.map((bd) => (
+                      <div key={bd.id} className="flex items-center justify-between p-3 bg-slate-950/70 rounded-xl border border-slate-800/30 hover:border-slate-700 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-xs font-black text-violet-400">
+                            {(bd.name || "?").split(' ').map(n => n[0]).join('')}
                           </div>
-                          <div className="w-full bg-slate-800 rounded-full h-1">
-                            <div className={`bg-${t.color}-500 h-1 rounded-full transition-all`} style={{ width: `${progress}%` }}></div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-300">{bd.name}</p>
+                            <p className="text-[10px] text-slate-600 font-medium">{bd.email}</p>
                           </div>
                         </div>
-                      );
-                    });
-                  })()}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="text-[9px] font-black text-slate-600 uppercase">Agents</p>
+                            <p className="text-sm font-black text-emerald-400">{bd.agentsCount || 0}</p>
+                          </div>
+                          <div className="w-px h-6 bg-slate-800" />
+                          <div className="text-right">
+                            <p className="text-[9px] font-black text-slate-600 uppercase">Vendors</p>
+                            <p className="text-sm font-black text-amber-400">{bd.vendorsCount || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center gap-4">
-                <p className="text-xs text-slate-500 font-medium italic">"Consistent performance across all field metrics."</p>
+              {staff.bds && staff.bds.length === 0 && (
+                <div className="pt-4 border-t border-slate-800">
+                  <div className="text-center py-6 bg-slate-950/30 rounded-2xl border border-dashed border-slate-800/50">
+                    <p className="text-slate-600 text-sm font-medium">No BDs assigned yet</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
                 <button
                   onClick={() => setSelectedStaff(staff)}
                   className="px-6 py-3 rounded-xl bg-slate-950 text-slate-300 font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl"
@@ -435,8 +439,8 @@ export default function StaffPerformance() {
                   key={i + 1}
                   onClick={() => paginate(i + 1)}
                   className={`w-12 h-12 rounded-2xl font-black text-sm transition-all duration-300 ${currentPage === i + 1
-                      ? "bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.4)] scale-110 border-2 border-blue-400"
-                      : "bg-slate-900 border-2 border-slate-800 text-slate-500 hover:border-blue-500/50 hover:text-blue-400"
+                    ? "bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.4)] scale-110 border-2 border-blue-400"
+                    : "bg-slate-900 border-2 border-slate-800 text-slate-500 hover:border-blue-500/50 hover:text-blue-400"
                     }`}
                 >
                   {i + 1}
@@ -456,10 +460,9 @@ export default function StaffPerformance() {
         </div>
       )}
 
-      {/* Detailed Modal using Portal */}
       {isMounted && selectedStaff && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] w-full max-w-6xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
+          <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
             <button
               onClick={() => setSelectedStaff(null)}
               className="absolute top-8 right-8 w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-500/20 hover:border-rose-500/50 transition-all z-10"
@@ -468,146 +471,86 @@ export default function StaffPerformance() {
             </button>
 
             <div className="p-10 md:p-16 text-left">
-              <div className="flex flex-col md:flex-row gap-12">
-                {/* Left Side: Stats */}
-                <div className="flex-1 space-y-8">
-                  <div className="space-y-4 text-left">
-                    <span className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-[0.2em]">Personnel Profile</span>
-                    <h2 className="text-5xl font-black text-white tracking-tighter text-left">{selectedStaff.name}</h2>
-                    <div className="flex items-center gap-4">
-                      <span className="text-slate-500 font-bold uppercase tracking-widest">{selectedStaff.role}</span>
+              {/* Profile Header */}
+              <div className="space-y-4 mb-10">
+                <span className="px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-[0.2em]">Personnel Profile</span>
+                <h2 className="text-5xl font-black text-white tracking-tighter">{selectedStaff.name}</h2>
+                <div className="flex items-center gap-4">
+                  <span className="text-slate-500 font-bold uppercase tracking-widest">{selectedStaff.role}</span>
+                  {selectedStaff.email && (
+                    <>
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-                      <span className="text-slate-500 font-bold uppercase tracking-widest">{selectedStaff.region}</span>
-                    </div>
-                  </div>
+                      <span className="text-slate-500 font-medium text-sm">{selectedStaff.email}</span>
+                    </>
+                  )}
+                </div>
+              </div>
 
-                  <div className="space-y-4">
-                    {(() => {
-                      const r = (selectedStaff?.role || '').toLowerCase();
-                      const stats = selectedStaff?.metrics || {};
-                      
-                      const vTarget = { 'rm': 130000, 'tl': 13000, 'bdm': 2500, 'bd': 250, 'regional manager': 130000, 'state manager': 13000, 'team lead': 13000 };
-                      const sTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
-                      const dTarget = { 'rm': 40000, 'tl': 4000, 'sm': 250, 'regional manager': 40000, 'state manager': 4000, 'sales manager': 250, 'team lead': 4000 };
+              {/* Key Metrics */}
+              <div className="grid grid-cols-3 gap-4 mb-10">
+                <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-center hover:border-indigo-500/30 transition-all">
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Total BDs</p>
+                  <p className="text-4xl font-black text-indigo-400 tracking-tighter">{selectedStaff.bdCount || 0}</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-center hover:border-emerald-500/30 transition-all">
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Total Agents</p>
+                  <p className="text-4xl font-black text-emerald-400 tracking-tighter">{selectedStaff.totalAgents || 0}</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-center hover:border-amber-500/30 transition-all">
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2">Total Vendors</p>
+                  <p className="text-4xl font-black text-amber-400 tracking-tighter">{selectedStaff.totalVendors || 0}</p>
+                </div>
+              </div>
 
-                      const vt = vTarget[r] || 0;
-                      const st = sTarget[r] || 0;
-                      const dt = dTarget[r] || 0;
-
-                      const targets = [];
-                      if (vt > 0) targets.push({ name: 'Vendors', target: vt, achieved: stats.vendorsCount || 0, color: 'emerald' });
-                      if (st > 0) targets.push({ name: 'Sales', target: st, achieved: stats.salesCount || 0, color: 'blue' });
-                      if (dt > 0) targets.push({ name: 'Delivery', target: dt, achieved: stats.deliveryCount || 0, color: 'purple' });
-
-                      if (targets.length === 0) {
-                        return (
-                          <div className="grid grid-cols-2 gap-4">
-                            {Object.entries(stats).map(([key, val]) => (
-                              <div key={key} className="p-6 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
-                                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
-                                <p className="text-2xl font-black text-white">{val}</p>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      }
-
-                      return targets.map((t, idx) => {
-                        const progress = t.target > 0 ? Math.min(100, Math.round((t.achieved / t.target) * 100)) : 0;
-                        return (
-                          <div key={idx} className="p-5 rounded-2xl bg-slate-900 border border-slate-800/50 text-left">
-                            <div className="flex justify-between items-center mb-2 text-xs">
-                              <span className="font-semibold text-slate-400">{t.name} Target: {t.target.toLocaleString()}</span>
-                              <span className={`font-bold text-${t.color}-400`}>Achieved: {progress}%</span>
-                            </div>
-                            <div className="w-full bg-slate-800 rounded-full h-2">
-                              <div className={`bg-${t.color}-500 h-2 rounded-full transition-all duration-1000`} style={{ width: `${progress}%` }}></div>
-                            </div>
-                            <p className="text-[10px] font-medium text-slate-500 mt-2">Current Count: {t.achieved.toLocaleString()}</p>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
+              {/* BDs Roster */}
+              <div className="bg-slate-900/40 border border-slate-800/50 rounded-[2rem] p-8">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-black text-white tracking-tight italic flex items-center gap-3">
+                    <div className="w-2 h-8 bg-blue-500 rounded-full" />
+                    BDs Roster
+                  </h3>
+                  <p className="text-slate-500 text-sm font-medium mt-1">All business developers assigned to {selectedStaff.name}</p>
                 </div>
 
-                {/* Right Side: Chart */}
-                <div className="flex-1 bg-slate-900/40 border border-slate-800/50 rounded-[2.5rem] p-8 md:p-12">
-                  <div className="h-full flex flex-col items-start justify-start text-left">
-                    <div className="mb-0 text-left">
-                      <h3 className="text-2xl font-black text-white tracking-tight italic flex items-center gap-3">
-                        <div className="w-2 h-8 bg-blue-500 rounded-full" />
-                        Performance Analytics
-                      </h3>
-                      <p className="text-slate-500 text-sm font-medium mt-1">Monthly KPI achievement distribution for {selectedYear}</p>
-                    </div>
-
-                    <div className="flex-1 min-h-[400px] w-full mt-5">
-                      <Bar
-                        data={{
-                          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                          datasets: [{
-                            label: 'Achievement %',
-                            data: [
-                              Math.round(selectedStaff.yearlyPerformance?.january?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.february?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.march?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.april?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.may?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.june?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.july?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.august?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.september?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.october?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.november?.achievement || 0),
-                              Math.round(selectedStaff.yearlyPerformance?.december?.achievement || 0),
-                            ],
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 2,
-                            borderRadius: 8,
-                            hoverBackgroundColor: 'rgba(59, 130, 246, 0.8)',
-                          }]
-                        }}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                              backgroundColor: '#0f172a',
-                              titleFont: { size: 14, weight: 'bold' },
-                              bodyFont: { size: 12 },
-                              padding: 12,
-                              displayColors: false,
-                              callbacks: {
-                                label: (ctx) => `${ctx.raw}% ACHIEVEMENT`
-                              }
-                            }
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              max: 100,
-                              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                              ticks: { color: '#64748b', font: { weight: 'bold' } }
-                            },
-                            x: {
-                              grid: { display: false },
-                              ticks: { color: '#64748b', font: { weight: 'bold' } }
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-
-                    <div className="mt-8 p-6 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
-                      <p className="text-xs text-slate-400 leading-relaxed italic">
-                        Data is aggregated monthly from field operations. Achievement scores reflect performance against weighted quota targets.
-                      </p>
-                    </div>
+                {selectedStaff.bds && selectedStaff.bds.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedStaff.bds.map((bd, idx) => (
+                      <div key={bd.id} className="flex items-center justify-between p-4 bg-slate-950/60 rounded-xl border border-slate-800/30 hover:border-slate-700 transition-all group/bd">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-sm font-black text-violet-400">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <p className="text-base font-bold text-slate-200 group-hover/bd:text-white transition-colors">{bd.name}</p>
+                            <p className="text-xs text-slate-600 font-medium">{bd.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-center">
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Agents</p>
+                            <p className="text-lg font-black text-emerald-400">{bd.agentsCount || 0}</p>
+                          </div>
+                          <div className="w-px h-8 bg-slate-800" />
+                          <div className="text-center">
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Vendors</p>
+                            <p className="text-lg font-black text-amber-400">{bd.vendorsCount || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-12 border-2 border-dashed border-slate-800/50 rounded-2xl">
+                    <FaDatabase className="text-slate-800 text-4xl mx-auto mb-4" />
+                    <p className="text-slate-600 font-bold">No BDs assigned to this {selectedStaff.role}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 p-6 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left">
+                <p className="text-xs text-slate-400 leading-relaxed italic">
+                  Data reflects current team structure for {selectedYear}. Agent and vendor counts are based on active assignments.
+                </p>
               </div>
             </div>
           </div>

@@ -46,7 +46,7 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
                             placeholder="member@example.com"
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                         <select
@@ -54,12 +54,12 @@ const AssignMemberModal = ({ isOpen, onClose, onAssign, loading, form, setForm, 
                             onChange={(e) => setForm({ ...form, role: e.target.value })}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         >
-                           <option value="agent">Agent</option>
+                            <option value="agent">Agent</option>
                             <option value="user">User</option>
                             <option value="vendor">Vendor</option>
                             <option value="bd">Business Developer (BD)</option>
                             <option value="bdm">Business Development Manager (BDM)</option>
-                            <option value="sm">Sales Manager (SM)</option> 
+                            <option value="sm">Sales Manager (SM)</option>
                         </select>
                     </div>
 
@@ -135,7 +135,7 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                         <FaTimes className="text-xl" />
                     </button>
                 </div>
-                
+
                 <form onSubmit={onRegister} className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {form.role === 'tl' && (
@@ -148,11 +148,11 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                         <label className="text-xs font-bold text-gray-500 uppercase ml-1">Assign to Team <span className="text-red-500 ml-0.5">*</span></label>
                                         <div className="relative">
                                             <FaLayerGroup className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            <select 
-                                                name="teamId" 
-                                                required 
-                                                value={form.teamId} 
-                                                onChange={handleChange} 
+                                            <select
+                                                name="teamId"
+                                                required
+                                                value={form.teamId}
+                                                onChange={handleChange}
                                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-purple-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm appearance-none"
                                             >
                                                 <option value="">Select Team</option>
@@ -203,16 +203,16 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
                                     <div className="relative">
                                         <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input 
-                                            name="password" 
-                                            type={showPassword ? "text" : "password"} 
-                                            value={form.password} 
-                                            onChange={handleChange} 
-                                            placeholder="•••••••• (Optional)" 
-                                            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm" 
+                                        <input
+                                            name="password"
+                                            type={showPassword ? "text" : "password"}
+                                            value={form.password}
+                                            onChange={handleChange}
+                                            placeholder="•••••••• (Optional)"
+                                            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all text-sm"
                                         />
-                                        <button 
-                                            type="button" 
+                                        <button
+                                            type="button"
                                             onClick={() => setShowPassword(!showPassword)}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
                                         >
@@ -272,11 +272,11 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">State <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaGlobe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <select 
-                                            name="state" 
-                                            required 
-                                            value={form.state} 
-                                            onChange={handleChange} 
+                                        <select
+                                            name="state"
+                                            required
+                                            value={form.state}
+                                            onChange={handleChange}
                                             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm appearance-none"
                                         >
                                             <option value="">Select State</option>
@@ -290,11 +290,11 @@ const RegisterMemberModal = ({ isOpen, onClose, onRegister, loading, form, setFo
                                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">LGA <span className="text-red-500 ml-0.5">*</span></label>
                                     <div className="relative">
                                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <select 
-                                            name="localGovt" 
-                                            required 
-                                            value={form.localGovt} 
-                                            onChange={handleChange} 
+                                        <select
+                                            name="localGovt"
+                                            required
+                                            value={form.localGovt}
+                                            onChange={handleChange}
                                             disabled={!form.state}
                                             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none transition-all text-sm appearance-none disabled:opacity-50"
                                         >
@@ -414,7 +414,7 @@ const ReassignMemberModal = ({ isOpen, onClose, onReassign, loading, form, setFo
                             className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 outline-none"
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Move to Team</label>
                         <select
@@ -469,9 +469,9 @@ const SetTeamLeadModal = ({ isOpen, onClose, onSetLead, loading, form, setForm }
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder="leader@example.com"
                         />
-                         <p className="text-xs text-gray-500 mt-1">This user will be promoted to State Co-ordinator for the selected team.</p>
+                        <p className="text-xs text-gray-500 mt-1">This user will be promoted to State Co-ordinator for the selected team.</p>
                     </div>
-                    
+
                     <button
                         type="submit"
                         disabled={loading}
@@ -556,7 +556,7 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [walletData, setWalletData] = useState(null);
     const [teamWallets, setTeamWallets] = useState({});
     const [walletLoading, setWalletLoading] = useState(false);
-    
+
     // Assign Modal State
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [assignLoading, setAssignLoading] = useState(false);
@@ -598,14 +598,14 @@ const MyTeamDashboardView = ({ teamId }) => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            
+
             if (teamId) {
                 // Team selected: fetch both the teams list (for team info) and the team members
                 const [teamsRes, membersRes] = await Promise.all([
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_REGION_TEAMS), { withCredentials: true }),
                     axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_TEAM_MEMBERS + teamId), { withCredentials: true })
                 ]);
-                
+
                 if (teamsRes.data.success) {
                     setDashboardData(teamsRes.data);
                 }
@@ -627,7 +627,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     console.log("TL Endpoint (Fallback):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM));
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM), { withCredentials: true });
                 }
-               
+
                 if (response?.data?.success) {
                     setDashboardData(response.data);
                     setTeamMembers(response.data.members || []);
@@ -645,7 +645,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             setWalletLoading(true);
             let endpoint = "";
             const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
-            
+
             if (currentTeamId) {
                 endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_TEAM + currentTeamId;
             } else if (dashboardData?.zone?._id || dashboardData?.zone?.id) {
@@ -673,7 +673,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 try {
                     const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData.zoneId;
                     const teamsWalletRes = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_REGIONAL_TEAMS + zoneId + "/teams"), { withCredentials: true });
-                    
+
                     if (teamsWalletRes.data.success) {
                         const walletMap = {};
                         const wallets = teamsWalletRes.data.wallets || teamsWalletRes.data.teamWallets || teamsWalletRes.data.data || [];
@@ -684,7 +684,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                         setTeamWallets(walletMap);
                     }
                 } catch (err) {
-                  
+
                 }
             }
         } catch (error) {
@@ -704,6 +704,21 @@ const MyTeamDashboardView = ({ teamId }) => {
             fetchWalletData();
         }
     }, [dashboardData, userData, teamId]);
+
+    // Independent debugging block to inspect TEAM_SC response
+    useEffect(() => {
+        const fetchTeamSC = async () => {
+            try {
+                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_SC), { withCredentials: true });
+                console.log("=== INDEPENDENT TEAM_SC RESPONSE ===", response.data);
+            } catch (error) {
+                console.error("=== INDEPENDENT TEAM_SC ERROR ===", error);
+            }
+        };
+        if (userData) {
+            fetchTeamSC();
+        }
+    }, [userData]);
 
     const handleAssignMember = async (e) => {
         e.preventDefault();
@@ -740,7 +755,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 email: setLeadForm.email,
                 teamId: setLeadForm.teamId
             };
-            
+
             console.log("TL Endpoint (Set TL):", apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.SET_TEAM_LEAD));
             await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.SET_TEAM_LEAD), payload, { withCredentials: true });
             toast.success("TL Set successfully!");
@@ -762,7 +777,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 email: reassignForm.email,
                 teamId: reassignForm.teamId
             };
-            
+
             await axios.put(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.REASSIGN_MEMBER), payload, { withCredentials: true });
             toast.success("Member reassigned successfully!");
             setShowReassignModal(false);
@@ -825,7 +840,7 @@ const MyTeamDashboardView = ({ teamId }) => {
             };
 
             const payload = { ...registerForm };
-            
+
             // Set regional ID from user data if not present
             if (!payload.regionalId) {
                 payload.regionalId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
@@ -846,15 +861,15 @@ const MyTeamDashboardView = ({ teamId }) => {
                 endpoint = API_CONFIG.ENDPOINTS.REGIONAL.REGISTER_BDM;
                 delete payload.role;
             }
-                
+
             if (registerForm.role === 'tl') {
                 console.log("TL Endpoint (Register TL):", apiUrl(endpoint));
             }
-            await axios.post(apiUrl(endpoint), payload, { 
+            await axios.post(apiUrl(endpoint), payload, {
                 withCredentials: true,
                 headers: { 'Content-Type': 'application/json' }
             });
-            
+
             toast.success(`${registerForm.role.toUpperCase()} Registered successfully!`);
             setShowRegisterModal(false);
             setRegisterForm(initialRegisterForm);
@@ -870,7 +885,7 @@ const MyTeamDashboardView = ({ teamId }) => {
         if (showCreateTeamModal) {
             const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
             const zoneName = dashboardData?.zone?.name || "your assigned zone";
-            
+
             if (zoneId) {
                 setCreateTeamForm(prev => ({ ...prev, zoneId }));
                 fetchTeamStates(zoneId);
@@ -888,7 +903,7 @@ const MyTeamDashboardView = ({ teamId }) => {
         else if (pathname.includes("/agent-dashboard")) base = "/agent-dashboard";
         else if (pathname.includes("/sales-manager")) base = "/sales-manager";
         else if (pathname.includes("/dashboard")) base = "/dashboard";
-        
+
         if (base) {
             router.push(`${base}/team?id=${tId}`);
         }
@@ -928,7 +943,7 @@ const MyTeamDashboardView = ({ teamId }) => {
     }
 
     const isRegionalView = !teamId && (
-        (dashboardData?.teams && Array.isArray(dashboardData.teams)) || 
+        (dashboardData?.teams && Array.isArray(dashboardData.teams)) ||
         (dashboardData?.zone && (dashboardData.role === 'regional-leader' || dashboardData.role === 'rm' || userData?.role === 'rm' || userData?.role === 'regional-leader'))
     );
     // Team view if: API returned members directly, OR we found a selectedTeam from the regional teams array
@@ -937,8 +952,8 @@ const MyTeamDashboardView = ({ teamId }) => {
     const isSingleTeamFromRegion = !!selectedTeam;
 
     // Prepare teams for modal
-    const availableTeams = isRegionalView 
-        ? (dashboardData?.teams || []) 
+    const availableTeams = isRegionalView
+        ? (dashboardData?.teams || [])
         : (dashboardData?.teams || (selectedTeam ? [selectedTeam] : (dashboardData?.team ? [dashboardData.team] : [])));
 
     const isUserRegionalLeader = userData?.role === 'rm' || userData?.role === 'regional-leader' || userData?.role === 'bdm' || userData?.role === 'bd' || userData?.role === 'sm';
@@ -954,7 +969,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                         {userData?.role === 'rm' ? "Regional Manager Dashboard" : "My Team Dashboard"}
                     </h1>
                     <p className="text-gray-500 text-sm">
-                        {isSingleTeamFromRegion 
+                        {isSingleTeamFromRegion
                             ? `Team: ${selectedTeam.name || "Selected Team"}`
                             : (dashboardData?.team?.name || dashboardData?.teamName)
                                 ? `Team: ${dashboardData.team?.name || dashboardData.teamName}`
@@ -962,12 +977,12 @@ const MyTeamDashboardView = ({ teamId }) => {
                         }
                     </p>
                 </div>
-                
+
                 {/* Actions: Create Team, Register Staff, and Assign Member */}
                 <div className="flex flex-wrap items-center gap-2 md:gap-3 lg:justify-end">
                     {/* Create Team - Only for Regional Leaders */}
                     {isRegionalView && (userData?.role === 'rm' || userData?.role === 'regional-leader') && (
-                        <button 
+                        <button
                             onClick={() => setShowCreateTeamModal(true)}
                             className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 whitespace-nowrap"
                         >
@@ -980,7 +995,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                         <>
                             {userData?.role?.toLowerCase() !== 'rm' && userData?.role?.toLowerCase() !== 'regional-leader' && (
                                 <>
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
                                             const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
@@ -991,7 +1006,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     >
                                         <FaPlusCircle /> Register SM
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
                                             const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
@@ -1005,7 +1020,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 </>
                             )}
                             {(userData?.role === 'rm' || userData?.role === 'regional-leader') && (
-                                <button 
+                                <button
                                     onClick={() => {
                                         const zoneId = dashboardData?.zone?._id || dashboardData?.zone?.id || userData?.zoneId;
                                         setRegisterForm({ ...initialRegisterForm, role: "tl", isTeamLead: true, regionalId: zoneId });
@@ -1021,7 +1036,7 @@ const MyTeamDashboardView = ({ teamId }) => {
 
                     {/* Assign Member Button */}
                     {(isRegionalView || isTeamView) && dashboardData?.role !== 'member' && userData?.role?.toLowerCase() !== 'rm' && userData?.role?.toLowerCase() !== 'regional-leader' && (
-                        <button 
+                        <button
                             onClick={() => {
                                 if (!isRegionalView) {
                                     const currentTeamId = teamId || dashboardData.team?._id || (selectedTeam?._id || selectedTeam?.id);
@@ -1045,7 +1060,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 const vTarget = isStateCoordinator ? 13000 : 130000;
                 const dTarget = isStateCoordinator ? 4500 : 40000;
                 const sTarget = isStateCoordinator ? 4500 : 40000;
-                
+
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         {/* Vendors Target Card */}
@@ -1144,7 +1159,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                             {isRegionalView ? "Region Members" : "Team Members"}
                         </p>
                         <h3 className="text-2xl font-bold text-gray-800">
-                            {isRegionalView 
+                            {isRegionalView
                                 ? (dashboardData?.totalMembers || (dashboardData?.teams?.reduce((acc, t) => acc + (t.totalMembers || 0), 0)) || 0)
                                 : (teamMembers?.length || 0)
                             }
@@ -1171,91 +1186,91 @@ const MyTeamDashboardView = ({ teamId }) => {
             {isRegionalView && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                         {dashboardData.teams?.map((team, index) => {
-                             const hasCoordinator = !!(team.teamLeadId?.firstName || team.teamLead?.firstName);
-                             return (
-                                 <div 
-                                     key={index} 
-                                     className={`bg-white rounded-2xl p-6 shadow-sm border transition-all relative group cursor-pointer ${hasCoordinator ? 'border-gray-100 hover:shadow-md' : 'border-amber-200 hover:shadow-amber-100 hover:shadow-md ring-1 ring-amber-100'}`}
-                                     onClick={(e) => {
-                                         if (!e.target.closest('button')) {
-                                             handleViewTeam(team._id || team.id);
-                                         }
-                                     }}
-                                 >
-                                     {/* Coordinator status badge */}
-                                     <div className={`absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${hasCoordinator ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                         <span className={`w-1.5 h-1.5 rounded-full ${hasCoordinator ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
-                                         {hasCoordinator ? 'Assigned' : 'Pending'}
-                                     </div>
+                        {dashboardData.teams?.map((team, index) => {
+                            const hasCoordinator = !!(team.teamLeadId?.firstName || team.teamLead?.firstName);
+                            return (
+                                <div
+                                    key={index}
+                                    className={`bg-white rounded-2xl p-6 shadow-sm border transition-all relative group cursor-pointer ${hasCoordinator ? 'border-gray-100 hover:shadow-md' : 'border-amber-200 hover:shadow-amber-100 hover:shadow-md ring-1 ring-amber-100'}`}
+                                    onClick={(e) => {
+                                        if (!e.target.closest('button')) {
+                                            handleViewTeam(team._id || team.id);
+                                        }
+                                    }}
+                                >
+                                    {/* Coordinator status badge */}
+                                    <div className={`absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${hasCoordinator ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${hasCoordinator ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                        {hasCoordinator ? 'Assigned' : 'Pending'}
+                                    </div>
 
-                                     <div className="flex items-center justify-between mb-4">
-                                         <div className="flex items-center gap-4">
-                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl group-hover:text-white transition-colors ${hasCoordinator ? 'bg-blue-100 text-blue-600 group-hover:bg-blue-600' : 'bg-amber-100 text-amber-600 group-hover:bg-amber-500'}`}>
-                                                 <FaLayerGroup />
-                                             </div>
-                                             <div>
-                                                 <h3 className={`font-bold group-hover:transition-colors ${hasCoordinator ? 'text-gray-800 group-hover:text-blue-600' : 'text-amber-900 group-hover:text-amber-700'}`}>{team.name || "Unnamed Team"}</h3>
-                                                  <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
-                                             </div>
-                                         </div>
-                                         <div className="p-2 text-gray-300 group-hover:text-blue-500 transition-colors mr-5">
-                                             <FaChevronRight className="text-sm" />
-                                         </div>
-                                     </div>
-                                     
-                                     <div className="space-y-3">
-                                         <div className={`flex items-center justify-between gap-3 p-3 rounded-xl group/lead ${hasCoordinator ? 'bg-gray-50' : 'bg-amber-50'}`}>
-                                            <div className="flex items-center gap-3">
-                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${hasCoordinator ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-700'}`}>
-                                                     <FaUserTie className="text-sm" />
-                                                 </div>
-                                                 <div>
-                                                     <p className="text-xs text-gray-500">State Co-ordinator</p>
-                                                      <p className={`text-sm font-semibold ${hasCoordinator ? 'text-gray-800' : 'text-amber-700 italic'}`}>
-                                                     {hasCoordinator ? `${team.teamLeadId?.firstName || team.teamLead?.firstName} ${team.teamLeadId?.lastName || team.teamLead?.lastName}` : "Not Assigned"}
-                                                 </p>
-                                                 </div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl group-hover:text-white transition-colors ${hasCoordinator ? 'bg-blue-100 text-blue-600 group-hover:bg-blue-600' : 'bg-amber-100 text-amber-600 group-hover:bg-amber-500'}`}>
+                                                <FaLayerGroup />
                                             </div>
-                                             <button 
+                                            <div>
+                                                <h3 className={`font-bold group-hover:transition-colors ${hasCoordinator ? 'text-gray-800 group-hover:text-blue-600' : 'text-amber-900 group-hover:text-amber-700'}`}>{team.name || "Unnamed Team"}</h3>
+                                                <p className="text-xs text-gray-500 uppercase tracking-wider">{team.code || "No Code"}</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-2 text-gray-300 group-hover:text-blue-500 transition-colors mr-5">
+                                            <FaChevronRight className="text-sm" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className={`flex items-center justify-between gap-3 p-3 rounded-xl group/lead ${hasCoordinator ? 'bg-gray-50' : 'bg-amber-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${hasCoordinator ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-700'}`}>
+                                                    <FaUserTie className="text-sm" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-500">State Co-ordinator</p>
+                                                    <p className={`text-sm font-semibold ${hasCoordinator ? 'text-gray-800' : 'text-amber-700 italic'}`}>
+                                                        {hasCoordinator ? `${team.teamLeadId?.firstName || team.teamLead?.firstName} ${team.teamLeadId?.lastName || team.teamLead?.lastName}` : "Not Assigned"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     openSetLeadModal(team._id || team.id);
                                                 }}
                                                 className={`text-xs border px-2 py-1 rounded hover:opacity-80 transition-colors ${hasCoordinator ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'}`}
                                                 title="Set State Co-ordinator"
-                                             >
+                                            >
                                                 {hasCoordinator ? 'Change' : 'Assign'}
-                                             </button>
-                                         </div>
-                                            
-                                          <div className="grid grid-cols-2 gap-2 mt-2">
-                                             <div className="text-center p-2 bg-blue-50 rounded-lg">
-                                                 <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Members</p>
-                                                 <p className="font-bold text-blue-900">{team.totalMembers || 0}</p>
-                                             </div>
-                                             <div className="text-center p-2 bg-purple-50 rounded-lg">
-                                                 <p className="text-xs text-purple-600 font-bold uppercase tracking-widest text-[10px]">Wallet</p>
-                                                 <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
-                                             </div>
-                                          </div>
-                                          
-                                          <div className="flex items-center justify-between gap-2 mt-2">
-                                              <div className="flex-1 text-center p-2 bg-green-50 rounded-lg">
-                                                  <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
-                                                  <p className="font-bold text-green-900">{team.performance || 0}%</p>
-                                              </div>
-                                          </div>
+                                            </button>
+                                        </div>
 
-                                          <div className="pt-3 mt-1 border-t border-gray-50 flex justify-center">
-                                              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  View Team Details <FaArrowRight />
-                                              </span>
-                                          </div>
-                                       </div>
-                                   </div>
-                             );
-                         })}
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <div className="text-center p-2 bg-blue-50 rounded-lg">
+                                                <p className="text-xs text-blue-600 font-bold uppercase tracking-widest text-[10px]">Members</p>
+                                                <p className="font-bold text-blue-900">{team.totalMembers || 0}</p>
+                                            </div>
+                                            <div className="text-center p-2 bg-purple-50 rounded-lg">
+                                                <p className="text-xs text-purple-600 font-bold uppercase tracking-widest text-[10px]">Wallet</p>
+                                                <p className="font-bold text-purple-900 truncate">₦{(teamWallets[team._id || team.id]?.balance || 0).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-2 mt-2">
+                                            <div className="flex-1 text-center p-2 bg-green-50 rounded-lg">
+                                                <p className="text-xs text-green-600 font-bold uppercase tracking-widest text-[10px]">Performance</p>
+                                                <p className="font-bold text-green-900">{team.performance || 0}%</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-3 mt-1 border-t border-gray-50 flex justify-center">
+                                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                View Team Details <FaArrowRight />
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                     {(!dashboardData.teams || dashboardData.teams.length === 0) && dashboardData.zone && (
                         <div className="bg-blue-50 p-8 rounded-2xl border border-blue-100 text-center">
@@ -1326,7 +1341,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center ${hasCoordinator ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-700'}`}>
                                             <FaUserTie className="text-lg" />
                                         </div>
-                                         <div>
+                                        <div>
                                             <p className={`font-semibold ${hasCoordinator ? 'text-gray-800' : 'text-amber-800 italic'}`}>
                                                 {hasCoordinator
                                                     ? `${selectedTeam.teamLeadId?.firstName || selectedTeam.teamLead?.firstName} ${selectedTeam.teamLeadId?.lastName || selectedTeam.teamLead?.lastName}`
@@ -1337,7 +1352,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                             )}
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id)}
                                         className={`text-xs px-3 py-1.5 rounded-lg transition-colors border ${hasCoordinator ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700'}`}
                                         title="Set State Co-ordinator"
@@ -1383,38 +1398,37 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                                                 <td className="px-6 py-4 text-sm">
-                                                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                        (member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email)) 
-                                                            ? 'bg-indigo-100 text-indigo-700' 
-                                                            : 'bg-gray-100 text-gray-600'
-                                                    }`}>
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${(member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email))
+                                                        ? 'bg-indigo-100 text-indigo-700'
+                                                        : 'bg-gray-100 text-gray-600'
+                                                        }`}>
                                                         {member.role?.toUpperCase() || 'MEMBER'}
                                                     </span>
                                                 </td>
 
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                        (member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                    }`}>
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${(member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
                                                         {(member.isActive !== false) ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
 
                                                 {canManageMembers && (
                                                     <td className="px-6 py-4 flex gap-2">
-                                                        <button 
+                                                        <button
                                                             onClick={() => openReassignModal(member.email)}
                                                             className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
                                                             title="Reassign to another team"
                                                         >
                                                             <FaExchangeAlt className="text-[10px]" /> Reassign
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)}
-                                                            className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100"
-                                                            title="Make State Co-ordinator (TL)"
+                                                            disabled={member.isTeamLead}
+                                                            className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-50"
+                                                            title={member.isTeamLead ? "Already State Co-ordinator" : "Make State Co-ordinator (TL)"}
                                                         >
-                                                            <FaUserTie className="text-[10px]" /> Make TL
+                                                            <FaUserTie className="text-[10px]" /> {member.isTeamLead ? "Current TL" : "Make TL"}
                                                         </button>
                                                     </td>
                                                 )}
@@ -1439,21 +1453,21 @@ const MyTeamDashboardView = ({ teamId }) => {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                         <div>
-                             <h2 className="text-lg font-bold text-gray-800">{dashboardData.team?.name || dashboardData.teamName || "My Team"}</h2>
-                             {(dashboardData.team?.teamLeadId || dashboardData.team?.teamLead || dashboardData.lead) && (
-                                 <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                                     <FaUserTie className="text-indigo-500" />
-                                     Lead by: <span className="font-medium text-gray-700">
+                            <h2 className="text-lg font-bold text-gray-800">{dashboardData.team?.name || dashboardData.teamName || "My Team"}</h2>
+                            {(dashboardData.team?.teamLeadId || dashboardData.team?.teamLead || dashboardData.lead) && (
+                                <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                    <FaUserTie className="text-indigo-500" />
+                                    Lead by: <span className="font-medium text-gray-700">
                                         {(dashboardData.team?.teamLeadId?.firstName || dashboardData.team?.teamLead?.firstName || dashboardData.lead?.firstName)} {(dashboardData.team?.teamLeadId?.lastName || dashboardData.team?.teamLead?.lastName || dashboardData.lead?.lastName)}
-                                     </span>
-                                 </p>
-                             )}
+                                    </span>
+                                </p>
+                            )}
                         </div>
                         <div className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">
                             {dashboardData.members?.length || 0} Members
                         </div>
                     </div>
-                    
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left whitespace-nowrap min-w-[800px]">
                             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
@@ -1466,7 +1480,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {console.log("Table 2 Members:", dashboardData.members)}
+
                                 {dashboardData.members?.map((member, index) => (
                                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
@@ -1481,35 +1495,34 @@ const MyTeamDashboardView = ({ teamId }) => {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
                                         <td className="px-6 py-4 text-sm">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                (member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-                                            }`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${(member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+                                                }`}>
                                                 {member.role?.toUpperCase() || 'MEMBER'}
                                             </span>
                                         </td>
 
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                (member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${(member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                }`}>
                                                 {(member.isActive !== false) ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
                                         {canManageMembers && (
                                             <td className="px-6 py-4 flex gap-2">
-                                                <button 
+                                                <button
                                                     onClick={() => openReassignModal(member.email)}
                                                     className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
                                                     title="Reassign to another team"
                                                 >
                                                     <FaExchangeAlt className="text-[10px]" /> Reassign
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)}
-                                                    className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100"
-                                                    title="Make State Co-ordinator (TL)"
+                                                    disabled={member.isTeamLead}
+                                                    className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-50"
+                                                    title={member.isTeamLead ? "Already State Co-ordinator" : "Make State Co-ordinator (TL)"}
                                                 >
-                                                    <FaUserTie className="text-[10px]" /> Make TL
+                                                    <FaUserTie className="text-[10px]" /> {member.isTeamLead ? "Current TL" : "Make TL"}
                                                 </button>
                                             </td>
                                         )}
@@ -1524,12 +1537,12 @@ const MyTeamDashboardView = ({ teamId }) => {
             {/* Performance Rankings */}
             <div className="space-y-6 pt-6">
                 <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Team Performance Rankings</h2>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* SM Performance List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 bg-teal-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaBriefcase className="text-teal-600"/> Top Sales Managers (SM)</h3>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaBriefcase className="text-teal-600" /> Top Sales Managers (SM)</h3>
                         </div>
                         <div className="p-0">
                             {(dashboardData?.performances?.sm || []).length > 0 ? (
@@ -1557,7 +1570,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     {/* BDM Performance List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 bg-indigo-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUserTie className="text-indigo-600"/> Top BDMs</h3>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUserTie className="text-indigo-600" /> Top BDMs</h3>
                         </div>
                         <div className="p-0">
                             {(dashboardData?.performances?.bdm || []).length > 0 ? (
@@ -1586,7 +1599,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     {/* BD Performance List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 bg-blue-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaIdBadge className="text-blue-600"/> Top BDs</h3>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaIdBadge className="text-blue-600" /> Top BDs</h3>
                         </div>
                         <div className="p-0">
                             {(dashboardData?.performances?.bd || []).length > 0 ? (
@@ -1614,7 +1627,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     {/* Agent Performance List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUsers className="text-emerald-600"/> Top Agents</h3>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUsers className="text-emerald-600" /> Top Agents</h3>
                         </div>
                         <div className="p-0">
                             {(dashboardData?.performances?.agent || []).length > 0 ? (
@@ -1650,7 +1663,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 </div>
             )}
 
-            <AssignMemberModal 
+            <AssignMemberModal
                 isOpen={showAssignModal}
                 onClose={() => setShowAssignModal(false)}
                 onAssign={handleAssignMember}
@@ -1661,7 +1674,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                 showTeamSelect={isRegionalView}
             />
 
-            <CreateTeamModal 
+            <CreateTeamModal
                 isOpen={showCreateTeamModal}
                 onClose={() => setShowCreateTeamModal(false)}
                 onCreate={handleCreateTeam}
