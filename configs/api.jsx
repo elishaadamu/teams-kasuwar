@@ -172,6 +172,7 @@ export const API_CONFIG = {
       CREATE: "/shipping-fee/create",
       GET_ALL: "/shipping-fee/all",
     },
+
     REPORTS: {
       TEAM_SC: "/team-members/performance",
       TEAM_PERFORMANCE: "/team-members/performance/my-team",
