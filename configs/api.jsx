@@ -174,7 +174,7 @@ export const API_CONFIG = {
     },
 
     REPORTS: {
-      TEAM_SC: "/team-members/performance",
+      TEAM_SC: "/team-members/performance/my-team",
       TEAM_PERFORMANCE: "/team-members/performance/my-team",
       PERFORMANCE_REPORT_BDM: "/report/bdm/my-performance",
       PERFORMANCE_REPORT_BD: "/report/bd/my-performance",

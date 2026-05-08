@@ -81,7 +81,7 @@ export default function StaffPerformance() {
         const response = await axios.get(`${apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_PERFORMANCE)}?year=${selectedYear}`, { withCredentials: true });
         console.log("Team Performance List Response:", response.data);
         const res = response.data;
-
+        console.log(res.data)
         let allData = [];
 
         if (res.success) {
@@ -130,7 +130,45 @@ export default function StaffPerformance() {
             };
           });
 
-          allData = [...bdmMembers, ...smMembers];
+          // Map BDs (nested inside BDMs)
+          const bdMembersFromBDMs = (res.bdms || []).flatMap(bdm =>
+            (bdm.bds || []).map(bd => ({
+              id: bd.id || Math.random().toString(),
+              name: bd.name || 'Unknown BD',
+              email: bd.email || '',
+              role: 'BD',
+              region: '',
+              bdCount: 0,
+              totalAgents: bd.agentsCount || 0,
+              totalVendors: bd.vendorsCount || 0,
+              bds: [],
+              kpi: 0,
+              trend: 0,
+              metrics: { vendorsCount: bd.vendorsCount || 0, agentsCount: bd.agentsCount || 0 },
+              yearlyPerformance: {}
+            }))
+          );
+
+          // Map BDs (nested inside SMs)
+          const bdMembersFromSMs = (res.sms || []).flatMap(sm =>
+            (sm.bds || []).map(bd => ({
+              id: bd.id || Math.random().toString(),
+              name: bd.name || 'Unknown BD',
+              email: bd.email || '',
+              role: 'BD',
+              region: '',
+              bdCount: 0,
+              totalAgents: bd.agentsCount || 0,
+              totalVendors: bd.vendorsCount || 0,
+              bds: [],
+              kpi: 0,
+              trend: 0,
+              metrics: { vendorsCount: bd.vendorsCount || 0, agentsCount: bd.agentsCount || 0 },
+              yearlyPerformance: {}
+            }))
+          );
+
+          allData = [...bdmMembers, ...smMembers, ...bdMembersFromBDMs, ...bdMembersFromSMs];
         }
 
         setStaffData(allData);
@@ -206,9 +244,10 @@ export default function StaffPerformance() {
             onChange={(e) => setFilterRole(e.target.value)}
             className="px-6 h-14 bg-slate-900 border-2 border-slate-800 rounded-2xl text-slate-300 font-bold focus:outline-none focus:border-blue-500 transition-all shadow-xl"
           >
-            <option value="all">All Management</option>
+            <option value="all">All Roles</option>
             <option value="SM">SM Only</option>
             <option value="BDM">BDM Only</option>
+            <option value="BD">BD Only</option>
           </select>
         </div>
       </div>

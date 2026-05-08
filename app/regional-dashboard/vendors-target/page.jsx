@@ -24,8 +24,9 @@ const VendorsTargetPage = () => {
                 } else {
                     response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REGIONAL.GET_MY_TEAM_DASHBOARD), { withCredentials: true });
                 }
-                
+
                 if (response?.data?.success) {
+                    console.log("=== DASHBOARD DATA ===", response.data);
                     setDashboardData(response.data);
                 }
             } catch (error) {
@@ -44,7 +45,7 @@ const VendorsTargetPage = () => {
             try {
                 let endpoint = "";
                 const currentTeamId = dashboardData?.team?._id || dashboardData?.team?.id;
-                
+
                 if (currentTeamId) {
                     endpoint = API_CONFIG.ENDPOINTS.ZONE_WALLET.GET_TEAM + currentTeamId;
                 } else if (dashboardData?.zone?._id || dashboardData?.zone?.id) {
@@ -110,7 +111,7 @@ const VendorsTargetPage = () => {
                     <h1 className="text-4xl font-black text-gray-900 tracking-tighter">Targets & <span className="text-blue-600">Achievements</span></h1>
                     <p className="text-sm text-gray-500 font-medium mt-1">Real-time tracking of active users and service metrics</p>
                 </div>
-                
+
                 {/* Wallet Balance Card - More Compact */}
                 <div className="bg-slate-900 rounded-2xl p-5 shadow-xl text-white min-w-[280px] w-full md:w-auto relative overflow-hidden border border-slate-800">
                     <div className="absolute -right-6 -bottom-6 opacity-10">
@@ -135,7 +136,7 @@ const VendorsTargetPage = () => {
                                     {progress}%
                                 </div>
                             </div>
-                            
+
                             <div className="mb-8 flex-1">
                                 <h2 className="text-5xl font-black tracking-tighter text-gray-900 mb-1">
                                     {item.achieved.toLocaleString()}
@@ -144,10 +145,10 @@ const VendorsTargetPage = () => {
                                     Goal: {item.target.toLocaleString()}
                                 </p>
                             </div>
-                            
+
                             <div className="space-y-3">
                                 <div className="w-full bg-gray-100 rounded-full h-2">
-                                    <div 
+                                    <div
                                         className={`h-2 rounded-full transition-all duration-1000 ${item.barColor} shadow-[0_0_10px_rgba(0,0,0,0.1)]`}
                                         style={{ width: `${progress}%` }}
                                     />

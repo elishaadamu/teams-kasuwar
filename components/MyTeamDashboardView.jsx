@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { apiUrl, API_CONFIG } from "@/configs/api";
 import { useAppContext } from "@/context/AppContext";
-import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaUserTie, FaUsers, FaSpinner, FaLayerGroup, FaUserPlus, FaTimes, FaExchangeAlt, FaWallet, FaChartLine, FaPlusCircle, FaChevronRight, FaArrowRight, FaBox, FaStore, FaUserCheck, FaTruck, FaClipboardList, FaBriefcase, FaIdBadge, FaUser, FaEnvelope, FaPhone, FaLock, FaMapMarkerAlt, FaGlobe, FaUniversity, FaFileAlt, FaCamera, FaVenusMars, FaHeart, FaCalendarAlt, FaEye, FaEyeSlash, FaUserShield } from "react-icons/fa";
 import Loading from "./Loading";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
@@ -556,6 +556,7 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [walletData, setWalletData] = useState(null);
     const [teamWallets, setTeamWallets] = useState({});
     const [walletLoading, setWalletLoading] = useState(false);
+    const [scPerformances, setScPerformances] = useState({ sc: [], sm: [], bdm: [], bd: [] });
 
     // Assign Modal State
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -709,13 +710,95 @@ const MyTeamDashboardView = ({ teamId }) => {
     useEffect(() => {
         const fetchTeamSC = async () => {
             try {
-                const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_SC), { withCredentials: true });
+                const currentYear = new Date().getFullYear();
+                const response = await axios.get(`${apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_SC)}?year=${currentYear}`, { withCredentials: true });
                 console.log("=== INDEPENDENT TEAM_SC RESPONSE ===", response.data);
+                
+                if (response.data.success) {
+                    let allBds = [];
+
+                    const bdmList = (response.data.bdms || []).map(bdm => {
+                        const totalAgents = (bdm.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
+                        const totalVendors = (bdm.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
+                        
+                        (bdm.bds || []).forEach(bd => {
+                            allBds.push({
+                                name: bd.name,
+                                vendors: bd.vendorsCount || 0,
+                                agents: bd.agentsCount || 0,
+                                customers: 0,
+                                score: (bd.vendorsCount || 0) + (bd.agentsCount || 0)
+                            });
+                        });
+
+                        return {
+                            name: bdm.name,
+                            vendors: totalVendors,
+                            customers: 0,
+                            bds: (bdm.bds || []).length,
+                            agents: totalAgents,
+                            score: totalAgents + totalVendors
+                        };
+                    }).sort((a, b) => b.score - a.score);
+
+                    const smList = (response.data.sms || []).map(sm => {
+                        const totalAgents = (sm.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
+                        const totalVendors = (sm.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
+                        
+                        (sm.bds || []).forEach(bd => {
+                            allBds.push({
+                                name: bd.name,
+                                vendors: bd.vendorsCount || 0,
+                                agents: bd.agentsCount || 0,
+                                customers: 0,
+                                score: (bd.vendorsCount || 0) + (bd.agentsCount || 0)
+                            });
+                        });
+
+                        return {
+                            name: sm.name,
+                            vendors: totalVendors,
+                            customers: 0,
+                            agents: totalAgents,
+                            score: totalAgents + totalVendors
+                        };
+                    }).sort((a, b) => b.score - a.score);
+
+                    const scList = (response.data.scs || []).map(sc => {
+                        const totalAgents = (sc.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
+                        const totalVendors = (sc.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
+                        
+                        (sc.bds || []).forEach(bd => {
+                            allBds.push({
+                                name: bd.name,
+                                vendors: bd.vendorsCount || 0,
+                                agents: bd.agentsCount || 0,
+                                customers: 0,
+                                score: (bd.vendorsCount || 0) + (bd.agentsCount || 0)
+                            });
+                        });
+
+                        return {
+                            name: sc.name,
+                            state: sc.state || 'State Coordinator',
+                            vendors: totalVendors,
+                            customers: 0,
+                            agents: totalAgents,
+                            score: totalAgents + totalVendors
+                        };
+                    }).sort((a, b) => b.score - a.score);
+
+                    allBds.sort((a, b) => b.score - a.score);
+
+                    setScPerformances({ sc: scList, sm: smList, bdm: bdmList, bd: allBds });
+                }
             } catch (error) {
                 console.error("=== INDEPENDENT TEAM_SC ERROR ===", error);
             }
         };
-        if (userData) {
+        const role = userData?.role?.toLowerCase() || '';
+        const isEligibleRole = role === 'tl' || role === 'team_lead' || role === 'team lead' || role === 'state coordinator' || role === 'rm' || role === 'regional manager';
+        if (isEligibleRole) {
             fetchTeamSC();
         }
     }, [userData]);
@@ -1365,294 +1448,339 @@ const MyTeamDashboardView = ({ teamId }) => {
                     })()}
 
                     {/* Members Table */}
-                    {teamMembers.length > 0 ? (
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 bg-gray-50">
-                                <h3 className="text-lg font-bold text-gray-800">Team Members</h3>
-                                <p className="text-sm text-gray-500">{teamMembers.length} members in this team</p>
+                    {teamMembers.length > 0 ? (() => {
+                        const avatarColors = ['from-violet-500 to-purple-600','from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-rose-500 to-pink-600','from-amber-500 to-orange-500','from-cyan-500 to-sky-600'];
+                        return (
+                        <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
+                            <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-white font-black text-base tracking-tight">Team Members</h3>
+                                    <p className="text-slate-400 text-xs mt-0.5">{teamMembers.length} members in this team</p>
+                                </div>
+                                <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{teamMembers.length} Total</span>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left whitespace-nowrap min-w-[800px]">
-                                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4 font-semibold">Member Name</th>
-                                            <th className="px-6 py-4 font-semibold">Email</th>
-                                            <th className="px-6 py-4 font-semibold">Role</th>
-                                            <th className="px-6 py-4 font-semibold">Status</th>
-                                            {canManageMembers && <th className="px-6 py-4 font-semibold">Actions</th>}
+                                <table className="w-full whitespace-nowrap min-w-[800px]">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
+                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
+                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                            {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {console.log("Table 1 Members:", teamMembers)}
-                                        {teamMembers.map((member, index) => (
-                                            <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                    <tbody>
+                                        {teamMembers.map((member, index) => {
+                                            const isLead = member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email);
+                                            const isActive = member.isActive !== false;
+                                            const colorClass = avatarColors[index % avatarColors.length];
+                                            return (
+                                            <tr key={index} className={`border-b border-slate-50 transition-colors ${isLead ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'bg-white hover:bg-slate-50/70'}`}>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-xs">
-                                                            {member.firstName?.charAt(0) || "U"}
+                                                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-black text-sm shadow-sm`}>
+                                                            {member.firstName?.charAt(0)?.toUpperCase() || 'U'}
                                                         </div>
-                                                        <span className="font-medium text-gray-800">
-                                                            {member.firstName} {member.lastName}
-                                                        </span>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-800">{member.firstName} {member.lastName}</p>
+                                                            {isLead && <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</p>}
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${(member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email))
-                                                        ? 'bg-indigo-100 text-indigo-700'
-                                                        : 'bg-gray-100 text-gray-600'
-                                                        }`}>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{member.email}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide ${isLead ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                                         {member.role?.toUpperCase() || 'MEMBER'}
                                                     </span>
                                                 </td>
-
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${(member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {(member.isActive !== false) ? 'Active' : 'Inactive'}
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                                        {isActive ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
-
                                                 {canManageMembers && (
-                                                    <td className="px-6 py-4 flex gap-2">
-                                                        <button
-                                                            onClick={() => openReassignModal(member.email)}
-                                                            className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
-                                                            title="Reassign to another team"
-                                                        >
-                                                            <FaExchangeAlt className="text-[10px]" /> Reassign
-                                                        </button>
-                                                        <button
-                                                            onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)}
-                                                            disabled={member.isTeamLead}
-                                                            className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-50"
-                                                            title={member.isTeamLead ? "Already State Co-ordinator" : "Make State Co-ordinator (TL)"}
-                                                        >
-                                                            <FaUserTie className="text-[10px]" /> {member.isTeamLead ? "Current TL" : "Make TL"}
-                                                        </button>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => openReassignModal(member.email)} className="flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-semibold shadow-sm" title="Reassign to another team">
+                                                                <FaExchangeAlt /> Reassign
+                                                            </button>
+                                                            <button onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? "Already Team Lead" : "Make Team Lead"}>
+                                                                <FaUserTie /> {member.isTeamLead ? 'Current TL' : 'Make TL'}
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 )}
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    ) : (
-                        <div className="bg-gray-50 p-8 rounded-2xl border border-gray-100 text-center">
-                            <FaUsers className="text-4xl text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold text-gray-700">No Members Yet</h3>
-                            <p className="text-gray-500 mt-2">This team currently has no members listed. Use the "Assign Member" button to add members.</p>
+                        );
+                    })() : (
+                        <div className="bg-gradient-to-br from-slate-50 to-gray-100 p-10 rounded-2xl border border-gray-100 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gray-200 flex items-center justify-center text-3xl mx-auto mb-4">👥</div>
+                            <h3 className="text-base font-bold text-gray-700">No Members Yet</h3>
+                            <p className="text-gray-500 text-sm mt-1">Use the "Assign Member" button to add members to this team.</p>
                         </div>
                     )}
                 </div>
             )}
 
             {/* Content: Team View (API returned members directly, e.g. for team leads) */}
-            {!isSingleTeamFromRegion && isTeamView && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            {!isSingleTeamFromRegion && isTeamView && (() => {
+                const avatarColors = ['from-violet-500 to-purple-600','from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-rose-500 to-pink-600','from-amber-500 to-orange-500','from-cyan-500 to-sky-600'];
+                const leadName = `${dashboardData.team?.teamLeadId?.firstName || dashboardData.team?.teamLead?.firstName || dashboardData.lead?.firstName || ''} ${dashboardData.team?.teamLeadId?.lastName || dashboardData.team?.teamLead?.lastName || dashboardData.lead?.lastName || ''}`.trim();
+                return (
+                <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
+                    <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-bold text-gray-800">{dashboardData.team?.name || dashboardData.teamName || "My Team"}</h2>
-                            {(dashboardData.team?.teamLeadId || dashboardData.team?.teamLead || dashboardData.lead) && (
-                                <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                                    <FaUserTie className="text-indigo-500" />
-                                    Lead by: <span className="font-medium text-gray-700">
-                                        {(dashboardData.team?.teamLeadId?.firstName || dashboardData.team?.teamLead?.firstName || dashboardData.lead?.firstName)} {(dashboardData.team?.teamLeadId?.lastName || dashboardData.team?.teamLead?.lastName || dashboardData.lead?.lastName)}
-                                    </span>
+                            <h2 className="text-white font-black text-base tracking-tight">{dashboardData.team?.name || dashboardData.teamName || 'My Team'}</h2>
+                            {leadName && (
+                                <p className="text-slate-400 text-xs mt-0.5 flex items-center gap-1.5">
+                                    <FaUserTie className="text-indigo-400" /> Lead: <span className="text-indigo-300 font-semibold">{leadName}</span>
                                 </p>
                             )}
                         </div>
-                        <div className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">
-                            {dashboardData.members?.length || 0} Members
-                        </div>
+                        <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{dashboardData.members?.length || 0} Members</span>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left whitespace-nowrap min-w-[800px]">
-                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-4 font-semibold">Member Name</th>
-                                    <th className="px-6 py-4 font-semibold">Email</th>
-                                    <th className="px-6 py-4 font-semibold">Role</th>
-                                    <th className="px-6 py-4 font-semibold">Status</th>
-                                    {canManageMembers && <th className="px-6 py-4 font-semibold">Actions</th>}
+                        <table className="w-full whitespace-nowrap min-w-[800px]">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
+                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
+                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                    {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
-
-                                {dashboardData.members?.map((member, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <tbody>
+                                {dashboardData.members?.map((member, index) => {
+                                    const isLead = member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email);
+                                    const isActive = member.isActive !== false;
+                                    const colorClass = avatarColors[index % avatarColors.length];
+                                    return (
+                                    <tr key={index} className={`border-b border-slate-50 transition-colors ${isLead ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'bg-white hover:bg-slate-50/70'}`}>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-xs">
-                                                    {member.firstName?.charAt(0) || "U"}
+                                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-black text-sm shadow-sm`}>
+                                                    {member.firstName?.charAt(0)?.toUpperCase() || 'U'}
                                                 </div>
-                                                <span className="font-medium text-gray-800">
-                                                    {member.firstName} {member.lastName}
-                                                </span>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-800">{member.firstName} {member.lastName}</p>
+                                                    {isLead && <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</p>}
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                                        <td className="px-6 py-4 text-sm">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${(member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || (member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email))) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-                                                }`}>
+                                        <td className="px-6 py-4 text-sm text-slate-500">{member.email}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide ${isLead ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                                 {member.role?.toUpperCase() || 'MEMBER'}
                                             </span>
                                         </td>
-
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${(member.isActive !== false) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                {(member.isActive !== false) ? 'Active' : 'Inactive'}
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                                {isActive ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
                                         {canManageMembers && (
-                                            <td className="px-6 py-4 flex gap-2">
-                                                <button
-                                                    onClick={() => openReassignModal(member.email)}
-                                                    className="flex items-center gap-1.5 text-xs bg-orange-50 text-orange-600 px-2.5 py-1.5 rounded-lg hover:bg-orange-100 transition-colors font-medium border border-orange-100"
-                                                    title="Reassign to another team"
-                                                >
-                                                    <FaExchangeAlt className="text-[10px]" /> Reassign
-                                                </button>
-                                                <button
-                                                    onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)}
-                                                    disabled={member.isTeamLead}
-                                                    className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors font-medium border border-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-50"
-                                                    title={member.isTeamLead ? "Already State Co-ordinator" : "Make State Co-ordinator (TL)"}
-                                                >
-                                                    <FaUserTie className="text-[10px]" /> {member.isTeamLead ? "Current TL" : "Make TL"}
-                                                </button>
+                                            <td className="px-6 py-4">
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => openReassignModal(member.email)} className="flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-semibold shadow-sm" title="Reassign to another team">
+                                                        <FaExchangeAlt /> Reassign
+                                                    </button>
+                                                    <button onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? 'Already Team Lead' : 'Make Team Lead'}>
+                                                        <FaUserTie /> {member.isTeamLead ? 'Current TL' : 'Make TL'}
+                                                    </button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Performance Rankings */}
-            <div className="space-y-6 pt-6">
-                <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Team Performance Rankings</h2>
+            {(() => {
+                const role = userData?.role?.toLowerCase() || '';
+                const isEligibleRole = role === 'tl' || role === 'team_lead' || role === 'team lead' || role === 'state coordinator' || role === 'rm' || role === 'regional manager';
+                const isRM = role === 'rm' || role === 'regional manager';
+                const scPerformancesList = isEligibleRole ? scPerformances?.sc : dashboardData?.performances?.sc;
+                const smPerformances = isEligibleRole ? scPerformances?.sm : dashboardData?.performances?.sm;
+                const bdmPerformances = isEligibleRole ? scPerformances?.bdm : dashboardData?.performances?.bdm;
+                const bdPerformances = isEligibleRole ? scPerformances?.bd : dashboardData?.performances?.bd;
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* SM Performance List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-teal-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaBriefcase className="text-teal-600" /> Top Sales Managers (SM)</h3>
-                        </div>
-                        <div className="p-0">
-                            {(dashboardData?.performances?.sm || []).length > 0 ? (
-                                <ul className="divide-y divide-gray-100">
-                                    {(dashboardData?.performances?.sm || []).map((user, idx) => (
-                                        <li key={idx} className="p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-semibold text-sm text-gray-800">{user.name}</span>
-                                                <span className="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-full">Rank #{idx + 1}</span>
+                const rankMedal = (idx) => {
+                    if (idx === 0) return { emoji: '🥇', color: 'from-yellow-400 to-amber-500', text: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' };
+                    if (idx === 1) return { emoji: '🥈', color: 'from-slate-400 to-slate-500', text: 'text-slate-600', bg: 'bg-slate-50 border-slate-200' };
+                    if (idx === 2) return { emoji: '🥉', color: 'from-orange-400 to-orange-500', text: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' };
+                    return { emoji: null, color: '', text: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' };
+                };
+
+                const RankingCard = ({ title, icon, gradient, items, statKeys, emptyMsg }) => {
+                    const [currentPage, setCurrentPage] = React.useState(1);
+                    const itemsPerPage = 5;
+                    const totalPages = Math.ceil((items || []).length / itemsPerPage);
+                    const maxScore = Math.max(...(items || []).map(u => u.score || 0), 1);
+                    
+                    const currentItems = (items || []).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+                    return (
+                        <div className="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden flex flex-col">
+                            {/* Header */}
+                            <div className={`bg-gradient-to-r ${gradient} p-5 text-white`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg backdrop-blur-sm">
+                                            {icon}
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-widest font-bold opacity-75">Leaderboard</p>
+                                            <h3 className="font-black text-sm leading-tight">{title}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-black">{(items || []).length}</p>
+                                        <p className="text-[10px] opacity-75 uppercase tracking-wide">Members</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* List */}
+                            <div className="flex-1 divide-y divide-gray-50">
+                                {(currentItems || []).length > 0 ? (currentItems || []).map((user, idx) => {
+                                    const absoluteIdx = (currentPage - 1) * itemsPerPage + idx;
+                                    const medal = rankMedal(absoluteIdx);
+                                    const barPct = maxScore > 0 ? Math.round(((user.score || 0) / maxScore) * 100) : 0;
+                                    return (
+                                        <div key={idx} className="p-4 hover:bg-gray-50/80 transition-all duration-150 group">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                {medal.emoji ? (
+                                                    <span className="text-xl leading-none">{medal.emoji}</span>
+                                                ) : (
+                                                    <span className={`w-6 h-6 rounded-full ${medal.bg} border text-[10px] font-black flex items-center justify-center ${medal.text}`}>
+                                                        {absoluteIdx + 1}
+                                                    </span>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-sm text-gray-900 truncate leading-tight">{user.name}</p>
+                                                    {user.state && <p className="text-[9px] uppercase tracking-widest font-black text-purple-400">{user.state}</p>}
+                                                </div>
+                                                <span className="text-xs font-black text-gray-400 shrink-0">Score {user.score || 0}</span>
                                             </div>
-                                            <div className="flex gap-4 text-xs text-gray-500 flex-wrap">
-                                                <span>Sales: <strong className="text-gray-700">{user.sales || 0}</strong></span>
-                                                <span>Customers: <strong className="text-gray-700">{user.customers || 0}</strong></span>
-                                                <span>Agents: <strong className="text-gray-700">{user.agents || 0}</strong></span>
+                                            {/* Score bar */}
+                                            <div className="w-full h-1 bg-gray-100 rounded-full mb-3 overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-700`}
+                                                    style={{ width: `${barPct}%` }}
+                                                />
                                             </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="p-6 text-center text-sm text-gray-500">No SM performance data available.</div>
+                                            {/* Stat chips */}
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {statKeys.map(({ key, label }) => user[key] !== undefined && (
+                                                    <span key={key} className="inline-flex items-center gap-1 text-[10px] font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                                        {label}: <strong className="text-gray-800">{user[key] || 0}</strong>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }) : (
+                                    <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl mb-3">📊</div>
+                                        <p className="text-sm font-semibold text-gray-500">{emptyMsg}</p>
+                                        <p className="text-xs text-gray-400 mt-1">No data for current period</p>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="border-t border-gray-100 p-3 bg-gray-50/50 flex justify-between items-center">
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Prev
+                                    </button>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-1 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
                             )}
                         </div>
-                    </div>
+                    );
+                };
 
-                    {/* BDM Performance List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-indigo-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUserTie className="text-indigo-600" /> Top BDMs</h3>
+                return (
+                    <div className="space-y-6 pt-6">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Performance Rankings</h2>
+                                <p className="text-sm text-gray-500 mt-0.5">Live leaderboard · {new Date().getFullYear()}</p>
+                            </div>
+                            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+                                <span className="text-sm">🏆</span>
+                                <span className="text-xs font-bold text-amber-700">YTD Achievements</span>
+                            </div>
                         </div>
-                        <div className="p-0">
-                            {(dashboardData?.performances?.bdm || []).length > 0 ? (
-                                <ul className="divide-y divide-gray-100">
-                                    {(dashboardData?.performances?.bdm || []).map((user, idx) => (
-                                        <li key={idx} className="p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-semibold text-sm text-gray-800">{user.name}</span>
-                                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">Rank #{idx + 1}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                                                <span>Vendors: <strong className="text-gray-700">{user.vendors || 0}</strong></span>
-                                                <span>Customers: <strong className="text-gray-700">{user.customers || 0}</strong></span>
-                                                <span>BDs: <strong className="text-gray-700">{user.bds || 0}</strong></span>
-                                                <span>Agents: <strong className="text-gray-700">{user.agents || 0}</strong></span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="p-6 text-center text-sm text-gray-500">No BDM performance data available.</div>
+
+                        <div className={`grid grid-cols-1 md:grid-cols-2 ${isRM ? 'xl:grid-cols-4' : 'lg:grid-cols-3'} gap-5`}>
+                            {isRM && (
+                                <RankingCard
+                                    title="State Coordinators"
+                                    icon={<FaUserShield />}
+                                    gradient="from-purple-600 to-violet-700"
+                                    items={scPerformancesList}
+                                    statKeys={[{ key: 'vendors', label: 'Vendors' }, { key: 'agents', label: 'Agents' }]}
+                                    emptyMsg="No SC data yet"
+                                />
                             )}
+                            <RankingCard
+                                title="Sales Managers"
+                                icon={<FaBriefcase />}
+                                gradient="from-teal-500 to-emerald-600"
+                                items={smPerformances}
+                                statKeys={[{ key: 'vendors', label: 'Vendors' }, { key: 'agents', label: 'Agents' }, { key: 'customers', label: 'Customers' }]}
+                                emptyMsg="No SM data yet"
+                            />
+                            <RankingCard
+                                title="Business Dev. Managers"
+                                icon={<FaUserTie />}
+                                gradient="from-indigo-500 to-blue-700"
+                                items={bdmPerformances}
+                                statKeys={[{ key: 'vendors', label: 'Vendors' }, { key: 'bds', label: 'BDs' }, { key: 'agents', label: 'Agents' }]}
+                                emptyMsg="No BDM data yet"
+                            />
+                            <RankingCard
+                                title="Business Developers"
+                                icon={<FaIdBadge />}
+                                gradient="from-sky-500 to-cyan-600"
+                                items={bdPerformances}
+                                statKeys={[{ key: 'vendors', label: 'Vendors' }, { key: 'agents', label: 'Agents' }]}
+                                emptyMsg="No BD data yet"
+                            />
                         </div>
                     </div>
-
-                    {/* BD Performance List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-blue-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaIdBadge className="text-blue-600" /> Top BDs</h3>
-                        </div>
-                        <div className="p-0">
-                            {(dashboardData?.performances?.bd || []).length > 0 ? (
-                                <ul className="divide-y divide-gray-100">
-                                    {(dashboardData?.performances?.bd || []).map((user, idx) => (
-                                        <li key={idx} className="p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-semibold text-sm text-gray-800">{user.name}</span>
-                                                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Rank #{idx + 1}</span>
-                                            </div>
-                                            <div className="flex gap-4 text-xs text-gray-500 flex-wrap">
-                                                <span>Vendors: <strong className="text-gray-700">{user.vendors || 0}</strong></span>
-                                                <span>Customers: <strong className="text-gray-700">{user.customers || 0}</strong></span>
-                                                <span>Agents: <strong className="text-gray-700">{user.agents || 0}</strong></span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="p-6 text-center text-sm text-gray-500">No BD performance data available.</div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Agent Performance List */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-emerald-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2"><FaUsers className="text-emerald-600" /> Top Agents</h3>
-                        </div>
-                        <div className="p-0">
-                            {(dashboardData?.performances?.agent || []).length > 0 ? (
-                                <ul className="divide-y divide-gray-100">
-                                    {(dashboardData?.performances?.agent || []).map((user, idx) => (
-                                        <li key={idx} className="p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-semibold text-sm text-gray-800">{user.name}</span>
-                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Rank #{idx + 1}</span>
-                                            </div>
-                                            <div className="flex gap-4 text-xs text-gray-500 flex-wrap">
-                                                <span>Vendors: <strong className="text-gray-700">{user.vendors || 0}</strong></span>
-                                                <span>Customers: <strong className="text-gray-700">{user.customers || 0}</strong></span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="p-6 text-center text-sm text-gray-500">No Agent performance data available.</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+                );
+            })()}
             {!isRegionalView && !isTeamView && (
                 <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-100 text-yellow-800">
                     <h3 className="font-bold">Unrecognized Data Format</h3>
