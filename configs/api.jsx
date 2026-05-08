@@ -172,7 +172,10 @@ export const API_CONFIG = {
       CREATE: "/shipping-fee/create",
       GET_ALL: "/shipping-fee/all",
     },
-
+    TARGETS: {
+      GET_MY_TARGETS: "/team-members/performance/team-tasks",
+      REGIONAL_OVERVIEW: "/team-members/performance/regional-overview",
+    },
     REPORTS: {
       TEAM_SC: "/team-members/performance/my-team",
       TEAM_PERFORMANCE: "/team-members/performance/my-team",

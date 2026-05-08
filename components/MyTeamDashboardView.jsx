@@ -557,6 +557,8 @@ const MyTeamDashboardView = ({ teamId }) => {
     const [teamWallets, setTeamWallets] = useState({});
     const [walletLoading, setWalletLoading] = useState(false);
     const [scPerformances, setScPerformances] = useState({ sc: [], sm: [], bdm: [], bd: [] });
+    const [targetData, setTargetData] = useState(null);
+    const [regionalOverview, setRegionalOverview] = useState(null);
 
     // Assign Modal State
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -706,6 +708,43 @@ const MyTeamDashboardView = ({ teamId }) => {
         }
     }, [dashboardData, userData, teamId]);
 
+    useEffect(() => {
+        const fetchTargets = async () => {
+            try {
+                const currentTeamId = teamId || dashboardData?.team?._id || dashboardData?.team?.id;
+                const role = userData?.role?.toLowerCase();
+                const isRmOrLeader = role === 'rm' || role === 'regional manager' || role === 'regional-leader';
+
+                if (isRmOrLeader && !currentTeamId) {
+                    // RM with no team selected → fetch regional overview
+                    const response = await axios.get(apiUrl(API_CONFIG.ENDPOINTS.TARGETS.REGIONAL_OVERVIEW), { withCredentials: true });
+                    console.log("=== REGIONAL OVERVIEW DATA ===", response.data);
+                    if (response.data.success) {
+                        setRegionalOverview(response.data);
+                        setTargetData(null);
+                    }
+                } else {
+                    // Team-level targets (TL, SC, SM, BDM or RM viewing a specific team)
+                    let endpoint = apiUrl(API_CONFIG.ENDPOINTS.TARGETS.GET_MY_TARGETS);
+                    if (currentTeamId) {
+                        endpoint += `?teamId=${currentTeamId}`;
+                    }
+                    const response = await axios.get(endpoint, { withCredentials: true });
+                    console.log("=== TARGET DATA ===", response.data);
+                    if (response.data.success) {
+                        setTargetData(response.data);
+                        setRegionalOverview(null);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching targets:", error);
+            }
+        };
+        if (userData) {
+            fetchTargets();
+        }
+    }, [userData, teamId, dashboardData]);
+
     // Independent debugging block to inspect TEAM_SC response
     useEffect(() => {
         const fetchTeamSC = async () => {
@@ -713,14 +752,14 @@ const MyTeamDashboardView = ({ teamId }) => {
                 const currentYear = new Date().getFullYear();
                 const response = await axios.get(`${apiUrl(API_CONFIG.ENDPOINTS.REPORTS.TEAM_SC)}?year=${currentYear}`, { withCredentials: true });
                 console.log("=== INDEPENDENT TEAM_SC RESPONSE ===", response.data);
-                
+
                 if (response.data.success) {
                     let allBds = [];
 
                     const bdmList = (response.data.bdms || []).map(bdm => {
                         const totalAgents = (bdm.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
                         const totalVendors = (bdm.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
-                        
+
                         (bdm.bds || []).forEach(bd => {
                             allBds.push({
                                 name: bd.name,
@@ -744,7 +783,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     const smList = (response.data.sms || []).map(sm => {
                         const totalAgents = (sm.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
                         const totalVendors = (sm.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
-                        
+
                         (sm.bds || []).forEach(bd => {
                             allBds.push({
                                 name: bd.name,
@@ -767,7 +806,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     const scList = (response.data.scs || []).map(sc => {
                         const totalAgents = (sc.bds || []).reduce((acc, bd) => acc + (bd.agentsCount || 0), 0);
                         const totalVendors = (sc.bds || []).reduce((acc, bd) => acc + (bd.vendorsCount || 0), 0);
-                        
+
                         (sc.bds || []).forEach(bd => {
                             allBds.push({
                                 name: bd.name,
@@ -1138,11 +1177,111 @@ const MyTeamDashboardView = ({ teamId }) => {
             </div>
 
             {/* Targets Overview */}
-            {(() => {
+            {regionalOverview && isRegionalView ? (() => {
+                /* Regional Overview for RM — compute overall from teams array */
+                const teams = regionalOverview.teams || [];
+                const totalDone = teams.reduce((sum, t) => sum + (t.totalTasksDone || 0), 0);
+                const totalRequired = teams.reduce((sum, t) => sum + (t.totalTasksRequired || 0), 0);
+                const overallPct = totalRequired > 0 ? Math.round((totalDone / totalRequired) * 100) : 0;
+                const regionMonth = regionalOverview.month || (new Date().getMonth() + 1);
+                const regionYear = regionalOverview.year || new Date().getFullYear();
+                const regionName = dashboardData?.zone?.name || 'My Region';
+
+                return (
+                <div className="space-y-6 mb-6">
+                    {/* Region-wide overall summary */}
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-[1.5rem] p-6 text-white shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Region Overall Progress</p>
+                                <h3 className="text-xl font-black mt-1">{regionName}</h3>
+                                <p className="text-[10px] text-white/50 uppercase tracking-wider font-bold mt-0.5">
+                                    {new Date(0, regionMonth - 1).toLocaleString('default', { month: 'long' })} {regionYear}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-3xl font-black">{overallPct}%</span>
+                                <p className="text-[10px] text-white/60 uppercase tracking-wider font-bold">{totalDone.toLocaleString()} / {totalRequired.toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div className="w-full bg-white/20 rounded-full h-2">
+                            <div className="bg-white h-2 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, overallPct)}%` }}></div>
+                        </div>
+                    </div>
+
+                    {/* Per-team target breakdown */}
+                    {teams.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-black text-gray-900 tracking-tight">Team Targets Breakdown</h3>
+                                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase tracking-wider">{teams.length} Teams</span>
+                            </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {teams.map((team, idx) => {
+                                    const pct = team.percentage || 0;
+                                    const metrics = team.metrics || {};
+                                    return (
+                                        <div key={team.teamId || idx} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={() => handleViewTeam(team.teamId)}>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
+                                                        {(team.teamName || 'T').charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-900 text-sm">{team.teamName || 'Unknown Team'}</h4>
+                                                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
+                                                            {(team.totalTasksDone || 0).toLocaleString()} / {(team.totalTasksRequired || 0).toLocaleString()} tasks
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span className={`text-sm font-black px-2.5 py-1 rounded-full ${pct >= 75 ? 'bg-emerald-50 text-emerald-600' : pct >= 40 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'}`}>
+                                                    {pct}%
+                                                </span>
+                                            </div>
+                                            {/* Overall progress bar */}
+                                            <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
+                                                <div className={`h-2 rounded-full transition-all duration-700 ${pct >= 75 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-400'}`} style={{ width: `${Math.min(100, pct)}%` }}></div>
+                                            </div>
+                                            {/* Metric chips */}
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div className="text-center p-2 bg-emerald-50 rounded-xl">
+                                                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Vendors</p>
+                                                    <p className="text-lg font-black text-emerald-800">{(metrics.vendors || 0).toLocaleString()}</p>
+                                                </div>
+                                                <div className="text-center p-2 bg-purple-50 rounded-xl">
+                                                    <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest">Sales</p>
+                                                    <p className="text-lg font-black text-purple-800">{(metrics.sales || 0).toLocaleString()}</p>
+                                                </div>
+                                                <div className="text-center p-2 bg-blue-50 rounded-xl">
+                                                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Deliveries</p>
+                                                    <p className="text-lg font-black text-blue-800">{(metrics.deliveries || 0).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                );
+            })() : (() => {
                 const isStateCoordinator = userData?.role?.toLowerCase() === 'tl' || userData?.role?.toLowerCase() === 'team lead' || userData?.role?.toLowerCase() === 'state coordinator';
-                const vTarget = isStateCoordinator ? 13000 : 130000;
-                const dTarget = isStateCoordinator ? 4500 : 40000;
-                const sTarget = isStateCoordinator ? 4500 : 40000;
+                const defaultVTarget = isStateCoordinator ? 13000 : 130000;
+                const defaultDTarget = isStateCoordinator ? 4500 : 40000;
+                const defaultSTarget = isStateCoordinator ? 4500 : 40000;
+
+                const vTarget = targetData?.performance?.vendors?.required || defaultVTarget;
+                const dTarget = targetData?.performance?.deliveries?.required || defaultDTarget;
+                const sTarget = targetData?.performance?.sales?.required || defaultSTarget;
+
+                const vDone = targetData?.performance?.vendors?.done !== undefined ? targetData.performance.vendors.done : (dashboardData?.metrics?.totalVendors || 0);
+                const dDone = targetData?.performance?.deliveries?.done !== undefined ? targetData.performance.deliveries.done : (dashboardData?.metrics?.totalDeliveryMen || 0);
+                const sDone = targetData?.performance?.sales?.done !== undefined ? targetData.performance.sales.done : (dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0);
+
+                const vPercent = targetData?.performance?.vendors?.percentage !== undefined ? targetData.performance.vendors.percentage : Math.min(100, Math.round((vDone / vTarget) * 100));
+                const dPercent = targetData?.performance?.deliveries?.percentage !== undefined ? targetData.performance.deliveries.percentage : Math.min(100, Math.round((dDone / dTarget) * 100));
+                const sPercent = targetData?.performance?.sales?.percentage !== undefined ? targetData.performance.sales.percentage : Math.min(100, Math.round((sDone / sTarget) * 100));
 
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -1152,15 +1291,15 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 <div className="flex justify-between items-start mb-4">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-emerald-500 transition-colors">Vendors Target</h4>
                                     <span className="text-xs font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                        {Math.min(100, Math.round(((dashboardData?.metrics?.totalVendors || 0) / vTarget) * 100))}%
+                                        {vPercent}%
                                     </span>
                                 </div>
                                 <div className="flex items-baseline gap-2 mb-4">
-                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.metrics?.totalVendors || 0).toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-gray-900">{vDone.toLocaleString()}</span>
                                     <span className="text-[10px] font-bold text-gray-400 uppercase">/ {vTarget.toLocaleString()}</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.metrics?.totalVendors || 0) / vTarget) * 100)}%` }}></div>
+                                    <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, vPercent)}%` }}></div>
                                 </div>
                             </div>
                         </div>
@@ -1171,15 +1310,15 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 <div className="flex justify-between items-start mb-4">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-blue-500 transition-colors">Delivery Target</h4>
                                     <span className="text-xs font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                                        {Math.min(100, Math.round(((dashboardData?.metrics?.totalDeliveryMen || 0) / dTarget) * 100))}%
+                                        {dPercent}%
                                     </span>
                                 </div>
                                 <div className="flex items-baseline gap-2 mb-4">
-                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.metrics?.totalDeliveryMen || 0).toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-gray-900">{dDone.toLocaleString()}</span>
                                     <span className="text-[10px] font-bold text-gray-400 uppercase">/ {dTarget.toLocaleString()}</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.metrics?.totalDeliveryMen || 0) / dTarget) * 100)}%` }}></div>
+                                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, dPercent)}%` }}></div>
                                 </div>
                             </div>
                         </div>
@@ -1190,15 +1329,15 @@ const MyTeamDashboardView = ({ teamId }) => {
                                 <div className="flex justify-between items-start mb-4">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 group-hover:text-purple-500 transition-colors">Sales Target</h4>
                                     <span className="text-xs font-black text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
-                                        {Math.min(100, Math.round(((dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0) / sTarget) * 100))}%
+                                        {sPercent}%
                                     </span>
                                 </div>
                                 <div className="flex items-baseline gap-2 mb-4">
-                                    <span className="text-3xl font-black text-gray-900">{(dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0).toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-gray-900">{sDone.toLocaleString()}</span>
                                     <span className="text-[10px] font-bold text-gray-400 uppercase">/ {sTarget.toLocaleString()}</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, ((dashboardData?.stats?.totalOrders || dashboardData?.metrics?.totalOrders || 0) / sTarget) * 100)}%` }}></div>
+                                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, sPercent)}%` }}></div>
                                 </div>
                             </div>
                         </div>
@@ -1449,33 +1588,122 @@ const MyTeamDashboardView = ({ teamId }) => {
 
                     {/* Members Table */}
                     {teamMembers.length > 0 ? (() => {
-                        const avatarColors = ['from-violet-500 to-purple-600','from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-rose-500 to-pink-600','from-amber-500 to-orange-500','from-cyan-500 to-sky-600'];
+                        const avatarColors = ['from-violet-500 to-purple-600', 'from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-600', 'from-rose-500 to-pink-600', 'from-amber-500 to-orange-500', 'from-cyan-500 to-sky-600'];
                         return (
-                        <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
-                            <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-white font-black text-base tracking-tight">Team Members</h3>
-                                    <p className="text-slate-400 text-xs mt-0.5">{teamMembers.length} members in this team</p>
+                            <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
+                                <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-white font-black text-base tracking-tight">Team Members</h3>
+                                        <p className="text-slate-400 text-xs mt-0.5">{teamMembers.length} members in this team</p>
+                                    </div>
+                                    <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{teamMembers.length} Total</span>
                                 </div>
-                                <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{teamMembers.length} Total</span>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full whitespace-nowrap min-w-[800px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
+                                                <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                                <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
+                                                <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                                {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {teamMembers.map((member, index) => {
+                                                const isLead = member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email);
+                                                const isActive = member.isActive !== false;
+                                                const colorClass = avatarColors[index % avatarColors.length];
+                                                return (
+                                                    <tr key={index} className={`border-b border-slate-50 transition-colors ${isLead ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'bg-white hover:bg-slate-50/70'}`}>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-black text-sm shadow-sm`}>
+                                                                    {member.firstName?.charAt(0)?.toUpperCase() || 'U'}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-semibold text-slate-800">{member.firstName} {member.lastName}</p>
+                                                                    {isLead && <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</p>}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-slate-500">{member.email}</td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide ${isLead ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                                                                {member.role?.toUpperCase() || 'MEMBER'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                                                {isActive ? 'Active' : 'Inactive'}
+                                                            </span>
+                                                        </td>
+                                                        {canManageMembers && (
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex gap-2">
+                                                                    <button onClick={() => openReassignModal(member.email)} className="flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-semibold shadow-sm" title="Reassign to another team">
+                                                                        <FaExchangeAlt /> Reassign
+                                                                    </button>
+                                                                    <button onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? "Already Team Lead" : "Make Team Lead"}>
+                                                                        <FaUserTie /> {member.isTeamLead ? 'Current TL' : 'Make TL'}
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full whitespace-nowrap min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-100">
-                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
-                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
-                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
-                                            <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                                            {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {teamMembers.map((member, index) => {
-                                            const isLead = member.isTeamLead || member.role === 'team_lead' || member.role === 'tl' || member.email === (selectedTeam?.teamLeadId?.email || selectedTeam?.teamLead?.email);
-                                            const isActive = member.isActive !== false;
-                                            const colorClass = avatarColors[index % avatarColors.length];
-                                            return (
+                        );
+                    })() : (
+                        <div className="bg-gradient-to-br from-slate-50 to-gray-100 p-10 rounded-2xl border border-gray-100 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gray-200 flex items-center justify-center text-3xl mx-auto mb-4">👥</div>
+                            <h3 className="text-base font-bold text-gray-700">No Members Yet</h3>
+                            <p className="text-gray-500 text-sm mt-1">Use the "Assign Member" button to add members to this team.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Content: Team View (API returned members directly, e.g. for team leads) */}
+            {!isSingleTeamFromRegion && isTeamView && (() => {
+                const avatarColors = ['from-violet-500 to-purple-600', 'from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-600', 'from-rose-500 to-pink-600', 'from-amber-500 to-orange-500', 'from-cyan-500 to-sky-600'];
+                const leadName = `${dashboardData.team?.teamLeadId?.firstName || dashboardData.team?.teamLead?.firstName || dashboardData.lead?.firstName || ''} ${dashboardData.team?.teamLeadId?.lastName || dashboardData.team?.teamLead?.lastName || dashboardData.lead?.lastName || ''}`.trim();
+                return (
+                    <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
+                        <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-white font-black text-base tracking-tight">{dashboardData.team?.name || dashboardData.teamName || 'My Team'}</h2>
+                                {leadName && (
+                                    <p className="text-slate-400 text-xs mt-0.5 flex items-center gap-1.5">
+                                        <FaUserTie className="text-indigo-400" /> Lead: <span className="text-indigo-300 font-semibold">{leadName}</span>
+                                    </p>
+                                )}
+                            </div>
+                            <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{dashboardData.members?.length || 0} Members</span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full whitespace-nowrap min-w-[800px]">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
+                                        <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
+                                        <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
+                                        <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                        {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {dashboardData.members?.map((member, index) => {
+                                        const isLead = member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email);
+                                        const isActive = member.isActive !== false;
+                                        const colorClass = avatarColors[index % avatarColors.length];
+                                        return (
                                             <tr key={index} className={`border-b border-slate-50 transition-colors ${isLead ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'bg-white hover:bg-slate-50/70'}`}>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -1506,108 +1734,19 @@ const MyTeamDashboardView = ({ teamId }) => {
                                                             <button onClick={() => openReassignModal(member.email)} className="flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-semibold shadow-sm" title="Reassign to another team">
                                                                 <FaExchangeAlt /> Reassign
                                                             </button>
-                                                            <button onClick={() => openSetLeadModal(selectedTeam._id || selectedTeam.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? "Already Team Lead" : "Make Team Lead"}>
+                                                            <button onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? 'Already Team Lead' : 'Make Team Lead'}>
                                                                 <FaUserTie /> {member.isTeamLead ? 'Current TL' : 'Make TL'}
                                                             </button>
                                                         </div>
                                                     </td>
                                                 )}
                                             </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                        );
-                    })() : (
-                        <div className="bg-gradient-to-br from-slate-50 to-gray-100 p-10 rounded-2xl border border-gray-100 text-center">
-                            <div className="w-16 h-16 rounded-2xl bg-gray-200 flex items-center justify-center text-3xl mx-auto mb-4">👥</div>
-                            <h3 className="text-base font-bold text-gray-700">No Members Yet</h3>
-                            <p className="text-gray-500 text-sm mt-1">Use the "Assign Member" button to add members to this team.</p>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Content: Team View (API returned members directly, e.g. for team leads) */}
-            {!isSingleTeamFromRegion && isTeamView && (() => {
-                const avatarColors = ['from-violet-500 to-purple-600','from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-rose-500 to-pink-600','from-amber-500 to-orange-500','from-cyan-500 to-sky-600'];
-                const leadName = `${dashboardData.team?.teamLeadId?.firstName || dashboardData.team?.teamLead?.firstName || dashboardData.lead?.firstName || ''} ${dashboardData.team?.teamLeadId?.lastName || dashboardData.team?.teamLead?.lastName || dashboardData.lead?.lastName || ''}`.trim();
-                return (
-                <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-md">
-                    <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-5 flex justify-between items-center">
-                        <div>
-                            <h2 className="text-white font-black text-base tracking-tight">{dashboardData.team?.name || dashboardData.teamName || 'My Team'}</h2>
-                            {leadName && (
-                                <p className="text-slate-400 text-xs mt-0.5 flex items-center gap-1.5">
-                                    <FaUserTie className="text-indigo-400" /> Lead: <span className="text-indigo-300 font-semibold">{leadName}</span>
-                                </p>
-                            )}
-                        </div>
-                        <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">{dashboardData.members?.length || 0} Members</span>
                     </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full whitespace-nowrap min-w-[800px]">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Member</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Email</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Role</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                                    {canManageMembers && <th className="px-6 py-3 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest">Actions</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {dashboardData.members?.map((member, index) => {
-                                    const isLead = member.isTeamLead || member.role === 'tl' || member.role === 'team_lead' || member.email === (dashboardData.team?.teamLeadId?.email || dashboardData.team?.teamLead?.email || dashboardData.lead?.email);
-                                    const isActive = member.isActive !== false;
-                                    const colorClass = avatarColors[index % avatarColors.length];
-                                    return (
-                                    <tr key={index} className={`border-b border-slate-50 transition-colors ${isLead ? 'bg-indigo-50/40 hover:bg-indigo-50/70' : 'bg-white hover:bg-slate-50/70'}`}>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center text-white font-black text-sm shadow-sm`}>
-                                                    {member.firstName?.charAt(0)?.toUpperCase() || 'U'}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-slate-800">{member.firstName} {member.lastName}</p>
-                                                    {isLead && <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Team Lead</p>}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-slate-500">{member.email}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wide ${isLead ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                                                {member.role?.toUpperCase() || 'MEMBER'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                                                {isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        {canManageMembers && (
-                                            <td className="px-6 py-4">
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => openReassignModal(member.email)} className="flex items-center gap-1.5 text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-semibold shadow-sm" title="Reassign to another team">
-                                                        <FaExchangeAlt /> Reassign
-                                                    </button>
-                                                    <button onClick={() => openSetLeadModal(dashboardData.team?._id || dashboardData.team?.id, member.email)} disabled={member.isTeamLead} className="flex items-center gap-1.5 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600" title={member.isTeamLead ? 'Already Team Lead' : 'Make Team Lead'}>
-                                                        <FaUserTie /> {member.isTeamLead ? 'Current TL' : 'Make TL'}
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
                 );
             })()}
 
@@ -1633,7 +1772,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                     const itemsPerPage = 5;
                     const totalPages = Math.ceil((items || []).length / itemsPerPage);
                     const maxScore = Math.max(...(items || []).map(u => u.score || 0), 1);
-                    
+
                     const currentItems = (items || []).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
                     return (
@@ -1706,7 +1845,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
                                 <div className="border-t border-gray-100 p-3 bg-gray-50/50 flex justify-between items-center">
-                                    <button 
+                                    <button
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
                                         className="px-3 py-1 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1716,7 +1855,7 @@ const MyTeamDashboardView = ({ teamId }) => {
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                         Page {currentPage} of {totalPages}
                                     </span>
-                                    <button 
+                                    <button
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
                                         className="px-3 py-1 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
